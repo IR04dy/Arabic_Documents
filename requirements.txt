@@ -39,3 +39,7 @@ surya-ocr>=0.22
 # startup by the classifier. Already present in the system Python, but a clean
 # install needs it declared.
 pyyaml>=6.0
+
+
+# Registry
+hijridate>=1.0

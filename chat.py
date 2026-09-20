@@ -71,6 +71,34 @@ def _missing_block(context: dict) -> str:
     return "\n".join(lines)
 
 
+def _expiry_block(context: dict) -> str:
+    """The server's expiry verdict, stated as fact.
+
+    expiry.py computed it deterministically from the date the document prints,
+    and the UI badge shows the same numbers. The model is handed the ANSWER
+    rather than asked to work it out of the text again, so the two can never
+    disagree — and a revoked or suspended instrument carries that state here
+    too, because an expiry date alone is silent about it.
+    """
+    e = context.get("expiry")
+    if not isinstance(e, dict) or not e.get("status_ar"):
+        return ""
+    bits = ["- الحالة بحسب تاريخ الانتهاء: " + str(e["status_ar"])]
+    if e.get("date_text"):
+        bits.append("- تاريخ الانتهاء كما ورد في المستند: " + str(e["date_text"]))
+    if e.get("date_gregorian"):
+        bits.append("- ما يقابله ميلاديًا: " + str(e["date_gregorian"]))
+    days = e.get("days_remaining")
+    if isinstance(days, int) and not isinstance(days, bool):
+        bits.append("- المتبقي: %d يومًا" % days if days >= 0
+                    else "- انقضى منذ %d يومًا" % -days)
+    if e.get("state_override_ar"):
+        bits.append("- حالة الوثيقة المصرّح بها: " + str(e["state_override_ar"])
+                    + " — تسبق تاريخ الانتهاء: لا تَعُدّ الوثيقة سارية.")
+    if e.get("note"):
+        bits.append("- ملاحظة: " + str(e["note"]))
+    return "\n".join(bits)
+
 def _cite(f: dict) -> str:
     """The field's source tag, [صN سM] = page N, line M — or "" when unknown.
     The same tag the UI turns back into a jump to that line."""
@@ -122,6 +150,13 @@ def build_system_prompt(context: dict, full_text: str) -> str:
         lines.append("EXPECTED BUT MISSING — this document type normally carries "
                      "these fields and this copy does not:")
         lines.append(missing)
+    expiry = _expiry_block(context)
+    if expiry:
+        lines.append("")
+        lines.append("EXPIRY — computed by the server from the date this document "
+                     "prints. Use THESE values when asked whether the document is "
+                     "still valid, and do not recompute them from the text:")
+        lines.append(expiry)
     lines.append("")
     lines.append(_FENCE_OPEN)
     lines.append(full_text or "(no document text)")

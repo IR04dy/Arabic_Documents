@@ -333,6 +333,7 @@ class ChatContext(BaseModel):
     full_text: str = ""
     template_id: str = ""
     missing_required: list = Field(default_factory=list)
+    expiry: dict = Field(default_factory=dict)
 
 
 class ChatIn(BaseModel):
@@ -385,6 +386,32 @@ def _cap_missing(missing: list) -> list:
                         "label_en": str(m.get("label_en", ""))[:120]})
     return out
 
+# What chat is allowed to know about expiry. `source`, `verified`, `confidence`
+# and `converter` stay out: they are for the UI badge and the reviewer, and
+# every extra key is prompt budget spent on something the model cannot use.
+_EXPIRY_OUT = ("status", "status_ar", "date_text", "date_gregorian",
+               "days_remaining", "state_override", "state_override_ar", "note")
+
+
+def _cap_expiry(e) -> dict:
+    """The expiry verdict, rebuilt key by key.
+
+    It reaches the server from the CLIENT like the rest of the chat context, so
+    it is never passed through: a caller that inflates `note` to a megabyte, or
+    sends days_remaining=10**12, must not reach the prompt builder.
+    """
+    out: dict = {}
+    if not isinstance(e, dict):
+        return out
+    for k in _EXPIRY_OUT:
+        v = e.get(k)
+        if isinstance(v, str) and v:
+            out[k] = v[:120]
+        elif isinstance(v, bool):
+            continue                  # bool is an int; days_remaining is not one
+        elif isinstance(v, int):
+            out[k] = max(-100000, min(100000, v))
+    return out
 
 @app.post("/chat")
 async def chat_endpoint(body: ChatIn):
@@ -404,6 +431,7 @@ async def chat_endpoint(body: ChatIn):
         "full_text": (body.context.full_text or "")[:CHAT_FULLTEXT_MAX],
         "template_id": (body.context.template_id or "")[:64],
         "missing_required": _cap_missing(body.context.missing_required),
+        "expiry": _cap_expiry(body.context.expiry),
     }
     try:
         await run_in_threadpool(ensure_llm)

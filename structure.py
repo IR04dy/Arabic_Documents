@@ -65,6 +65,7 @@ from registry import Normalizer
 from llm import ensure_loaded as ensure_loaded   # re-export for app.py
 from llm import status as status                  # re-export (server status)
 from llm import stop_server as stop_server        # re-export
+from expiry import detect as detect_expiry
 
 MAX_INPUT_CHARS = int(os.environ.get("STRUCTURE_MAX_INPUT_CHARS", "12000"))
 MAX_NEW_TOKENS = int(os.environ.get("STRUCTURE_MAX_NEW_TOKENS", "4096"))
@@ -254,6 +255,7 @@ class StructureResult:
     missing_required: list = dc_field(default_factory=list)
     extras: int = 0
     passes: int = 0
+    expiry: dict | None = None  # expiry.py's verdict on the document's own expiry
 
     def to_dict(self) -> dict:
         d = {
@@ -268,6 +270,8 @@ class StructureResult:
                      missing_required=self.missing_required,
                      extras=self.extras,
                      passes=self.passes)
+        if self.expiry is not None:
+            d["expiry"] = self.expiry
         return d
 
 
@@ -393,6 +397,25 @@ class _Fidelity:
                 return span
         return None
 
+def _expiry(text: str, result: StructureResult, fid: "_Fidelity") -> dict | None:
+    """The document's own expiry date, and what it means today (expiry.py).
+
+    Runs on the RAW text, never on `cleaned`: a date past MAX_INPUT_CHARS is
+    exactly the case the prompt cannot reach. The fidelity helpers are handed
+    over so the date is cited and checked like every other value. Never raises —
+    an expiry verdict is an addition to the result, not a precondition for it.
+    """
+    try:
+        return detect_expiry(
+            text,
+            sections=[s.to_dict() for s in result.sections],
+            locate=lambda v, labels=(): fid.locate(v, labels=list(labels)),
+            verify=lambda v: fid.check(v)[1],
+            restore=fid.restore,
+        )
+    except Exception as exc:
+        print("expiry detection failed:", repr(exc))
+        return None
 
 # =============================================================================
 # Generic pass
@@ -456,6 +479,14 @@ def _merge_generic(a: dict, b: dict) -> dict:
             merged.append({"title": title, "fields": list(fields)})
     return {"document_type": str(a.get("document_type") or b.get("document_type") or ""),
             "sections": merged}
+
+def parse_structure(text: str, *, fidelity: "_Fidelity | None" = None,
+                    with_expiry: bool = True) -> StructureResult:
+    result = StructureResult(str(data.get("document_type", "")), sections, truncated,
+                            output_capped=capped)
+    if with_expiry:
+        result.expiry = _expiry(text or "", result, fid)
+    return result
 
 
 def _generic_pass(text: str, depth: int = 0) -> tuple:

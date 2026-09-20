@@ -213,6 +213,17 @@ button{font-family:inherit}
 .send:disabled{opacity:.5;cursor:default}
 .send span{display:inline-block;transform:scaleX(-1)}   /* the arrow flies toward the start edge in RTL */
 
+/* ---- panel 3.New: expiry verdict ---- */
+.expiry{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 10px}
+.ebadge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--pill);
+  border:1px solid var(--line-2);background:var(--bar);color:var(--ink-2)}
+.ebadge.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.ebadge.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.ebadge.crit{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+.edate{font-size:12px;font-weight:700;color:var(--ink)}
+.edays,.enote{font-size:11px;color:var(--muted)}
+.expiry .fsrc{margin-top:0}
+
 /* ---- provenance ---- */
 .cite{display:inline-block;margin:0 3px;padding:0 6px;border-radius:var(--pill);border:1px solid var(--accent-line);
   background:var(--accent-soft);color:var(--accent);font-size:10.5px;line-height:16px;cursor:pointer;
@@ -319,7 +330,7 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
     </div>
   </section>
   <div class="flow" aria-hidden="true"></div>
-
+ 
   <!-- 3) تحليل المستند -->
   <section class="panel" id="p3">
     <div class="phead">
@@ -331,6 +342,7 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
       <div id="structstate" class="state"></div>
       <div id="doctype" class="doctype hidden"></div>
       <div id="reviewnote" class="review hidden">⚠ دون حدّ المراجعة — تحقّق من نوع المستند</div>
+      <div id="expiry" class="expiry hidden"></div>
       <div id="cmpsum" class="cmpsum"></div>
       <div id="struct"><div class="empty">تظهر الحقول المستخرجة هنا مع مصدر كل قيمة في المستند</div></div>
       <div id="structnote" class="struct-note hidden"></div>
@@ -967,7 +979,32 @@ const vcls=f=>f.status==="mismatch"?" bad":(f.status==="unverified"?" warn":"");
 function rowCite(row){ let best=null;
   for(const f of row) if(f.source&&f.source.page&&!f.source.approx&&(best===null||f.source.start<best.start)) best=f.source;
   return best; }
+
+/* Expiry verdict: status, the date as the deed prints it, and a jump to its line.
+  state_override (ملغاة / موقوفة) is shown BESIDE the status, never merged into
+  it — a revoked wakalah with a 1450 expiry date is not "سارية". */
+const EXP_CLS={valid:"ok", expiring_soon:"warn", expired:"crit", unknown:""};
+function renderExpiry(e){
+  const box=$("#expiry");
+  if(!e){ box.innerHTML=""; box.classList.add("hidden"); return; }
+  let h='<span class="ebadge '+(EXP_CLS[e.status]||"")+'">'+esc(e.status_ar||"")+'</span>';
+  if(e.state_override_ar)
+    h+='<span class="ebadge crit" title="حالة الوثيقة مستقلة عن تاريخ الانتهاء">'+
+       esc(e.state_override_ar)+'</span>';
+  if(e.date_text){
+    h+='<span class="edate" dir="auto">'+escNum(e.date_text)+
+       (e.calendar==="hijri"?' هـ':(e.calendar==="gregorian"?' م':''))+'</span>';
+    if(e.days_remaining!=null)
+      h+='<span class="edays">'+(e.days_remaining<0
+         ? 'انقضت منذ '+arNum(-e.days_remaining)+' يومًا'
+         : 'متبقٍ '+arNum(e.days_remaining)+' يومًا')+'</span>';
+  }
+  if(e.note) h+='<span class="enote">'+esc(e.note)+'</span>';
+  if(e.source && e.source.page) h+=srcLink(e.source);
+  box.innerHTML=h; box.classList.remove("hidden");
+}
 function renderStructure(j){
+  renderExpiry(j.expiry);
   const body=$("#struct"), note=$("#structnote");
   if((!lastVerdict || lastVerdict.generic) && j.document_type){
     const el=$("#doctype"); el.className="doctype"; el.classList.remove("hidden");
@@ -1013,6 +1050,10 @@ $("#struct").addEventListener("click", e=>{
   const b=e.target.closest(".fsrc[data-start]"); if(!b) return;
   showSource(+b.dataset.start, +b.dataset.end);
 });
+$("#expiry").addEventListener("click", e=>{
+  const b=e.target.closest(".fsrc[data-start]"); if(!b) return;
+  showSource(+b.dataset.start, +b.dataset.end);
+});
 $("#compare").onclick=()=>{
   const on=$("#p3").classList.toggle("compare");
   $("#compare").textContent=on?"إخفاء المقارنة":"مقارنة بالمستند";
@@ -1026,7 +1067,8 @@ function enableChat(fullText, struct){
   docContext={document_type:(struct&&struct.document_type)||"",
               sections:(struct&&struct.sections)||[], full_text:fullText||"",
               template_id:(struct&&struct.template_id)||"",
-              missing_required:(struct&&struct.missing_required)||[]};
+              missing_required:(struct&&struct.missing_required)||[],
+              expiry:(struct&&struct.expiry)||null};
   renderContext(struct); renderQuestions(struct);
   $("#chatinput").disabled=false; $("#chatsend").disabled=false;
 }
