@@ -37,7 +37,13 @@ from docx.oxml.ns import qn
 from docx.shared import Emu, Pt, RGBColor
 
 ARABIC_FONT = "Arial"
-LAYOUT_DPI = int(os.environ.get("LAYOUT_DPI", "200"))
+# Only two things read the page image: the ink bounding box (margins) and the
+# colour palette. Neither resolves glyphs, so 200 DPI was ~3x the pixels needed
+# — and every one of them is a pixel the CPU layout model has to chew through.
+LAYOUT_DPI = int(os.environ.get("LAYOUT_DPI", "120"))
+# Skip the layout model entirely: margins and tables still come out right, the
+# headings just lose their colour. The fastest the formatted export can go.
+USE_PALETTE = os.environ.get("LAYOUT_PALETTE", "1").lower() not in ("0", "false", "no")
 
 _ARABIC = re.compile(r"[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]")
 _ARABIC_LETTER = _ARABIC
@@ -497,19 +503,27 @@ def build_layout_docx(doc_bytes: bytes, pages_text, filename: str = "document") 
         # Paper size and margins come from page 1 of the ORIGINAL, before any
         # content is laid out: Word applies section properties to the whole
         # document, and a wrong page size reflows every line in it.
+        title_color = heading_color = None
         if n_pages:
+            # Page 1 is rendered ONCE and answers both questions. It used to be
+            # rendered for the page setup and then again, per page, for the
+            # palette — N renders and N CPU inferences for a document whose
+            # pages all carry the same letterhead. The palette is colour only,
+            # so page 1's is the document's.
+            first = None
             try:
-                _page_setup(doc, get_size(0), get_image(0))
+                first = get_image(0)
+                _page_setup(doc, get_size(0), first)
             except Exception:
                 pass                          # keep the template's Letter default
+            if USE_PALETTE and first is not None:
+                try:
+                    title_color, heading_color = _palette(first)
+                except Exception:
+                    pass                      # no palette -> headings un-coloured
         for pi in range(n_pages):
             if pi > 0:
                 doc.add_page_break()
-            title_color = heading_color = None
-            try:
-                title_color, heading_color = _palette(get_image(pi))
-            except Exception:
-                pass                          # no palette -> headings stay un-coloured
             text = pages_text[pi] if pi < len(pages_text) else ""
             _emit_page(doc, text, title_color, heading_color)
     finally:
