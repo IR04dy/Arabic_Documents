@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>منصة تحليل الصكوك والأحكام</title>
+<style>
+/* Design tokens — taken from deeds_ui_wireframe.drawio (Tahoma, blue #1F6FEB,
+   greys #F5F7FA / #C8CFDA / #1B2430 / #5A6473 / #8A93A0, red #D24B4B, amber #B8860B). */
+:root{
+  --ground:#EEF1F5; --bar:#F5F7FA; --surface:#FFFFFF; --card:#FCFCFD; --card-2:#FAFBFC;
+  --line:#C8CFDA; --line-2:#D6DBE3; --line-3:#B0B7C3;
+  --ink:#1B2430; --ink-2:#5A6473; --muted:#8A93A0; --muted-2:#9AA4B2;
+  --accent:#1F6FEB; --accent-ink:#FFFFFF; --accent-soft:#EEF3FB; --accent-line:#CBD9F2;
+  --crit:#D24B4B; --crit-soft:#FBEDED; --warn:#B8860B; --warn-soft:#FBF4E3;
+  --ok:#1E8E5A; --ok-soft:#E8F5EE;
+  --r:6px; --r-sm:5px; --pill:999px;
+  --shadow:0 1px 2px rgba(27,36,48,.06);
+  --font:"Tahoma","Segoe UI","Dubai",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#0F141B; --bar:#151B24; --surface:#1A212B; --card:#1F2730; --card-2:#1C232C;
+  --line:#2E3947; --line-2:#333E4D; --line-3:#3A4656;
+  --ink:#E6EBF2; --ink-2:#B3BCC9; --muted:#8792A1; --muted-2:#6F7A89;
+  --accent:#5B9BFF; --accent-ink:#0B1524; --accent-soft:#1B2A42; --accent-line:#2D4468;
+  --crit:#F07A7A; --crit-soft:#3A1F22; --warn:#E0B043; --warn-soft:#3A2F14;
+  --ok:#4CC38A; --ok-soft:#17301F;
+  --shadow:0 1px 2px rgba(0,0,0,.35);
+}}
+*{box-sizing:border-box}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);font-size:13px;
+  line-height:1.6;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+button{font-family:inherit}
+
+/* ---- top bar ---- */
+.topbar{height:56px;flex-shrink:0;background:var(--bar);border-bottom:1px solid var(--line-3);
+  display:flex;align-items:center;gap:14px;padding:0 20px}
+.apptitle{font-size:16px;font-weight:700;margin:0;white-space:nowrap}
+.docchip{display:inline-flex;align-items:center;gap:6px;max-width:380px;padding:2px 12px;
+  border-radius:var(--pill);border:1px solid var(--accent);background:var(--accent-soft);
+  color:var(--accent);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1}
+.enginechip{display:inline-flex;align-items:center;gap:7px;color:var(--ink-2);font-size:12px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted-2);flex:none}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--crit)}
+.dot.busy{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.err{flex-shrink:0;margin:10px 16px 0;background:var(--crit-soft);color:var(--crit);border:1px solid var(--crit);
+  border-radius:var(--r);padding:8px 12px;font-size:12.5px;display:flex;gap:10px;align-items:center}
+.err button{margin-inline-start:auto;border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px}
+
+/* ---- the four panels ---- */
+.board{flex:1;min-height:0;display:flex;padding:12px 16px 16px}
+.panel{flex:1 1 0;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.flow{flex:0 0 14px;position:relative}
+.flow::before{content:"";position:absolute;top:19px;left:0;right:0;border-top:1.5px dashed var(--muted-2)}
+.flow::after{content:"";position:absolute;top:14px;left:-1px;border:5px solid transparent;border-right-color:var(--muted-2)}
+.phead{height:40px;flex-shrink:0;background:var(--bar);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px;padding:0 12px}
+.phead h2{font-size:14px;font-weight:700;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptools{display:flex;gap:6px;align-items:center}
+.ghost{font-size:11px;padding:2px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  border-radius:var(--pill);cursor:pointer}
+.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.ghost:disabled{opacity:.45;cursor:default}
+.collapse{width:24px;height:20px;border-radius:var(--pill);border:1px solid var(--line);background:var(--surface);
+  color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1;display:inline-flex;align-items:center;
+  justify-content:center;padding:0 0 2px;flex:none}
+.pbody{flex:1;min-height:0;overflow:auto;padding:12px}
+.pbody.col{display:flex;flex-direction:column;overflow:hidden}
+.pfoot{flex-shrink:0;padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;
+  border-top:1px solid var(--line-2);background:var(--surface)}
+.panel.collapsed{flex:0 0 44px}
+.panel.collapsed .pbody,.panel.collapsed .pfoot,.panel.collapsed .ptools{display:none}
+.panel.collapsed .phead{height:100%;flex-direction:column;justify-content:flex-start;padding:10px 0;gap:12px;
+  border-bottom:0;cursor:pointer}
+.panel.collapsed .phead h2{writing-mode:vertical-rl;flex:0;font-size:13px;overflow:visible}
+
+/* ---- panel 1: document ---- */
+.viewer{flex:1;min-height:0;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+  position:relative;display:flex;flex-direction:column;overflow:hidden}
+.viewer-hd{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line-2);
+  font-size:11px;color:var(--muted);flex-shrink:0}
+.viewer-hd .lbl{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--pill);overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:2px 10px;font-size:11px;color:var(--ink-2);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.4;cursor:default}
+.viewer-body{flex:1;min-height:0;position:relative;overflow:auto}
+#preview{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--card)}
+#previewimg{display:block;margin:0 auto;width:100%;max-width:none}
+.textpane{padding:10px 12px 40px;white-space:pre-wrap;font-size:14px;line-height:1.9;direction:rtl;text-align:right}
+.viewer-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);text-align:center;padding:24px;font-size:12px;line-height:1.8}
+.zoom{position:absolute;bottom:10px;left:10px;display:inline-flex;border:1px solid var(--line);
+  border-radius:var(--pill);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;z-index:2;direction:ltr}
+.zoom button{border:0;background:transparent;width:28px;height:26px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.zoom button:hover{color:var(--accent)}
+.zoom span{min-width:46px;text-align:center;font-size:11px;color:var(--muted);line-height:26px;font-family:var(--mono)}
+.uprow{flex-shrink:0;display:flex;gap:10px;margin-top:10px;height:96px}
+#drop{flex:1;border:1.5px dashed var(--muted-2);border-radius:var(--r);background:var(--card-2);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;color:var(--ink-2);font-size:11.5px;cursor:pointer;
+  text-align:center;gap:2px;transition:border-color .15s,background .15s,color .15s}
+#drop.over,#drop:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+#upload{flex:0 0 84px;border:0;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:13px;
+  font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#upload .arrow{font-size:18px;line-height:1}
+#upload:disabled{opacity:.55;cursor:default}
+.status{font-size:11px;color:var(--muted);margin-top:8px;min-height:18px;display:flex;align-items:center;gap:6px}
+.status.ok{color:var(--ink-2)}
+
+/* ---- panel 2: proofreading ---- */
+.subhd{font-size:12px;font-weight:700;color:var(--ink-2);margin:2px 0 8px;display:flex;align-items:center;gap:8px}
+.subhd .spacer{flex:1}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.badge{font-size:10.5px;padding:1px 8px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--bar);color:var(--ink-2)}
+.badge.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.badge.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.badge.crit{color:var(--crit);border-color:var(--crit);background:var(--crit-soft)}
+.sug{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);padding:8px 10px;margin-bottom:10px}
+.sug .chg{font-size:13px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sug .num{color:var(--muted);font-family:var(--mono);font-size:11px}
+.sug .was{color:var(--ink)} .sug .arr{color:var(--muted)} .sug .now{color:var(--ink);font-weight:700}
+.sug .kind{font-size:10.5px;color:var(--muted);margin-top:2px}
+.sug .kind.warn{color:var(--warn)}
+.sug .flag{color:var(--crit)}
+.sug .acts{display:flex;gap:8px;margin-top:8px}
+.acc,.rej{flex:1;border-radius:var(--pill);padding:5px 0;font-size:12px;cursor:pointer;max-width:110px}
+.acc{border:0;background:var(--accent);color:var(--accent-ink)}
+.rej{border:1px solid var(--crit);background:var(--surface);color:var(--crit)}
+.sug.accepted{border-color:var(--ok);background:var(--ok-soft)}
+.sug.accepted .acc{background:var(--ok)}
+.sug.rejected{opacity:.8;background:var(--card-2)}
+.sug.rejected .now{text-decoration:line-through;font-weight:400;color:var(--muted)}
+.sug.rejected .rej{background:var(--crit);color:#fff}
+.empty{border:1.5px dashed var(--line-2);border-radius:var(--r-sm);background:var(--card-2);color:var(--muted);
+  text-align:center;padding:16px;font-size:12px}
+.state{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;min-height:22px}
+.state.bad{color:var(--crit)}
+.note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
+.btn-out{border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:var(--pill);
+  padding:7px 12px;font-size:12px;cursor:pointer;width:100%}
+.btn-out:hover:not(:disabled){background:var(--accent-soft)}
+.btn-fill{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:11px 12px;
+  font-size:13px;font-weight:700;cursor:pointer;width:100%}
+.btn-fill:hover:not(:disabled){filter:brightness(1.07)}
+.btn-fill:disabled,.btn-out:disabled{opacity:.5;cursor:default}
+.textpane mark.chg{background:var(--ok-soft);color:var(--ok);font-weight:700;border-radius:3px;padding:0 2px;cursor:help}
+
+/* ---- panel 3: analysis ---- */
+.doctype{font-size:13px;font-weight:700;color:var(--crit);margin:2px 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.doctype small{font-weight:400;color:var(--muted);font-size:10.5px}
+.doctype.unknown{color:var(--muted)}
+.review{font-size:11px;color:var(--warn);margin:-6px 0 10px}
+.missing{border:1px solid var(--crit);background:var(--crit-soft);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:12px}
+.missing b{color:var(--crit);font-size:12px}
+.missing ul{margin:4px 0 0;padding-inline-start:16px;font-size:12px;color:var(--ink-2)}
+.grp{font-size:12px;font-weight:700;color:var(--ink-2);margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
+.grp:first-child{margin-top:0}
+.flbl{font-size:12px;color:var(--ink-2);margin:0 0 4px}
+.flbl.req::after{content:"*";color:var(--crit);margin-inline-start:2px}
+.fcard{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);padding:8px 10px;margin-bottom:10px}
+.fval{font-size:13px;color:var(--ink);word-break:break-word;min-height:20px}
+.fval.bad{color:var(--crit)} .fval.warn{color:var(--warn)}
+.fsrc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:10.5px;color:var(--accent);
+  background:none;border:0;padding:0;cursor:pointer}
+.fsrc:hover{text-decoration:underline}
+.fsrc.approx{opacity:.8}
+.fsrc.none{color:var(--muted);cursor:default;text-decoration:none}
+.fquote{display:none;margin-top:6px;padding:6px 8px;border-inline-start:3px solid var(--accent-line);background:var(--bar);
+  font-size:12px;color:var(--ink-2);border-radius:4px;white-space:pre-wrap;word-break:break-word;line-height:1.8}
+.fquote mark{background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:3px;padding:0 2px}
+.fquote.bad{border-color:var(--crit);color:var(--crit)} .fquote.warn{border-color:var(--warn);color:var(--warn)}
+.compare .fquote{display:block}
+.cmpsum{display:none;font-size:11px;color:var(--ink-2);background:var(--bar);border:1px solid var(--line-2);
+  border-radius:var(--r-sm);padding:6px 10px;margin-bottom:12px}
+.compare .cmpsum{display:block}
+.rhd{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+.rkv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px}
+.rkv .k{color:var(--muted)} .rkv .v{color:var(--ink);word-break:break-word}
+.rkv .v.bad{color:var(--crit)} .rkv .v.warn{color:var(--warn)}
+.struct-note{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+/* ---- panel 4: chat ---- */
+.ctx{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:8px 10px;margin-bottom:12px;flex-shrink:0}
+.ctx .lbl{font-size:11px;color:var(--muted);margin-bottom:4px}
+.ctx dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px}
+.ctx dt{color:var(--ink-2)} .ctx dd{margin:0;color:var(--ink)}
+.qs{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;flex-shrink:0}
+.q{border:1px solid var(--line-2);background:var(--bar);border-radius:var(--pill);padding:7px 12px;text-align:right;
+  font-size:12px;color:var(--ink);cursor:pointer}
+.q:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.q:disabled{opacity:.5;cursor:default}
+.chatlog{flex:1;min-height:140px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:10px;display:flex;flex-direction:column;gap:6px}
+.bubble{max-width:88%;padding:7px 11px;border-radius:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.bubble.user{align-self:flex-start;background:var(--accent-soft);border:1px solid var(--accent-line);border-top-right-radius:4px}
+.bubble.assistant{align-self:flex-end;background:var(--bar);border:1px solid var(--line-2);border-top-left-radius:4px}
+.bubble.err-bubble{background:var(--crit-soft);border-color:var(--crit);color:var(--crit)}
+.chat-hint{color:var(--muted);text-align:center;font-size:12px;margin:auto;line-height:1.8}
+.trunc-note{color:var(--muted);font-size:11px;margin-top:6px}
+.composer{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;resize:none;max-height:120px;overflow:auto;border:1px solid var(--line);border-radius:22px;
+  padding:11px 14px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--ink);line-height:1.5}
+.composer textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.send{flex:0 0 44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.send:disabled{opacity:.5;cursor:default}
+.send span{display:inline-block;transform:scaleX(-1)}   /* the arrow flies toward the start edge in RTL */
+
+/* ---- provenance ---- */
+.cite{display:inline-block;margin:0 3px;padding:0 6px;border-radius:var(--pill);border:1px solid var(--accent-line);
+  background:var(--accent-soft);color:var(--accent);font-size:10.5px;line-height:16px;cursor:pointer;
+  vertical-align:middle;white-space:nowrap;unicode-bidi:isolate}
+.cite:hover{filter:brightness(.93)}
+#textview .ln.hit{background:var(--accent-soft);box-shadow:0 0 0 3px var(--accent-soft);border-radius:4px}
+mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:0 2px}
+
+.hidden{display:none!important}
+.spinner{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;
+  display:inline-block;vertical-align:-2px;animation:spin .7s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner,.dot.busy{animation:none}}
+
+@media (max-width:1100px){
+  body{height:auto;overflow:auto}
+  .board{flex-wrap:wrap;gap:12px}
+  .flow{display:none}
+  .panel,.panel.collapsed{flex:1 1 calc(50% - 6px);height:82vh}
+  .panel.collapsed .pbody,.panel.collapsed .pfoot,.panel.collapsed .ptools{display:flex}
+  .panel.collapsed .pbody:not(.col){display:block}
+  .panel.collapsed .phead{height:40px;flex-direction:row;padding:0 12px;border-bottom:1px solid var(--line);cursor:default}
+  .panel.collapsed .phead h2{writing-mode:horizontal-tb;flex:1}
+  .collapse{display:none}
+}
+@media (max-width:680px){
+  .panel,.panel.collapsed{flex:1 1 100%}
+  .docchip{display:none}
+  .apptitle{font-size:14px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1 class="apptitle">منصة تحليل الصكوك والأحكام</h1>
+  <span id="docchip" class="docchip hidden" dir="auto"></span>
+  <span class="spacer"></span>
+  <span class="enginechip"><span id="enginedot" class="dot busy"></span><span id="enginetxt">جارٍ تحميل النماذج…</span></span>
+</header>
+<div id="error" class="err hidden" role="alert"><span id="errortxt"></span><button type="button" id="errorclose" title="إغفال">✕</button></div>
+
+<main class="board">
+
+  <!-- 1) تحويل مستند -->
+  <section class="panel" id="p1">
+    <div class="phead">
+      <h2>تحويل مستند</h2>
+      <div class="ptools"><button type="button" id="copytext" class="ghost hidden">نسخ النص</button></div>
+      <button type="button" class="collapse" title="طيّ اللوحة" aria-expanded="true">›</button>
+    </div>
+    <div class="pbody col">
+      <div class="viewer">
+        <div class="viewer-hd">
+          <span class="lbl">معاينة المستند</span>
+          <span class="seg" role="tablist" aria-label="طريقة العرض">
+            <button type="button" role="tab" aria-selected="true" data-view="doc" class="on">المستند</button>
+            <button type="button" role="tab" aria-selected="false" data-view="text" id="segtext" disabled>النص المستخرج</button>
+            <button type="button" role="tab" aria-selected="false" data-view="proof" id="segproof" disabled>بعد التدقيق</button>
+          </span>
+        </div>
+        <div class="viewer-body" id="viewerbody">
+          <div id="viewerph" class="viewer-ph">اسحب ملف PDF أو صورة إلى الأسفل، أو اضغط «رفع».<br>يبدأ الاستخراج تلقائيًا بعد الرفع.</div>
+          <iframe id="preview" class="hidden" title="معاينة المستند"></iframe>
+          <img id="previewimg" class="hidden" alt="معاينة المستند">
+          <div id="textview" class="textpane hidden"></div>
+          <div id="proofview" class="textpane hidden"></div>
+        </div>
+        <div class="zoom" aria-label="تكبير">
+          <button type="button" id="zoomout" title="تصغير">−</button>
+          <span id="zoomlbl">١٠٠٪</span>
+          <button type="button" id="zoomfit" title="ملاءمة">⃞</button>
+          <button type="button" id="zoomin" title="تكبير">+</button>
+        </div>
+      </div>
+      <!-- wireframe order: the drop zone on the right (the leading edge), رفع on the left -->
+      <div class="uprow">
+        <div id="drop"><div><b>اسحب الملف هنا</b></div><div>PDF / صورة</div></div>
+        <button type="button" id="upload"><span class="arrow">↑</span><span id="uploadtxt">رفع</span></button>
+      </div>
+      <div id="status" class="status"></div>
+      <input id="file" type="file" class="hidden"
+        accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,image/tiff,image/bmp,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp">
+    </div>
+  </section>
+  <div class="flow" aria-hidden="true"></div>
+
+  <!-- 2) التدقيق اللغوي -->
+  <section class="panel" id="p2">
+    <div class="phead">
+      <h2>التدقيق اللغوي</h2>
+      <div class="ptools"><button type="button" id="dltxt" class="ghost" disabled>نص .txt</button></div>
+      <button type="button" class="collapse" title="طيّ اللوحة" aria-expanded="true">›</button>
+    </div>
+    <div class="pbody">
+      <div id="proofstate" class="state"></div>
+      <div id="proofbadges" class="badges"></div>
+      <div class="subhd"><span id="sugcount">الاقتراحات</span></div>
+      <div id="suglist"><div class="empty">تظهر اقتراحات التصحيح هنا بعد استخراج النص</div></div>
+      <div id="proofnote" class="note hidden">البيانات المنظّمة والمحادثة تعتمد على النص الأصلي كما استُخرج؛ التصحيحات المقبولة تُطبَّق على ملف Word والنص المحمَّل فقط.</div>
+    </div>
+    <div class="pfoot">
+      <button type="button" id="acceptall" class="btn-out" disabled>قبول الكل</button>
+      <button type="button" id="dlword" class="btn-fill" disabled>تحميل Word&nbsp; ⬇</button>
+    </div>
+  </section>
+  <div class="flow" aria-hidden="true"></div>
+
+  <!-- 3) تحليل المستند -->
+  <section class="panel" id="p3">
+    <div class="phead">
+      <h2>تحليل المستند</h2>
+      <div class="ptools"><button type="button" id="copyjson" class="ghost" disabled>نسخ JSON</button></div>
+      <button type="button" class="collapse" title="طيّ اللوحة" aria-expanded="true">›</button>
+    </div>
+    <div class="pbody">
+      <div id="structstate" class="state"></div>
+      <div id="doctype" class="doctype hidden"></div>
+      <div id="reviewnote" class="review hidden">⚠ دون حدّ المراجعة — تحقّق من نوع المستند</div>
+      <div id="cmpsum" class="cmpsum"></div>
+      <div id="struct"><div class="empty">تظهر الحقول المستخرجة هنا مع مصدر كل قيمة في المستند</div></div>
+      <div id="structnote" class="struct-note hidden"></div>
+    </div>
+    <div class="pfoot">
+      <button type="button" id="compare" class="btn-out" disabled>مقارنة بالمستند</button>
+    </div>
+  </section>
+  <div class="flow" aria-hidden="true"></div>
+
+  <!-- 4) شات و Q&A -->
+  <section class="panel" id="p4">
+    <div class="phead">
+      <h2>شات و Q&amp;A</h2>
+      <div class="ptools"></div>
+      <button type="button" class="collapse" title="طيّ اللوحة" aria-expanded="true">›</button>
+    </div>
+    <div class="pbody col">
+      <div class="ctx">
+        <div class="lbl">ملخص المستند / السياق</div>
+        <dl id="ctxlist"><dt>الحالة</dt><dd>لا يوجد مستند بعد</dd></dl>
+      </div>
+      <div class="subhd" style="flex-shrink:0">أسئلة مقترحة</div>
+      <div id="qs" class="qs">
+        <button type="button" class="q" disabled>ما نوع هذا المستند؟</button>
+        <button type="button" class="q" disabled>ما أهم التواريخ المذكورة؟</button>
+        <button type="button" class="q" disabled>ما الأرقام المرجعية الواردة؟</button>
+      </div>
+      <div id="chatlog" class="chatlog"><div class="chat-hint">تُجاب الأسئلة من نص المستند وحقوله فقط، مع الإشارة إلى مصدر كل قيمة.</div></div>
+    </div>
+    <div class="pfoot">
+      <form id="chatform" class="composer">
+        <textarea id="chatinput" rows="1" dir="auto" placeholder="اكتب سؤالك…" disabled></textarea>
+        <button type="submit" id="chatsend" class="send" disabled title="إرسال"><span>➤</span></button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const arNum = n => String(n).replace(/[0-9]/g, d => AR_DIGITS[+d]);
+
+let picked=null, isPdf=false, previewUrl=null, lastName="document";
+let lastText="", groundText="", lastPages=[], lastPdfFile=null, pageCount=0;
+let engineReady=false, engineErr=null, busy=false, wantStart=false, runGen=0;
+let proofData=null, sugItems=[], sugState=[];
+let lastStruct=null, lastVerdict=null;
+let docContext=null, chatHistory=[], chatBusy=false, chatAbort=null, chatGen=0;
+let view="doc", zoom=100, pdfPage=0;
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,
+  c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---------- print numbers the way the deed prints them ----------------------
+   ١٨٦٥-٠٠٠٠٢١٣٤ is two runs of Arabic-Indic digits (bidi class AN) around a
+   HYPHEN-MINUS (class ES). UAX #9 rule W4 folds a separator into the number
+   only between two EUROPEAN digits, so between two AN runs the hyphen stays a
+   neutral and N1 resolves it to R: the halves swap on screen in every base
+   direction (measured: dir=rtl, auto, ltr and LRI…PDI all fail). Only pinning
+   the token itself with <bdo dir="ltr"> works; it is a no-op for dates with
+   "/" (class CS, which W4 does fold) and leaves surrounding Arabic RTL.
+   The hyphen is LAST in the class: written as `\/-٫` it would be parsed as a
+   RANGE U+002F–U+066B, excluding the hyphen and swallowing letters. */
+const NUMTOK=/[0-9٠-٩][0-9٠-٩٫٬.,:\/-]*[0-9٠-٩]/g;
+function escNum(s){ return esc(s).replace(NUMTOK, t=>'<bdo dir="ltr">'+t+'</bdo>'); }
+/* Same result built from text nodes, for untrusted text (OCR, model output). */
+function appendNumText(el, text){
+  const s=(text==null?"":String(text));
+  let last=0, m; NUMTOK.lastIndex=0;
+  while((m=NUMTOK.exec(s))!==null){
+    if(m.index>last) el.appendChild(document.createTextNode(s.slice(last,m.index)));
+    const b=document.createElement("bdo"); b.dir="ltr"; b.textContent=m[0];
+    el.appendChild(b); last=NUMTOK.lastIndex;
+  }
+  if(last<s.length) el.appendChild(document.createTextNode(s.slice(last)));
+}
+function setNumText(el, text){ el.textContent=""; appendNumText(el, text); }
+
+/* ---------- provenance -----------------------------------------------------
+   The server cites every field as {page, line, start, end, quote}: character
+   offsets into the very text the client holds in lastText, with page/line
+   numbering derived from the "--- Page N ---" markers (a marker starts a page,
+   the lines after it count from 1, blank lines included). The chat model
+   repeats that numbering as [صN سM] tags. Both lead to one line of #textview. */
+let docLines=[], lineStarts=[], linePage=[], pageLine={};
+function indexLines(text){
+  docLines=(text||"").split("\n"); lineStarts=[]; linePage=[]; pageLine={};
+  let off=0, page=1, k=0;
+  docLines.forEach((ln,i)=>{
+    lineStarts.push(off); off+=ln.length+1;
+    const m=/^--- Page (\d+) ---[ \t]*$/.exec(ln);
+    if(m){ page=parseInt(m[1],10); k=0; linePage.push(page); return; }
+    k++; pageLine[page+":"+k]=i; linePage.push(page);
+  });
+}
+function lineAt(offset){
+  let lo=0, hi=lineStarts.length-1;
+  while(lo<hi){ const mid=(lo+hi+1)>>1; if(lineStarts[mid]<=offset) lo=mid; else hi=mid-1; }
+  return lo;
+}
+/* One addressable <span class="ln"> per line; "\n" text nodes between keep
+   pre-wrap layout and plain-text copy intact. */
+function setDocText(el, text){
+  el.textContent="";
+  const lines=(text==null?"":String(text)).split("\n");
+  lines.forEach((ln,i)=>{
+    const s=document.createElement("span"); s.className="ln"; s.dataset.ln=i;
+    appendNumText(s, ln); el.appendChild(s);
+    if(i<lines.length-1) el.appendChild(document.createTextNode("\n"));
+  });
+}
+function clearHits(){
+  $("#textview").querySelectorAll(".ln.hit").forEach(x=>{ x.classList.remove("hit"); setNumText(x, docLines[+x.dataset.ln]||""); });
+}
+/* A highlight must never cut a numeric token in half: the two halves would land
+   in separate <bdo> runs and swap on screen (١٨٦٥-٠٠٠٠٢١٣٤ printed as two
+   isolates reverses again). An approximate citation points at the number inside
+   a longer token, so widen the marked range to whole tokens before slicing. */
+function snapToken(line, a, b){
+  let m; NUMTOK.lastIndex=0;
+  while((m=NUMTOK.exec(line))!==null){
+    const s=m.index, e=s+m[0].length;
+    if(s<b && e>a){ if(s<a) a=s; if(e>b) b=e; }
+  }
+  return [a,b];
+}
+/* Show the extracted text, scroll to the cited line, mark the cited characters,
+   and remember the page so the PDF view opens there too. A span may cover more
+   than one line — the normaliser folds a newline to a space, so a value wrapped
+   across two OCR lines still matches — in which case every line it touches is
+   marked, not just the first. */
+function showSource(start, end){
+  if(!lastText || !docLines.length) return;
+  setView("text");
+  clearHits();
+  const first=lineAt(start), last=lineAt(Math.max(start, end-1));
+  let target=null;
+  for(let li=first; li<=last && li<docLines.length; li++){
+    const sp=$("#textview").querySelector('.ln[data-ln="'+li+'"]'); if(!sp) continue;
+    const line=docLines[li]||"", base=lineStarts[li];
+    let a=Math.max(0,Math.min(line.length,start-base));
+    let b=Math.max(a,Math.min(line.length,end-base));
+    if(li>first) a=0;
+    if(li<last) b=line.length;
+    [a,b]=snapToken(line,a,b);
+    sp.textContent="";
+    appendNumText(sp, line.slice(0,a));
+    if(b>a){ const m=document.createElement("mark"); m.className="src"; appendNumText(m, line.slice(a,b)); sp.appendChild(m); }
+    appendNumText(sp, line.slice(b));
+    sp.classList.add("hit");
+    if(!target) target=sp;
+  }
+  if(target){ target.scrollIntoView({block:"center", behavior:"smooth"}); pdfPage=linePage[first]||0; }
+}
+function showPageLine(page, line){
+  const li=pageLine[page+":"+line]; if(li==null) return;
+  showSource(lineStarts[li], lineStarts[li]+(docLines[li]||"").length);
+}
+/* "مصدر: صفحة ١ · سطر ١٢ ⤴" — the wireframe's source link under each value. */
+function srcLink(src){
+  if(!src || !src.page) return '<span class="fsrc none">لا مصدر في النص</span>';
+  return '<button type="button" class="fsrc'+(src.approx?' approx':'')+'" data-start="'+(+src.start||0)+
+         '" data-end="'+(+src.end||0)+'" title="'+esc(src.quote||"")+'">مصدر: صفحة '+arNum(src.page)+
+         ' · سطر '+arNum(src.line)+(src.approx?' ≈':'')+' ⤴</button>';
+}
+/* Compare mode: the cited line(s) of the document with the cited characters
+   marked — same rules as showSource, including multi-line spans and not cutting
+   a numeric token in half. */
+function quoteBox(src, f){
+  if(src && src.page && lastText && docLines.length){
+    const start=+src.start||0, end=+src.end||0;
+    const first=lineAt(start), last=lineAt(Math.max(start,end-1));
+    let h="";
+    for(let li=first; li<=last && li<docLines.length; li++){
+      const line=docLines[li]||"", base=lineStarts[li];
+      let a=Math.max(0,Math.min(line.length,start-base));
+      let b=Math.max(a,Math.min(line.length,end-base));
+      if(li>first) a=0;
+      if(li<last) b=line.length;
+      [a,b]=snapToken(line,a,b);
+      if(li>first) h+="\n";
+      h+=escNum(line.slice(0,a))+'<mark>'+escNum(line.slice(a,b))+'</mark>'+escNum(line.slice(b));
+    }
+    return '<div class="fquote" dir="rtl">'+h+'</div>';
+  }
+  if(f && f.status==="mismatch") return '<div class="fquote bad">لم يُعثر على هذه القيمة في نص المستند</div>';
+  if(f && f.status==="unverified") return '<div class="fquote warn">غير مؤكدة — ليست مقتبسة حرفيًا من النص</div>';
+  return '<div class="fquote">لا يوجد مقتبس من النص لهذه القيمة</div>';
+}
+/* Model answers: a [صN سM] tag becomes a chip. Text nodes only. */
+const CITE_TAG=/\[ص(\d{1,5}) س(\d{1,6})\]/g;
+function setChatText(el, text){
+  const s=(text==null?"":String(text));
+  el.textContent="";
+  let last=0, m; CITE_TAG.lastIndex=0;
+  while((m=CITE_TAG.exec(s))!==null){
+    if(m.index>last) appendNumText(el, s.slice(last,m.index));
+    const b=document.createElement("button"); b.type="button"; b.className="cite";
+    b.dataset.page=m[1]; b.dataset.line=m[2]; b.textContent="ص"+arNum(m[1])+" س"+arNum(m[2]);
+    const li=pageLine[m[1]+":"+m[2]]; if(li!=null) b.title=docLines[li]||"";
+    el.appendChild(b); last=CITE_TAG.lastIndex;
+  }
+  if(last<s.length) appendNumText(el, s.slice(last));
+}
+
+/* ---------- panels: collapse ---------- */
+const COLLAPSE_KEY="deeds.ui.collapsed";
+function saveCollapsed(){ try{ localStorage.setItem(COLLAPSE_KEY,
+  JSON.stringify([...document.querySelectorAll(".panel.collapsed")].map(p=>p.id))); }catch(_){} }
+function togglePanel(p){
+  const open=p.classList.contains("collapsed");
+  if(!open && document.querySelectorAll(".panel:not(.collapsed)").length<=1) return;   // keep one open
+  p.classList.toggle("collapsed", !open);
+  const b=p.querySelector(".collapse"); b.textContent=open?"›":"‹"; b.setAttribute("aria-expanded", open?"true":"false");
+  b.title=open?"طيّ اللوحة":"فتح اللوحة";
+  saveCollapsed();
+}
+document.querySelectorAll(".panel").forEach(p=>{
+  p.querySelector(".collapse").onclick=e=>{ e.stopPropagation(); togglePanel(p); };
+  p.querySelector(".phead").onclick=()=>{ if(p.classList.contains("collapsed")) togglePanel(p); };
+});
+try{ (JSON.parse(localStorage.getItem(COLLAPSE_KEY)||"[]")||[]).forEach(id=>{ const p=document.getElementById(id); if(p) togglePanel(p); }); }catch(_){}
+
+/* ---------- panel 1: views + zoom ---------- */
+function setView(v){
+  view=v;
+  document.querySelectorAll(".seg button").forEach(b=>{
+    const on=b.dataset.view===v;
+    b.classList.toggle("on", on); b.setAttribute("aria-selected", on?"true":"false");
+  });
+  const hasDoc=!!picked;
+  $("#viewerph").classList.toggle("hidden", hasDoc);
+  $("#preview").classList.toggle("hidden", !(v==="doc" && hasDoc && isPdf));
+  $("#previewimg").classList.toggle("hidden", !(v==="doc" && hasDoc && !isPdf));
+  $("#textview").classList.toggle("hidden", v!=="text");
+  $("#proofview").classList.toggle("hidden", v!=="proof");
+  $("#copytext").classList.toggle("hidden", v==="doc" || !lastText);
+  applyZoom();
+}
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+function pdfHash(){
+  let h="#toolbar=0"+(zoom===100?"&view=FitH":"&zoom="+zoom);
+  if(pdfPage) h+="&page="+pdfPage;
+  return h;
+}
+function loadPdf(){
+  if(!isPdf || !previewUrl) return;
+  const pv=$("#preview"), url=previewUrl+pdfHash();
+  if(pv.dataset.url===url) return;
+  const first=!pv.dataset.url;
+  pv.dataset.url=url;
+  if(first){ pv.src=url; return; }                   // nothing loaded yet: just load it
+  /* Same blob, different #page/#zoom, is a same-document fragment change and the
+     PDF viewer would not re-render — so drop the src and set it again on the next
+     task. A timer, NOT requestAnimationFrame: a window that is occluded or in the
+     background never paints, and rAF would never fire there (measured), leaving
+     the preview permanently blank. */
+  pv.removeAttribute("src");
+  setTimeout(()=>{ if(pv.dataset.url===url) pv.src=url; }, 0);
+}
+function applyZoom(){
+  $("#zoomlbl").textContent=arNum(zoom)+"٪";
+  if(view==="doc"){ if(isPdf) loadPdf(); else $("#previewimg").style.width=zoom+"%"; }
+  else { const el=(view==="text")?$("#textview"):$("#proofview"); el.style.fontSize=(14*zoom/100).toFixed(1)+"px"; }
+}
+$("#zoomin").onclick=()=>{ zoom=Math.min(300, zoom+25); applyZoom(); };
+$("#zoomout").onclick=()=>{ zoom=Math.max(50, zoom-25); applyZoom(); };
+$("#zoomfit").onclick=()=>{ zoom=100; applyZoom(); };
+
+/* ---------- engine readiness ---------- */
+function setEngine(cls, txt, title){ const d=$("#enginedot"); d.className="dot "+cls; $("#enginetxt").textContent=txt; $("#enginetxt").title=title||""; }
+function updateUpload(){
+  const b=$("#upload"), t=$("#uploadtxt");
+  if(busy){ b.disabled=true; t.textContent="جارٍ…"; return; }
+  b.disabled=false; t.textContent="رفع"; b.title=engineReady?"":"يبدأ الاستخراج عند اكتمال تحميل النماذج";
+}
+async function pollEngine(){
+  try{
+    const h=await (await fetch("/health")).json(); const e=h.engine||{};
+    if(e.status==="ready"){ engineReady=true; setEngine("ok","النماذج جاهزة"); updateUpload(); if(wantStart) startExtract(); }
+    else if(e.status==="error"){ engineErr=(e.error||"").slice(0,120); setEngine("bad","خطأ في محرك القراءة", engineErr); updateUpload();
+      if(wantStart){ wantStart=false; setStatus('<span style="color:var(--crit)">⚠ محرك القراءة غير متاح — '+esc(engineErr)+'</span>'); } }
+    else { setEngine("busy","جارٍ تحميل النماذج…"); updateUpload(); setTimeout(pollEngine,2000); }
+  }catch(_){ setTimeout(pollEngine,2000); }
+}
+updateUpload(); pollEngine();
+
+/* ---------- panel 1: file in, extraction ---------- */
+const drop=$("#drop"), fileInput=$("#file");
+drop.onclick=()=>fileInput.click();
+$("#upload").onclick=()=>fileInput.click();
+["dragover","dragenter"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("drop",ev=>{ev.preventDefault(); if(ev.dataTransfer.files[0]) setFile(ev.dataTransfer.files[0]);});
+fileInput.onchange=()=>{ if(fileInput.files[0]) setFile(fileInput.files[0]); fileInput.value=""; };
+
+const FILE_RE=/\.(pdf|png|jpe?g|webp|tiff?|bmp)$/i;
+function setStatus(html, cls){ const s=$("#status"); s.className="status"+(cls?" "+cls:""); s.innerHTML=html; }
+function setFile(f, options={}){
+  if(busy){ setStatus("⚠ انتظر انتهاء المعالجة الحالية قبل رفع ملف آخر"); return; }
+  const pdf=/\.pdf$/i.test(f.name)||f.type==="application/pdf";
+  /* NOTE: `busy` covers /extract only. Proofreading and structuring keep running
+     after it returns, so a second document can legitimately arrive mid-chain —
+     resetResults() bumps runGen and every stage checks it before it writes. */
+  if(!FILE_RE.test(f.name) && !pdf && !/^image\//.test(f.type)){
+    showError("اختر ملف PDF أو صورة (PNG, JPEG, WEBP, TIFF, BMP)."); return; }
+  picked=f; isPdf=pdf; lastName=f.name.replace(FILE_RE,""); pdfPage=0; zoom=100;
+  if(previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl=URL.createObjectURL(f);
+  $("#preview").dataset.url="";
+  if(!isPdf) $("#previewimg").src=previewUrl;
+  const chip=$("#docchip");
+  setNumText(chip, f.name+" · "+(f.size/1048576).toFixed(1)+" MB");   // a file name may itself be a deed number
+  chip.classList.remove("hidden");
+  hideError(); resetResults(); setView("doc");
+  if (!options.qrCapture) document.dispatchEvent(new CustomEvent("qr:document", {detail:f}));
+  if (options.extraction) { wantStart=false; render(options.extraction); return; }
+  if(engineErr){ setStatus('<span style="color:var(--crit)">⚠ محرك القراءة غير متاح — '+esc(engineErr)+'</span>'); return; }
+  if(engineReady) startExtract();
+  else { wantStart=true; setStatus('<span class="spinner"></span> يبدأ الاستخراج عند اكتمال تحميل النماذج…'); }
+}
+function resetResults(){
+  runGen++;                                  // invalidates any stage still in flight for the old document
+  if(chatAbort){ try{chatAbort.abort();}catch(_){}} chatAbort=null; chatBusy=false; chatGen++;
+  lastText=""; groundText=""; lastPages=[]; lastPdfFile=null; pageCount=0; docLines=[]; lineStarts=[]; linePage=[]; pageLine={};
+  proofData=null; sugItems=[]; sugState=[]; lastStruct=null; lastVerdict=null; docContext=null; chatHistory=[];
+  $("#textview").textContent=""; $("#proofview").textContent="";
+  $("#segtext").disabled=true; $("#segproof").disabled=true;
+  $("#proofstate").innerHTML=""; $("#proofbadges").innerHTML=""; $("#sugcount").textContent="الاقتراحات";
+  $("#suglist").innerHTML='<div class="empty">تظهر اقتراحات التصحيح هنا بعد استخراج النص</div>';
+  $("#proofnote").classList.add("hidden"); $("#acceptall").disabled=true; $("#dlword").disabled=true; $("#dltxt").disabled=true;
+  $("#structstate").innerHTML=""; $("#doctype").classList.add("hidden"); $("#reviewnote").classList.add("hidden");
+  $("#struct").innerHTML='<div class="empty">تظهر الحقول المستخرجة هنا مع مصدر كل قيمة في المستند</div>';
+  $("#structnote").classList.add("hidden"); $("#cmpsum").textContent=""; $("#p3").classList.remove("compare");
+  $("#compare").disabled=true; $("#compare").textContent="مقارنة بالمستند"; $("#copyjson").disabled=true;
+  $("#ctxlist").innerHTML="<dt>الحالة</dt><dd>جارٍ معالجة المستند…</dd>";
+  document.querySelectorAll("#qs .q").forEach(b=>b.disabled=true);
+  $("#chatlog").innerHTML='<div class="chat-hint">تُجاب الأسئلة من نص المستند وحقوله فقط، مع الإشارة إلى مصدر كل قيمة.</div>';
+  $("#chatinput").disabled=true; $("#chatsend").disabled=true;
+}
+async function startExtract(){
+  if(!picked || !engineReady || busy) return;
+  wantStart=false; busy=true; updateUpload(); hideError();
+  setStatus('<span class="spinner"></span> جارٍ قراءة المستند…');
+  const stop=startProgress();
+  try{
+    const fd=new FormData(); fd.append("file",picked);
+    const r=await fetch("/extract",{method:"POST", body:fd});
+    const j=await r.json();
+    if(!r.ok){ showError(j.error||("HTTP "+r.status)); setStatus("⚠ تعذّر الاستخراج"); }
+    else render(j);
+  }catch(e){ showError(String(e)); setStatus("⚠ تعذّر الاستخراج"); }
+  finally{ stop(); busy=false; updateUpload(); }
+}
+function startProgress(){
+  let alive=true;
+  (async function loop(){
+    while(alive){
+      try{
+        const p=await (await fetch("/progress")).json();
+        if(alive && p.active && p.total)
+          setStatus('<span class="spinner"></span> جارٍ قراءة الصفحة '+arNum(p.page)+' من '+arNum(p.total)+'…');
+      }catch(_){}
+      await new Promise(r=>setTimeout(r,1200));
+    }
+  })();
+  return ()=>{ alive=false; };
+}
+function render(j){
+  lastText=j.full_text||"";
+  lastPages=(j.pages||[]).map(p=>(p&&p.text)||"");   // per-page text for the formatted export
+  lastPdfFile=picked;                                 // the file these pages came from
+  pageCount=j.page_count||lastPages.length||0;
+  setNumText($("#docchip"), picked.name+" · "+arNum(pageCount)+(pageCount===1?" صفحة":" صفحات"));
+  indexLines(lastText);
+  $("#segtext").disabled=false;
+  setStatus("تم الاستخراج • "+arNum(pageCount)+(pageCount===1?" صفحة":" صفحات"), "ok");
+  if(lastText.trim()){
+    setDocText($("#textview"), lastText);
+    enableExports();                 // the text alone is exportable; proofreading only refines it
+    startProofread(lastText);
+  } else {
+    // No addressable lines: a plain message, never a fake line 1 a citation could land on.
+    $("#textview").textContent="(لم يُعثر على نص في هذا الملف)";
+    $("#proofstate").innerHTML="لا يوجد نص للتدقيق";
+    $("#suglist").innerHTML='<div class="empty">لا يوجد نص للتدقيق</div>';
+    enableChat(lastText,{document_type:"",sections:[]});
+  }
+}
+/* The .txt and Word buttons export the DOCUMENT's text. Proofreading changes what
+   goes into them, but is not a precondition: if ALLaM is unavailable the raw OCR
+   must still be exportable, so these are enabled as soon as there is text. */
+function enableExports(){
+  const ok=!!(lastText && lastText.trim());
+  $("#dlword").disabled=!ok; $("#dltxt").disabled=!ok;
+}
+$("#copytext").onclick=()=>{
+  const txt=(view==="proof")?proofResolved().text:lastText; if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>{ const b=$("#copytext"); b.textContent="تم النسخ ✓"; setTimeout(()=>b.textContent="نسخ النص",1200); });
+};
+
+/* ---------- panel 2: proofreading (ALLaM) ---------- */
+async function startProofread(text){
+  const gen=runGen;                  // this document's run; a newer upload retires it
+  const st=$("#proofstate");
+  st.className="state"; st.innerHTML='<span class="spinner"></span> جارٍ التدقيق اللغوي بواسطة ALLaM…';
+  try{
+    const r=await fetch("/proofread",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text})});
+    const j=await r.json();
+    if(gen!==runGen) return;         // another document was loaded while ALLaM ran
+    if(!r.ok){ proofData=null; st.className="state bad";
+      st.textContent="⚠ التدقيق غير متاح ("+(j.error||("HTTP "+r.status))+") — تُستخدم القراءة الأصلية.";
+      proofFallback(); startStructure(lastText); return; }
+    proofData=j; st.innerHTML=""; renderProof(j.allam||{});
+    startStructure(lastText);        // structure + chat use the ORIGINAL OCR text
+  }catch(e){ if(gen!==runGen) return;
+    st.className="state bad"; st.textContent="⚠ فشل التدقيق اللغوي — تُستخدم القراءة الأصلية.";
+    proofData=null; proofFallback(); startStructure(lastText); }
+}
+/* Corrected text with ALLaM's edits highlighted inline (reading aid). */
+function proofHtml(d){
+  const segs=d.segments;
+  if(!segs || !segs.length) return escNum(d.corrected||"(فارغ)");
+  let h="";
+  for(const s of segs){
+    if(s.c){ const tip=s.b?' title="'+esc("قبل: "+s.b)+'"':''; h+='<mark class="chg"'+tip+'>'+escNum(s.t)+'</mark>'; }
+    else h+=escNum(s.t);
+  }
+  return h||escNum(d.corrected||"(فارغ)");
+}
+/* What kind of correction is this? A character-level heuristic on the pair so
+   each suggestion can say "إملائي • همزة" the way the wireframe does; anything
+   that is not a pure orthographic normalisation is flagged for review. */
+const TASHKEEL=/[ً-ْٰـ]/g;
+function normAr(s,o){ let t=String(s||"").replace(TASHKEEL,"");
+  if(o.h) t=t.replace(/[أإآٱ]/g,"ا"); if(o.t) t=t.replace(/ة/g,"ه"); if(o.y) t=t.replace(/ى/g,"ي"); if(o.s) t=t.replace(/\s+/g,"");
+  return t; }
+function classifyEdit(b,a){
+  if(!b) return {label:"إضافة كلمة • يتطلب مراجعة", warn:true};
+  if(normAr(b,{})===normAr(a,{})) return {label:"تشكيل"};
+  if(normAr(b,{h:1})===normAr(a,{h:1})) return {label:"إملائي • همزة"};
+  if(normAr(b,{t:1})===normAr(a,{t:1})) return {label:"إملائي • تاء مربوطة / هاء"};
+  if(normAr(b,{y:1})===normAr(a,{y:1})) return {label:"إملائي • ألف مقصورة / ياء"};
+  if(normAr(b,{s:1})===normAr(a,{s:1})) return {label:"إملائي • مسافات"};
+  const nb=normAr(b,{h:1,t:1,y:1,s:1}), na=normAr(a,{h:1,t:1,y:1,s:1});
+  if(nb===na) return {label:"إملائي"};
+  if(nb.includes(na)||na.includes(nb)) return {label:"صرفي • يتطلب مراجعة", warn:true};
+  return {label:"تغيير كلمة • يتطلب مراجعة", warn:true};
+}
+function renderProof(d){
+  const nEdits=(d.edits||[]).length, rev=d.reverted_pages||0, prot=d.protected_count||0, ms=d.ms||0;
+  let badges='<span class="badge">'+arNum(nEdits)+' تعديل</span><span class="badge">'+arNum((ms/1000).toFixed(1))+' ث</span>'+
+             '<span class="badge '+(prot?'ok':'')+'">'+arNum(prot)+' قيمة محمية</span>';
+  if(rev) badges+='<span class="badge warn" title="أُبقيت القراءة الأصلية لأن التصحيح غيّر رقمًا أو تاريخًا">'+arNum(rev)+' صفحة مُستبعدة</span>';
+  $("#proofbadges").innerHTML=badges;
+  $("#proofview").innerHTML=proofHtml(d); $("#segproof").disabled=false;
+  sugItems=[]; (d.segments||[]).forEach((s,i)=>{ if(s.c) sugItems.push({i, before:s.b||"", after:(s.t||"").trim()}); });
+  sugState=sugItems.map(()=>0);
+  renderSuggestions();
+  $("#proofnote").classList.remove("hidden");
+  $("#acceptall").disabled=!sugItems.length;
+  enableExports();
+  /* The server caps /proofread at 40 000 characters, so a long deed comes back
+     proofread only as far as that. Say so — the export still carries the whole
+     document, but the tail is the raw OCR. */
+  const covered=(d.page_count||0), total=Math.max(lastPages.length, pageCount||0);
+  if(total && covered && covered<total)
+    $("#proofbadges").insertAdjacentHTML("beforeend",
+      '<span class="badge warn" title="النص أطول من الحد الأقصى للتدقيق؛ بقية الصفحات تُصدَّر كما استُخرجت">'+
+      'دُقّقت '+arNum(covered)+' من '+arNum(total)+' صفحات</span>');
+}
+function renderSuggestions(){
+  const list=$("#suglist"); const keep=list.scrollTop; list.innerHTML="";
+  const nAcc=sugState.filter(s=>s===1).length, nRej=sugState.filter(s=>s===-1).length;
+  $("#sugcount").innerHTML='الاقتراحات ('+arNum(sugItems.length)+')'+
+    (nAcc?' <span class="badge ok">'+arNum(nAcc)+' مقبول</span>':'')+(nRej?' <span class="badge crit">'+arNum(nRej)+' مرفوض</span>':'');
+  if(!sugItems.length){ list.innerHTML='<div class="empty">لا توجد اقتراحات — لم يغيّر المدقق شيئًا</div>'; return; }
+  let h="";
+  sugItems.forEach((it,k)=>{
+    const kind=classifyEdit(it.before,it.after), st=sugState[k];
+    h+='<div class="sug'+(st===1?' accepted':st===-1?' rejected':'')+'" data-k="'+k+'">'+
+      '<div class="chg"><span class="num">'+arNum(k+1)+'.</span>'+(kind.warn?'<span class="flag" title="يتطلب مراجعة">✻</span>':'')+
+      (it.before?'<span class="was" dir="auto">'+escNum(it.before)+'</span><span class="arr">←</span>':'<span class="arr">إضافة:</span>')+
+      '<span class="now" dir="auto">'+escNum(it.after)+'</span></div>'+
+      '<div class="kind'+(kind.warn?' warn':'')+'">'+esc(kind.label)+'</div>'+
+      '<div class="acts"><button type="button" class="acc" data-act="1">'+(st===1?'✓ مقبول':'قبول')+'</button>'+
+      '<button type="button" class="rej" data-act="-1">'+(st===-1?'✗ مرفوض':'رفض')+'</button></div></div>';
+  });
+  list.innerHTML=h; list.scrollTop=keep;
+}
+$("#suglist").addEventListener("click", e=>{
+  const b=e.target.closest("button[data-act]"); if(!b) return;
+  const card=b.closest(".sug"); const k=+card.dataset.k, act=+b.dataset.act;
+  sugState[k]=(sugState[k]===act)?0:act;             // click again to undo
+  renderSuggestions();
+  /* renderSuggestions() replaces the whole list, which drops focus to <body>.
+     Someone working through the suggestions from the keyboard would have to tab
+     back from the top of the page for every single one, so put focus back on the
+     button they just pressed. */
+  const again=$("#suglist").querySelector('.sug[data-k="'+k+'"] button[data-act="'+act+'"]');
+  if(again) again.focus({preventScroll:true});
+});
+$("#acceptall").onclick=()=>{ sugState=sugState.map(s=>s===-1?-1:1); renderSuggestions(); };
+/* The text to export: ALLaM's correction with every REJECTED suggestion put back
+   to the original words, plus the per-page split the formatted Word export needs.
+
+   `pages` must be positional over the ORIGINAL PDF pages, because
+   /export/layout-docx pairs pages[i] with the image it renders from PDF page i.
+   The proofreader's own `pages` array is NOT that: it has one entry per page
+   present in full_text, and extract.py omits a page whose OCR came back empty
+   while page_count still counts it — so a blank page 2 would pour page 3's text
+   onto page 2's layout and drop page 3 entirely. The server also caps /proofread
+   at 40 000 characters, which silently ends the corrected text mid-document.
+
+   So always rebuild from the "--- Page N ---" markers, which carry the real page
+   number, and fill any page the corrected text does not cover from the original
+   OCR (lastPages). One code path, whatever the user decided. */
+function proofResolved(){
+  const a=proofData&&proofData.allam;
+  if(!a) return {text:lastText||"", pages:lastPages.slice()};   // no proofread: export the OCR as-is
+  let t="", k=0;
+  for(const s of (a.segments||[])){
+    if(s.c){ const idx=k++;
+      if(sugState[idx]===-1){ const lead=(s.t.match(/^\s*/)||[""])[0], trail=(s.t.match(/\s*$/)||[""])[0];
+        t+=lead+(s.b||"")+trail; continue; } }
+    t+=s.t;
+  }
+  if(!t) t=a.corrected||"";
+  const seen=[]; let cur=0, sawMarker=false;
+  for(const ln of t.split("\n")){
+    const m=/^--- Page (\d+) ---\s*$/.exec(ln);
+    if(m){ sawMarker=true; cur=Math.max(0,parseInt(m[1],10)-1); seen[cur]=seen[cur]||[]; continue; }
+    (seen[cur]=seen[cur]||[]).push(ln);
+  }
+  if(!sawMarker) return {text:t, pages:[t]};      // single page, or no markers at all
+  const n=Math.max(seen.length, lastPages.length, pageCount||0);
+  const pages=[];
+  for(let i=0;i<n;i++){
+    const body=seen[i] ? seen[i].join("\n").replace(/^\n+|\n+$/g,"") : "";
+    // Not covered by the proofread text (empty OCR page, or past the 40 000-char
+    // cap): keep the original page so the export stays aligned and complete.
+    pages.push(body || (lastPages[i]||""));
+  }
+  return {text:t, pages};
+}
+/* Proofreading failed: the exports still work, on the raw OCR. */
+function proofFallback(){
+  $("#proofbadges").innerHTML='<span class="badge warn">تعذّر التدقيق</span>';
+  $("#suglist").innerHTML='<div class="empty">لا توجد اقتراحات — سيُصدَّر النص كما استُخرج</div>';
+  $("#sugcount").textContent="الاقتراحات (٠)";
+  $("#acceptall").disabled=true;
+  enableExports();
+}
+$("#dltxt").onclick=()=>{
+  const txt=proofResolved().text; if(!txt.trim()) return;
+  const blob=new Blob([txt],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=lastName+".txt"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+};
+$("#dlword").onclick=async()=>{
+  const res=proofResolved(); if(!res.text.trim()) return;
+  const b=$("#dlword"), orig=b.innerHTML; b.disabled=true; b.textContent="جارٍ التنسيق…";
+  const plain=async()=>{
+    const r=await fetch("/export/docx",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:res.text,filename:lastName})});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.blob();
+  };
+  try{
+    let blob=null;
+    if(lastPdfFile && res.pages.length){          // formatted: page image for layout + corrected text poured in
+      const fd=new FormData(); fd.append("file",lastPdfFile); fd.append("pages",JSON.stringify(res.pages)); fd.append("filename",lastName);
+      const r=await fetch("/export/layout-docx",{method:"POST",body:fd});
+      blob = r.ok ? await r.blob() : await plain();
+    } else blob=await plain();
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=lastName+".docx"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    b.textContent="تم الحفظ ✓";
+  }catch(e){ b.textContent="⚠ فشل التحميل"; }
+  setTimeout(()=>{ b.innerHTML=orig; b.disabled=false; },1400);
+};
+
+/* ---------- panel 3: classify + structure ---------- */
+async function startStructure(text){
+  const gen=runGen;                  // this document's run; a newer upload retires it
+  groundText=text||lastText;
+  const st=$("#structstate");
+  $("#struct").innerHTML=""; $("#structnote").classList.add("hidden"); $("#copyjson").disabled=true;
+  $("#compare").disabled=true; lastVerdict=null;
+  st.className="state"; st.innerHTML='<span class="spinner"></span> جارٍ تحديد نوع المستند…';
+  try{
+    const rc=await fetch("/classify",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:groundText})});
+    if(gen!==runGen) return;                 // a newer document owns the panels now
+    if(rc.ok){ lastVerdict=await rc.json(); renderVerdict(lastVerdict); }
+  }catch(e){ /* classification is advisory */ }
+  if(gen!==runGen) return;
+  const tid=(lastVerdict && !lastVerdict.generic) ? (lastVerdict.template_id||"") : "";
+  st.innerHTML='<span class="spinner"></span> '+(tid?'جارٍ استخراج حقول النموذج…':'جارٍ استخراج الحقول…');
+  try{
+    const r=await fetch("/structure",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:groundText, template_id:tid})});
+    const j=await r.json();
+    if(gen!==runGen) return;
+    st.innerHTML="";
+    if(!r.ok){ structErr(j.error||("HTTP "+r.status)); lastStruct={document_type:"",sections:[]}; }
+    else { lastStruct=j; renderStructure(j); $("#copyjson").disabled=false; $("#compare").disabled=false; }
+  }catch(e){ if(gen!==runGen) return;
+    st.innerHTML=""; structErr(String(e)); lastStruct={document_type:"",sections:[]}; }
+  enableChat(groundText, lastStruct);
+}
+function structErr(m){
+  $("#struct").innerHTML='<div class="empty">⚠ '+esc(m)+'<br><button type="button" id="reparse" class="ghost" style="margin-top:8px">إعادة المحاولة</button></div>';
+  const b=$("#reparse"); if(b) b.onclick=()=>startStructure(groundText);
+}
+function renderVerdict(v){
+  const el=$("#doctype"); el.classList.remove("hidden");
+  if(!v || v.generic){
+    el.className="doctype unknown"; el.innerHTML='نوع المستند: غير معروف <small>استخراج حر</small>';
+    $("#reviewnote").classList.add("hidden"); return;
+  }
+  const pct=Math.round((v.confidence||0)*100);
+  el.className="doctype";
+  el.innerHTML='نوع المستند: '+esc(v.name_ar||v.template_id)+
+    '<small dir="ltr">'+esc(v.name_en||"")+' · '+pct+'%'+(v.corroborated?' ✓':'')+'</small>';
+  $("#reviewnote").classList.toggle("hidden", !v.needs_review);
+}
+const vcls=f=>f.status==="mismatch"?" bad":(f.status==="unverified"?" warn":"");
+/* a row is cited once, on the line its cells were read from */
+function rowCite(row){ let best=null;
+  for(const f of row) if(f.source&&f.source.page&&!f.source.approx&&(best===null||f.source.start<best.start)) best=f.source;
+  return best; }
+function renderStructure(j){
+  const body=$("#struct"), note=$("#structnote");
+  if((!lastVerdict || lastVerdict.generic) && j.document_type){
+    const el=$("#doctype"); el.className="doctype"; el.classList.remove("hidden");
+    el.innerHTML='نوع المستند: '+esc(j.document_type)+'<small>استخراج حر</small>';
+  }
+  if(!j.sections || !j.sections.length){ body.innerHTML='<div class="empty">لم تُكتشف حقول منظّمة</div>'; return; }
+  let html="", n=0, nOk=0, nWarn=0, nBad=0;
+  const tally=f=>{ if(!f.value) return; n++; if(f.status==="mismatch") nBad++; else if(f.status==="unverified") nWarn++; else nOk++; };
+  if(j.missing_required && j.missing_required.length)
+    html+='<div class="missing"><b>حقول مطلوبة لم تُوجد في المستند ('+arNum(j.missing_required.length)+')</b><ul>'+
+      j.missing_required.map(m=>'<li>'+esc(m.label_ar||m.label_en||m.key||"")+'</li>').join('')+'</ul></div>';
+  for(const s of j.sections){
+    if(s.title) html+='<div class="grp" dir="auto">'+esc(s.title)+'</div>';
+    for(const f of (s.fields||[])){
+      tally(f);
+      html+='<div class="flbl'+(f.required?' req':'')+'" dir="auto">'+esc(f.label)+'</div>'+
+        '<div class="fcard"><div class="fval'+vcls(f)+'" dir="auto">'+(f.value?escNum(f.value):'—')+'</div>'+
+        (f.value?srcLink(f.source)+quoteBox(f.source,f):'')+'</div>';
+    }
+    if(s.records && s.records.length){
+      s.records.forEach((row,i)=>{
+        const src=rowCite(row); let worst=null;
+        html+='<div class="fcard"><div class="rhd">'+esc(s.record_label||"سجل")+' '+arNum(i+1)+'</div><div class="rkv">';
+        for(const f of row){ if(!f.value) continue; tally(f);
+          if(f.status==="mismatch") worst=f; else if(f.status==="unverified" && !worst) worst=f;
+          html+='<span class="k" dir="auto">'+esc(f.label)+'</span><span class="v'+vcls(f)+'" dir="auto"'+
+            (f.source&&f.source.quote?' title="'+esc(f.source.quote)+'"':'')+'>'+escNum(f.value)+'</span>'; }
+        html+='</div>'+srcLink(src)+quoteBox(src, worst||{})+'</div>';
+      });
+      html+='<div class="struct-note">'+arNum(s.records.length)+' × '+esc(s.record_label||"سجل")+'</div>';
+    }
+  }
+  body.innerHTML=html;
+  $("#cmpsum").innerHTML=arNum(n)+' قيمة · <span style="color:var(--ok)">'+arNum(nOk)+' مؤكدة من النص</span>'+
+    (nWarn?' · <span style="color:var(--warn)">'+arNum(nWarn)+' غير مؤكدة</span>':'')+
+    (nBad?' · <span style="color:var(--crit)">'+arNum(nBad)+' غير موجودة</span>':'');
+  const notes=[];
+  if(j.truncated) notes.push('ملاحظة: تم تحليل بداية المستند فقط (نص طويل).');
+  if(j.output_capped) notes.push('ملاحظة: توقف النموذج قبل إتمام الإخراج، قد تكون بعض الحقول ناقصة.');
+  if(notes.length){ note.textContent=notes.join(' '); note.classList.remove("hidden"); } else note.classList.add("hidden");
+}
+$("#struct").addEventListener("click", e=>{
+  const b=e.target.closest(".fsrc[data-start]"); if(!b) return;
+  showSource(+b.dataset.start, +b.dataset.end);
+});
+$("#compare").onclick=()=>{
+  const on=$("#p3").classList.toggle("compare");
+  $("#compare").textContent=on?"إخفاء المقارنة":"مقارنة بالمستند";
+};
+$("#copyjson").onclick=()=>{ if(!lastStruct) return;
+  navigator.clipboard.writeText(JSON.stringify(lastStruct,null,2)).then(()=>{
+    const b=$("#copyjson"); b.textContent="تم النسخ ✓"; setTimeout(()=>b.textContent="نسخ JSON",1200); }); };
+
+/* ---------- panel 4: context, suggested questions, chat ---------- */
+function enableChat(fullText, struct){
+  docContext={document_type:(struct&&struct.document_type)||"",
+              sections:(struct&&struct.sections)||[], full_text:fullText||"",
+              template_id:(struct&&struct.template_id)||"",
+              missing_required:(struct&&struct.missing_required)||[]};
+  renderContext(struct); renderQuestions(struct);
+  $("#chatinput").disabled=false; $("#chatsend").disabled=false;
+}
+function renderContext(struct){
+  const secs=(struct&&struct.sections)||[];
+  let n=0, ok=0; const recs=[];
+  for(const s of secs){
+    for(const f of (s.fields||[])) if(f.value){ n++; if(f.status!=="mismatch"&&f.status!=="unverified") ok++; }
+    if(s.records&&s.records.length) recs.push(arNum(s.records.length)+' × '+esc(s.record_label||s.title||"سجل"));
+  }
+  const type=(lastVerdict&&!lastVerdict.generic&&lastVerdict.name_ar)||(struct&&struct.document_type)||"غير معروف";
+  const missing=(struct&&struct.missing_required)||[];
+  let h='<dt>نوع المستند</dt><dd dir="auto">'+esc(type)+'</dd>'+
+        '<dt>الصفحات</dt><dd>'+arNum(pageCount)+'</dd>'+
+        '<dt>الحقول</dt><dd>'+arNum(n)+(n?' (مؤكدة من النص: '+arNum(ok)+')':'')+'</dd>';
+  if(recs.length) h+='<dt>السجلات</dt><dd>'+recs.join(' · ')+'</dd>';
+  if(missing.length) h+='<dt>حقول ناقصة</dt><dd style="color:var(--crit)">'+arNum(missing.length)+'</dd>';
+  h+='<dt>المصدر</dt><dd>نص المستند وحقوله فقط</dd>';
+  $("#ctxlist").innerHTML=h;
+}
+function renderQuestions(struct){
+  const secs=(struct&&struct.sections)||[]; const scalars=[]; let recSec=null;
+  for(const s of secs){ for(const f of (s.fields||[])) if(f.value&&f.label) scalars.push(f); if(!recSec&&s.records&&s.records.length) recSec=s; }
+  const req=scalars.filter(f=>f.required), pick=req.length?req:scalars, qs=[];
+  if(pick[0]) qs.push("ما "+pick[0].label+"؟");
+  if(recSec) qs.push("اذكر "+(recSec.title||recSec.record_label||"السجلات")+" كاملة");
+  else if(pick[1]) qs.push("ما "+pick[1].label+"؟");
+  if(qs.length<3 && pick[recSec?1:2]) qs.push("ما "+pick[recSec?1:2].label+"؟");
+  if(qs.length<3 && (struct&&struct.missing_required||[]).length) qs.push("ما الحقول الناقصة في هذا المستند؟");
+  if(qs.length<3) qs.push("لخّص المستند في ثلاث نقاط");
+  if(qs.length<3) qs.push("ما أهم التواريخ المذكورة؟");
+  const box=$("#qs"); box.innerHTML="";
+  qs.slice(0,3).forEach(q=>{ const b=document.createElement("button"); b.type="button"; b.className="q"; b.textContent=q;
+    b.onclick=()=>{ if(chatBusy||!docContext) return; $("#chatinput").value=q; $("#chatform").requestSubmit(); }; box.appendChild(b); });
+}
+function addBubble(role, text){
+  const hint=$("#chatlog .chat-hint"); if(hint) hint.remove();
+  const d=document.createElement("div");
+  d.className="bubble "+role; d.setAttribute("dir","auto"); setChatText(d, text||"");
+  $("#chatlog").appendChild(d); return d;
+}
+function atBottom(){ const l=$("#chatlog"); return (l.scrollHeight-l.scrollTop-l.clientHeight)<48; }
+function scrollChat(){ const l=$("#chatlog"); l.scrollTop=l.scrollHeight; }
+$("#chatlog").addEventListener("click", e=>{
+  const b=e.target.closest(".cite"); if(!b) return;
+  showPageLine(+b.dataset.page, +b.dataset.line);
+});
+$("#chatform").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if(chatBusy || !docContext) return;
+  const inp=$("#chatinput"); const q=inp.value.trim(); if(!q) return;
+  const myGen=chatGen;                       // invalidated if a new document is loaded
+  inp.value=""; autoGrow(inp);
+  addBubble("user", q); chatHistory.push({role:"user",content:q});
+  const bubble=addBubble("assistant",""); bubble.setAttribute("aria-busy","true");
+  chatBusy=true; $("#chatsend").disabled=true; document.querySelectorAll("#qs .q").forEach(b=>b.disabled=true); scrollChat();
+  chatAbort=new AbortController();
+  let acc="", truncated=false, errored=null;
+  try{
+    const r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages:chatHistory, context:docContext}), signal:chatAbort.signal});
+    if(!r.ok){ let j={}; try{j=await r.json();}catch(_){} errored=j.error||("HTTP "+r.status); }
+    else{
+      const reader=r.body.getReader(); const dec=new TextDecoder("utf-8"); let buf="";
+      while(true){
+        const {value,done}=await reader.read(); if(done) break;
+        buf+=dec.decode(value,{stream:true});
+        let nl;
+        while((nl=buf.indexOf("\n"))>=0){
+          const line=buf.slice(0,nl); buf=buf.slice(nl+1);
+          if(!line.trim()) continue;
+          let ev; try{ ev=JSON.parse(line); }catch(_){ continue; }
+          if(ev.delta){ const wasBottom=atBottom(); acc+=ev.delta; setChatText(bubble,acc); if(wasBottom) scrollChat(); }
+          else if(ev.error){ errored=ev.error; }
+          else if(ev.done){ truncated=!!ev.truncated; }
+        }
+      }
+    }
+  }catch(e){ if(e.name!=="AbortError") errored="chat failed"; }
+  if(myGen!==chatGen) return;          // a new document was loaded mid-stream: discard
+  const wasBottom=atBottom();
+  bubble.removeAttribute("aria-busy");
+  if(errored){ bubble.classList.add("err-bubble"); setChatText(bubble,(acc?acc+"\n\n":"")+"⚠ "+errored); }
+  else{
+    if(!acc){ bubble.textContent="(لا إجابة)"; }
+    else chatHistory.push({role:"assistant",content:acc});
+    if(truncated){ const t=document.createElement("div"); t.className="trunc-note"; t.textContent="… (تم اختصار الإجابة)"; bubble.appendChild(t); }
+  }
+  chatBusy=false; $("#chatsend").disabled=false; document.querySelectorAll("#qs .q").forEach(b=>b.disabled=false);
+  chatAbort=null; if(wasBottom) scrollChat();
+});
+function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(120,t.scrollHeight)+"px"; }
+$("#chatinput").addEventListener("input", ()=>autoGrow($("#chatinput")));
+$("#chatinput").addEventListener("keydown", (e)=>{
+  if(e.key==="Enter" && !e.shiftKey){
+    if(e.isComposing || e.keyCode===229) return;   // IME (Arabic candidate commit)
+    e.preventDefault(); $("#chatform").requestSubmit();
+  }
+});
+window.addEventListener("beforeunload", ()=>{ if(chatAbort){ try{chatAbort.abort();}catch(_){} } });
+
+/* ---------- errors ---------- */
+function showError(m){ $("#errortxt").textContent="⚠ "+m; $("#error").classList.remove("hidden"); }
+function hideError(){ $("#error").classList.add("hidden"); }
+$("#errorclose").onclick=hideError;
+</script>
+<script src="/qr/flow.js" defer></script>
+<script src="/qr/ui.js" defer></script>
+</body>
+</html>

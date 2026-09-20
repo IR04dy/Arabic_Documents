@@ -1,0 +1,1532 @@
+# =============================================================================
+# KSA DEED TEMPLATE REGISTRY  —  registry_id: ksa_deeds
+# =============================================================================
+# Consumed by the input layer that sits between /extract (Surya OCR) and
+# /structure (Qwen3). For a given document the layer emits:
+#
+#     { template_id, family, confidence, decided_by, candidates[],
+#       required_fields[], optional_fields[] }
+#
+# `required_fields` and `optional_fields` are the resolved field lists that get
+# compiled into the JSON schema handed to the structurer. A required field
+# becomes a required schema key (the model must emit it, empty string if truly
+# absent) and a missing/invalid one becomes a completeness finding. An optional
+# field becomes an optional key. Anything the template did not predict still
+# lands in `extra_fields[]`, so a template never blocks an unexpected value.
+#
+# -----------------------------------------------------------------------------
+# HOW TO READ THIS FILE
+# -----------------------------------------------------------------------------
+# Arabic here is written in NATURAL, READABLE form (with hamza, taa marbuta and
+# so on). The loader normalises the whole registry at load time with exactly the
+# same normaliser it applies to OCR text — see `normalization` below. Do NOT
+# hand-normalise strings when editing; you would only make them unreadable, and
+# a half-normalised registry is how anchors silently die.
+#
+# Field definitions live once in `field_groups` and are pulled in by templates
+# via `groups:`. Only genuinely template-specific fields are written inline
+# under a template's `fields:`.
+# =============================================================================
+
+registry_version: 1
+registry_id: ksa_deeds
+schema_version: 1
+language: ar
+updated: "2026-09-15"
+
+
+# =============================================================================
+# 1. NORMALISATION
+# =============================================================================
+# Applied to OCR text AND to every anchor/alias/negative in this file.
+normalization:
+  apply_to_registry_at_load: true
+
+  strip_tashkeel: true            # َ ُ ِ ّ ْ ً ٌ ٍ
+  strip_tatweel: true             # ـ
+  collapse_whitespace: true
+  strip_bidi_marks: true          # U+200E/F, U+061C — Surya emits these
+
+  unify_alef: true                # أ إ آ ٱ  ->  ا
+  unify_taa_marbuta: true         # ة -> ه
+  unify_hamza_forms: true         # ؤ -> و ,  ئ -> ي
+  arabic_indic_digits_to_ascii: true   # ٠-٩ and ۰-۹ -> 0-9
+
+  # ---------------------------------------------------------------------------
+  # DO NOT ENABLE. Folding ى -> ي collapses الموصى (legatee) into الموصي
+  # (testator). Those two words are the entire basis on which a will is told
+  # apart from a guardianship deed and from an inheritance deed. Every Arabic
+  # normaliser ships this fold on by default; it must stay off here.
+  # ---------------------------------------------------------------------------
+  unify_alef_maqsura: false
+
+  # Fuzzy anchor matching, so one bad OCR character does not kill an anchor.
+  fuzzy:
+    enabled: true
+    max_edit_distance: 1          # per anchor, for anchors >= 8 chars
+    min_length_for_fuzzy: 8
+
+
+# =============================================================================
+# 2. VALUE TYPES  (closed vocabulary — the only legal values of `type:`)
+# =============================================================================
+# Patterns assume digits are already folded to ASCII by the normaliser.
+value_types:
+
+  text:        {pattern: null}
+  long_text:   {pattern: null, note: "Clause or paragraph. Never a field value in the structurer's short-value sense."}
+  name:        {pattern: null}
+  city:        {pattern: null}
+  district:    {pattern: null}
+  enum:        {pattern: null, note: "Constrained by the field's own enum_values_ar."}
+  integer:     {pattern: '^[0-9]{1,6}$'}
+
+  # --- identity -------------------------------------------------------------
+  person_id:
+    pattern: '^[12][0-9]{9}$'
+    example: "1023456789 (citizen) / 2345678901 (resident)"
+    note: >
+      THE canonical identity type for any natural person. Use this for every
+      رقم الهوية slot. Branch on the leading digit for display only: 1 = Saudi
+      national ID, 2 = iqama. Do not use `national_id` for a generic identity
+      slot — it hard-rejects every non-Saudi party, which is a real and common
+      case on marriage, inheritance and property deeds.
+  national_id:
+    pattern: '^1[0-9]{9}$'
+    note: "Only where the printed label is specifically رقم الهوية الوطنية."
+  iqama_id:
+    pattern: '^2[0-9]{9}$'
+    note: "Only where the printed label is specifically رقم الإقامة."
+  unified_number_700:
+    pattern: '^70[0-9]{8}$'
+    example: "7001234567"
+  commercial_register:
+    pattern: '^[1-7][0-9]{9}$'
+    example: "1010123456"
+    note: "City-prefixed historically (1010 Riyadh, 4030 Jeddah, 2050 Dammam); leading class kept wide for the newer unified 7-series."
+
+  # --- instrument numbers ---------------------------------------------------
+  deed_number:
+    pattern: '^[0-9]{6,15}$'
+    example: "310209018123"
+    note: "Electronic (ناجز) instrument serial. Window deliberately wide — no source confirmed a fixed length."
+  legacy_deed_number:
+    pattern: '^[0-9]{1,5}$'
+    example: "45  (صك رقم 45 صفحة 78 مجلد 3 لعام 1405هـ)"
+    note: "ONLY valid when legacy_register fields are also populated. Standalone it is indistinguishable from a page or plot number."
+  wakala_number:
+    pattern: '^[0-9]{6,14}$'
+    example: "438219005112"
+  case_number:
+    pattern: '^[0-9]{5,12}$|^[0-9]{1,6}\s*/\s*[0-9]{1,3}\s*/\s*1[34][0-9]{2}$'
+    example: "4510023456  or  1234/5/1445"
+  register_reference:
+    pattern: '^[0-9]{1,6}(?:\s*(?:و|,|-|/)\s*[0-9]{1,6})*$'
+    example: "78   or   12 و13"
+    note: >
+      Text-typed, not integer, and multi-valued: register citations legitimately
+      span pages (صفحة 12 و13). An integer validator rejects the very form the
+      legacy registers print.
+
+  # --- dates ----------------------------------------------------------------
+  date_hijri:
+    pattern: '^(?:1[2-4][0-9]{2}\s*[/\-.]\s*(?:0?[1-9]|1[0-2])\s*[/\-.]\s*(?:0?[1-9]|[12][0-9]|30)|(?:0?[1-9]|[12][0-9]|30)\s*[/\-.]\s*(?:0?[1-9]|1[0-2])\s*[/\-.]\s*1[2-4][0-9]{2})\s*(?:هـ|ه)?$'
+    example: "1445/03/12هـ  or  12/03/1445هـ"
+    fallback: [date_hijri_in_words]
+    note: >
+      Accepts BOTH orderings. Saudi instruments print year-first at least as
+      often as day-first; a day-first-only pattern silently drops a large share
+      of electronic deeds. Falls back to the month-in-words form, which is how
+      handwritten instruments write the date and which no numeric pattern can
+      reach.
+  date_hijri_in_words:
+    pattern: '(?:محرم|صفر|ربيع\s*(?:الأول|الآخر|الثاني)|جماد[يى]\s*(?:الأول[يى]|الآخر[هة]|الثاني[هة])|رجب|شعبان|رمضان|شوال|ذو\s*القعد[هة]|ذو\s*الحج[هة])\s*(?:لعام|من\s*عام|عام|سن[هة]|لسن[هة])?\s*1[2-4][0-9]{2}'
+    example: "في الثاني عشر من شهر رجب لعام 1421هـ"
+    note: "Unanchored SEARCH pattern. Handwritten instruments spell the month; no numeric pattern reaches them."
+  date_gregorian:
+    pattern: '^(?:(?:19|20)[0-9]{2}\s*[/\-.]\s*(?:0?[1-9]|1[0-2])\s*[/\-.]\s*(?:0?[1-9]|[12][0-9]|3[01])|(?:0?[1-9]|[12][0-9]|3[01])\s*[/\-.]\s*(?:0?[1-9]|1[0-2])\s*[/\-.]\s*(?:19|20)[0-9]{2})\s*(?:م)?$'
+    note: "Hijri vs Gregorian is decided by the year component alone: 13xx/14xx Hijri, 19xx/20xx Gregorian."
+
+  # --- quantities -----------------------------------------------------------
+  amount_sar:
+    pattern: '^(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:[.,][0-9]{1,2})?\s*(?:ريال(?:\s*سعودي)?|ريالاً|ر\.?\s*س\.?|SAR)?$'
+    example: "500,000.00 ريال"
+    note: "The words restatement (فقط خمسمائة ألف ريال لا غير) is deliberately NOT matched — capture it separately as a cross-check."
+  area_sqm:
+    pattern: '^(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:[.,][0-9]{1,4})?\s*(?:م\s*[2²]|متر(?:اً)?\s*مربع(?:اً|[هة])?|هكتار)?$'
+    example: "612.50 م²"
+    note: "Must include the superscript ². Listing م٢ with an Arabic-Indic 2 is dead code once digits are folded."
+  length_m:
+    pattern: '^[0-9]{1,5}(?:[.,][0-9]{1,3})?\s*(?:م|م\.?\s*ط|متر(?:اً)?(?:\s*طولي(?:اً)?)?)?$'
+    example: "25.375 م"
+    note: "Surveyed side lengths are printed to millimetre precision, hence three decimals."
+  share_fraction:
+    pattern: '^(?:(?:ال)?(?:نصف|ثلث|ثلثان|ثلثين|ربع|خمس|سدس|ثمن|عشر|كامل|جميع|باقي)(?:\s+(?:الترك[هة]|المال|مشاعاً|تعصيباً|فرضاً|رداً))?|[0-9]{1,4}\s*/\s*[0-9]{1,4}|[0-9]{1,3}(?:[.,][0-9]{1,2})?\s*[%٪]|(?:[0-9]{1,4}|\S{1,25})\s*(?:سهم|سهماً|أسهم|سهام)(?:\s*من\s*(?:أصل\s*)?(?:[0-9]{1,4}|\S{1,25})(?:\s*سهم(?:اً)?)?)?)$'
+    example: "الثلث  /  1/4  /  600 سهم من أصل 2400  /  12.5%"
+    note: >
+      THE canonical share type. Ownership and inheritance shares are
+      overwhelmingly written as words, fractions or سهام — never type them
+      `percentage`, which rejects all three.
+  percentage:
+    pattern: '^[0-9]{1,3}(?:[.,][0-9]{1,3})?\s*[%٪]$'
+    note: "Genuine printed percentages only. Not for ownership/inheritance shares."
+
+  # --- contact / location ---------------------------------------------------
+  iban:
+    pattern: '^SA[0-9]{4}[0-9A-Z]{18}$'
+    example: "SA0380000000608010167519"
+    note: "Strip ALL whitespace before validating — the printed form is grouped in fours."
+  national_address:
+    pattern: '^[A-Z]{4}[0-9]{4}$|^[0-9]{4}\s+[^\n]{3,80}\s+[0-9]{5}\s*[-–]\s*[0-9]{4}$'
+    example: "RQBA2929  or  8228 طريق الملك فهد - حي العليا - الرياض 12333-3421"
+  coordinates:
+    pattern: '^(?:[+-]?(?:1[6-9]|2[0-9]|3[0-2])(?:\.[0-9]{1,8})?\s*[,،]\s*[+-]?(?:3[4-9]|4[0-9]|5[0-6])(?:\.[0-9]{1,8})?|[0-9]{6}(?:\.[0-9]{1,3})?\s*[,،\s]\s*[0-9]{7}(?:\.[0-9]{1,3})?)$'
+    example: "24.713552, 46.675297   or   665432.12 2725123.45 (UTM 38N)"
+    note: "Two branches: decimal degrees bounded to the Saudi envelope, and UTM northing/easting. Both presentations occur."
+  property_unique_number:
+    pattern: '^[0-9]{10,15}$'
+    example: "1010023456789"
+    note: "الرقم العقاري الموحد / الرقم المميز للعقار. Deliberately permissive — digit length unconfirmed."
+  phone:
+    pattern: '^(?:(?:\+|00)966\s*|0)?(?:5[0-9]{8}|1[1-7][0-9]{7})$'
+    example: "0551234567"
+  email:
+    pattern: '^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$'
+    status: reserved
+    note: "Not printed on any instrument in this registry. Kept for future commercial/contract templates."
+
+
+# =============================================================================
+# 3. SHARED FIELD GROUPS
+# =============================================================================
+# Pulled into templates by name. A group field is OPTIONAL by default; a
+# template promotes the ones it considers mandatory via `require:`.
+#
+# `person_identity` is special: it is instantiated once per ROLE, with a key
+# prefix, so a deed can carry owner_name, owner_id_number, witness_name, and so
+# on without redefining the block.
+field_groups:
+
+  deed_identity:
+    description: "The instrument header. Present on all ten templates."
+    fields:
+      - {key: deed_number,          type: deed_number,    label_ar: رقم الصك,        label_en: Instrument number,
+         aliases_ar: [رقم الوثيقة, الصك رقم, صك رقم, رقم الحجة, رقم السند]}
+      - {key: deed_date_hijri,      type: date_hijri,     label_ar: تاريخ الصك,      label_en: Instrument date (Hijri),
+         aliases_ar: [وتاريخ, وتاريخه, تاريخه, تاريخها, تاريخ الوثيقة, تاريخ الإصدار]}
+         # تاريخها / تاريخ الوثيقة: ناجز وثيقة header (feminine, after رقم الوثيقة).
+      - {key: deed_date_gregorian,  type: date_gregorian, label_ar: التاريخ الميلادي, label_en: Instrument date (Gregorian),
+         aliases_ar: [الموافق, التاريخ الميلادي المقابل]}
+      - {key: issuing_authority,    type: text,           label_ar: الجهة المصدرة,   label_en: Issuing court or notary office,
+         aliases_ar: [مصدر الصك, صادر من, كتابة العدل, المحكمة العامة, الصادر من]}
+      - {key: issuing_city,         type: city,           label_ar: المدينة,         label_en: City of issue,
+         aliases_ar: [بمدينة, المحافظة, مقر الإصدار, مقر المحكمة]}
+      - {key: case_number,          type: case_number,    label_ar: رقم المعاملة,    label_en: Case or transaction number,
+         aliases_ar: [رقم القضية, رقم الطلب, رقم الإنهاء, الرقم الآلي]}
+      - {key: verification_code,    type: text,           label_ar: رمز التحقق,      label_en: Electronic verification code,
+         aliases_ar: [رقم التحقق, كود التحقق, رمز الاستعلام, للتحقق من صحة الوثيقة]}
+
+  legacy_register:
+    description: "Pre-electronic سجل/مجلد/صفحة citation. Any instrument may be a legacy paper original."
+    fields:
+      - {key: register_number,        type: register_reference, label_ar: رقم السجل,   label_en: Register number,
+         aliases_ar: [سجل رقم, في سجل رقم, السجل رقم, رقم القيد]}
+      - {key: register_volume_number, type: register_reference, label_ar: رقم المجلد,  label_en: Register volume,
+         aliases_ar: [المجلد, مجلد رقم]}
+      - {key: register_page_number,   type: register_reference, label_ar: رقم الصفحة,  label_en: Register page,
+         aliases_ar: [الصفحة, صفحة رقم, الصفحة رقم, في صفحة]}
+
+  person_identity:
+    description: "Instantiated per role with a key prefix. Covers natural and legal persons."
+    instantiable: true
+    fields:
+      - {key: name,                type: name,                label_ar: الاسم,              label_en: Full name,
+         aliases_ar: [الاسم رباعياً, الاسم الكامل, اسم]}
+      - {key: id_number,           type: person_id,           label_ar: رقم الهوية,         label_en: Identity number,
+         aliases_ar: [رقم الهوية الوطنية, الهوية الوطنية, رقم السجل المدني, السجل المدني, رقم الإقامة, بموجب الهوية رقم]}
+         # الهوية الوطنية: ناجز table column header.
+      - {key: id_type,             type: enum,                label_ar: نوع الهوية,         label_en: Identity document type,
+         enum_values_ar: [هوية وطنية, إقامة, جواز سفر, حفيظة نفوس, سجل تجاري],
+         aliases_ar: [نوع الوثيقة, مصدر الهوية]}
+      - {key: nationality,         type: text,                label_ar: الجنسية,            label_en: Nationality,
+         aliases_ar: [جنسيته, جنسيتها]}
+      - {key: birth_date_hijri,    type: date_hijri,          label_ar: تاريخ الميلاد,      label_en: Date of birth (Hijri),
+         aliases_ar: [تاريخ ميلاده, تاريخ ميلادها]}
+      - {key: capacity,            type: text,                label_ar: الصفة,              label_en: Capacity in which the party acts,
+         aliases_ar: [بصفته, بوصفه, عن نفسه, أصالة عن نفسه]}
+      - {key: organization_name,   type: text,                label_ar: اسم المنشأة,        label_en: Organisation name (legal person),
+         aliases_ar: [اسم الشركة, اسم المؤسسة, المنشأة]}
+      - {key: commercial_register, type: commercial_register, label_ar: رقم السجل التجاري,  label_en: Commercial register (legal person),
+         aliases_ar: [السجل التجاري, سجل تجاري رقم, س.ت]}
+      - {key: unified_number_700,  type: unified_number_700,  label_ar: الرقم الموحد,       label_en: Unified 700 number (legal person),
+         aliases_ar: [الرقم الموحد للمنشأة, رقم المنشأة الموحد]}
+
+  property_description:
+    description: "The parcel. Reproduced VERBATIM by every instrument that encumbers, gifts, endows, bequeaths or divides it — see classification.neutral_evidence."
+    fields:
+      - {key: property_type,           type: enum,                   label_ar: نوع العقار,            label_en: Property type,
+         enum_values_ar: [أرض, أرض فضاء, فيلا, عمارة, شقة, دور, بيت شعبي, مزرعة, محل تجاري, مستودع, استراحة],
+         aliases_ar: [نوع الملك, صفة العقار, وصف العقار, نوع الوحدة]}
+      - {key: property_use,            type: enum,                   label_ar: استخدام العقار,        label_en: Property use,
+         enum_values_ar: [سكني, تجاري, صناعي, زراعي, سكني تجاري],
+         aliases_ar: [الاستخدام, نوع الاستخدام]}
+      - {key: property_city,           type: city,                   label_ar: المدينة,               label_en: City,
+         aliases_ar: [البلد, المحافظة, موقع العقار, الواقع في]}
+      - {key: property_district,       type: district,               label_ar: الحي,                  label_en: District,
+         aliases_ar: [اسم الحي, الحي السكني, الحارة, المحلة]}
+      - {key: plan_number,             type: text,                   label_ar: رقم المخطط,            label_en: Subdivision plan number,
+         aliases_ar: [المخطط رقم, مخطط رقم, رقم المخطط المعتمد, المخطط]}
+      - {key: plot_number,             type: text,                   label_ar: رقم القطعة,            label_en: Plot or parcel number,
+         aliases_ar: [القطعة رقم, قطعة رقم, رقم قطعة الأرض, القطعة]}
+      - {key: block_number,            type: text,                   label_ar: رقم البلك,             label_en: Block number,
+         aliases_ar: [البلك, بلك رقم, رقم المربع, المربع رقم]}
+      - {key: total_area_sqm,          type: area_sqm,               label_ar: المساحة,               label_en: Total area,
+         aliases_ar: [المساحة الإجمالية, مساحة العقار, مساحة الأرض, المساحة الكلية]}
+      - {key: property_unique_number,  type: property_unique_number, label_ar: الرقم المميز للعقار,   label_en: Unique property identifier,
+         aliases_ar: [الرقم العقاري الموحد, رقم العقار الموحد, المعرف العقاري]}
+      - {key: property_address,        type: national_address,       label_ar: العنوان الوطني,        label_en: National address,
+         aliases_ar: [عنوان العقار, الرمز البريدي, الرقم الإضافي, اسم الشارع]}
+
+  boundaries:
+    description: "One repeatable row per side. Keep the per-side structure — collapsing it to free text destroys the join against the source title deed."
+    repeatable: true
+    fields:
+      - {key: boundary_side,        type: enum,     label_ar: الحد,    label_en: Boundary side,
+         enum_values_ar: [شمالاً, جنوباً, شرقاً, غرباً],
+         aliases_ar: [الجهة, الحد الشمالي, الحد الجنوبي, الحد الشرقي, الحد الغربي]}
+      - {key: boundary_description, type: text,     label_ar: الوصف,   label_en: Adjoining feature,
+         aliases_ar: [المجاور, وصف الحد, يحده, الجار]}
+      - {key: boundary_length_m,    type: length_m, label_ar: الطول,   label_en: Boundary length,
+         aliases_ar: [بطول, الطول بالمتر, طول الحد, طول الضلع]}
+      - {key: corner_coordinates,   type: coordinates, label_ar: الإحداثيات, label_en: Corner coordinates,
+         aliases_ar: [إحداثيات الأركان, خط الطول, دائرة العرض, الإحداثي الشمالي]}
+
+  source_deed:
+    description: "Back-reference to the title deed this instrument derives from. The registry's principal inter-document join key."
+    fields:
+      - {key: source_deed_number,      type: deed_number, label_ar: رقم الصك الأصلي,   label_en: Source title deed number,
+         aliases_ar: [الصك الأصل, الصك السابق, الصك المصدر, بموجب الصك رقم, سند الملكية]}
+      - {key: source_deed_date_hijri,  type: date_hijri,  label_ar: تاريخ الصك الأصلي, label_en: Source deed date (Hijri),
+         aliases_ar: [وتاريخه, الصادر بتاريخ, تاريخ سند الملكية]}
+      - {key: source_deed_issuer,      type: text,        label_ar: مصدر الصك الأصلي,  label_en: Issuer of the source deed,
+         aliases_ar: [الصادر من, الجهة المصدرة للصك الأصلي]}
+
+  attestation:
+    description: "Closing certification furniture. On handwritten generations the official's name may sit inside an illegible seal — expect empty."
+    fields:
+      - {key: attesting_officer_name, type: name,      label_ar: كاتب العدل,        label_en: Attesting notary or judge,
+         aliases_ar: [اسم كاتب العدل, القاضي, اسم القاضي, رئيس المحكمة]}
+      - {key: witness_name,           type: name,      label_ar: اسم الشاهد,        label_en: Attesting witness,
+         repeatable: true,
+         aliases_ar: [الشاهد, الشهود, الشاهد الأول, الشاهد الثاني]}
+      - {key: witness_id_number,      type: person_id, label_ar: رقم هوية الشاهد,   label_en: Witness identity number,
+         repeatable: true,
+         aliases_ar: [سجل مدني رقم]}
+         # بموجب الهوية رقم removed: generic identity wording, matched
+         # section-scoped via person_identity.shared_aliases_ar instead.
+      - {key: seal_present,           type: enum,      label_ar: الختم,             label_en: Seal present,
+         enum_values_ar: [نعم, لا]}
+
+  agency:
+    description: "A party acting through an agent. Lawful on EVERY instrument in this registry — never treat as evidence against a template."
+    fields:
+      - {key: acting_agent_name,             type: name,      label_ar: اسم الوكيل,    label_en: Agent acting for a party,
+         aliases_ar: [الوكيل, وكيله, بصفته وكيلاً, ينوب عنه]}
+      - {key: acting_agent_id_number,        type: person_id, label_ar: رقم هوية الوكيل, label_en: Agent identity number,
+         aliases_ar: []}
+         # رقم الهوية / السجل المدني removed: both are generic identity
+         # labels. Claiming them here made every unlabelled ID in any deed
+         # resolve to the AGENT. The agent's own label رقم هوية الوكيل stays.
+      - {key: power_of_attorney_number,      type: wakala_number, label_ar: رقم الوكالة, label_en: Cited power-of-attorney number,
+         aliases_ar: [وكالة رقم, بموجب الوكالة رقم, رقم الوكالة الشرعية]}
+      - {key: power_of_attorney_date_hijri,  type: date_hijri, label_ar: تاريخ الوكالة, label_en: Power-of-attorney date,
+         aliases_ar: [وتاريخ الوكالة, الصادرة بتاريخ]}
+      - {key: power_of_attorney_issuer,      type: text,       label_ar: مصدر الوكالة,  label_en: Issuer of the power of attorney,
+         aliases_ar: [الصادرة من, الصادرة من كتابة العدل]}
+
+  share:
+    description: "Undivided or allotted share of an asset or estate."
+    fields:
+      - {key: share_value,        type: share_fraction, label_ar: الحصة,           label_en: Share of the asset or estate,
+         aliases_ar: [نسبة الملكية, حصة المالك, نصيب, النصيب الشرعي, سهام]}
+      - {key: share_area_sqm,     type: area_sqm,       label_ar: مساحة النصيب,     label_en: Area of the allotted share,
+         aliases_ar: [مساحة القسم, بمساحة قدرها, مساحة الحصة المفرزة]}
+      - {key: share_is_undivided, type: enum,           label_ar: على الشيوع,       label_en: Undivided (mushaa) or demarcated,
+         enum_values_ar: [مشاعة, مفرزة],
+         aliases_ar: [النصيب المفرز, الحصة المفرزة]}
+
+  minor_guardianship:
+    description: >
+      Guardian OF A MINOR PARTY. Deliberately keyed apart from aqd_nikah's
+      guardian_name, which means the bride's ولي — a principal party, not a
+      guardian of a minor. Same word, different concept.
+    fields:
+      - {key: minor_guardian_name,      type: name,      label_ar: اسم الولي أو الوصي, label_en: Guardian or trustee of a minor,
+         aliases_ar: [الوصي, الولي, ولي أمر القاصر, القيّم]}
+      - {key: minor_guardian_id_number, type: person_id, label_ar: رقم هوية الولي,     label_en: Guardian identity number}
+      - {key: minor_guardian_basis,     type: enum,      label_ar: صفة الولاية,        label_en: Basis of guardianship,
+         enum_values_ar: [ولاية, وصاية, قوامة],
+         aliases_ar: [بالولاية, بالوصاية, بموجب صك الوصاية]}
+
+
+# =============================================================================
+# 4. CLASSIFICATION
+# =============================================================================
+classification:
+
+  # --- Two-stage routing ----------------------------------------------------
+  # Stage 1 picks a FAMILY from operative vocabulary only. Stage 2 picks a
+  # template within that family. Without this, every property-bearing deed is a
+  # title deed, because they all copy the title deed's property block verbatim.
+  stages: [family, template]
+
+  # --- Scoring --------------------------------------------------------------
+  scoring:
+    mode: max_per_group
+    # Anchors that share a `group` contribute only their single highest hit.
+    # Without this, one printed title line "صك إثبات طلاق" scores 3 + 2 + 3 = 8
+    # because the shorter variants are substrings of it, and one recited
+    # confinement sentence scores up to 21 on hasr_warathah. Weights are then
+    # not comparable between templates and the winner is whoever was tuned
+    # hardest, not whoever is right.
+    normalize_by: max_possible_score
+    require_operative_voice_for_weight_3: true
+
+  # --- Tiers ----------------------------------------------------------------
+  tiers:
+    - id: rules
+      description: "Normalised anchor + regex scoring against this file. Zero cost, fully explainable. Resolves most printed forms."
+      accept_if: {min_score: 0.55, min_margin_over_runner_up: 0.18}
+    - id: embedding
+      description: "Multilingual sentence embedder (CPU) over page 1 vs template descriptions + the confirmed-correction exemplar bank. Improves as overrides accumulate."
+      accept_if: {min_similarity: 0.62, min_margin_over_runner_up: 0.08}
+    - id: llm
+      description: >
+        Qwen3 (already resident on port 8123), JSON-schema-constrained with
+        template_id as an ENUM of registry ids plus "unknown", so it cannot
+        invent a template. Invoked only when rules and embedding disagree or
+        both fall below threshold.
+      input_chars: 2000
+      accept_if: {min_confidence: 0.5}
+
+  fallback_template: generic_document
+  # generic_document = today's free-form structurer prompt, unchanged. An
+  # unrecognised document must still process exactly as it does now.
+
+  review_threshold: 0.70
+  # Below this the UI shows the prediction with the override dropdown preselected
+  # but unconfirmed. Tune against a held-out set; do not pick this by feel.
+
+  corroboration_min_score: 0.30
+  # The rules tier only CORROBORATES the model's answer when its own score for
+  # that template clears this. Below it the anchors found next to nothing, and
+  # ranking first among ten near-zero scores is not agreement: the verdict
+  # stays source "llm" with the unconfirmed penalty and the badge shows the
+  # rules score. Uncalibrated, like the tier thresholds above.
+
+  # --- Evidence that must NOT decide anything -------------------------------
+  neutral_evidence:
+    description: >
+      Strings so widely shared that scoring them hands whoever scores them a
+      head start on documents that are not theirs. Weight is forced to 0 for
+      TEMPLATE selection. They may still be used for FAMILY selection where
+      noted, and are of course still extracted as fields.
+    blocks:
+      - group: property_description
+        note: "Reproduced by gift, mortgage, endowment, partition and property-bearing wills. Usable as family evidence (property family), never as template evidence."
+        family_evidence_for: property
+      - group: boundaries
+        note: "Same. حدود وأطوال العقار is simultaneously the title deed's headline anchor and the gift deed's section title."
+        family_evidence_for: property
+      - group: deed_identity
+        note: "رقم الصك / تاريخ الصك / كتابة العدل / المحكمة العامة print on every صك of every type."
+      - group: agency
+        note: >
+          الموكل / الوكيل / وكالة شرعية / وكلت are NOT evidence against any
+          template. Any deed may lawfully be executed through an agent. Only
+          wakalah_shariyyah's own header fields (رقم الوكالة، حالة الوكالة،
+          نص الوكالة، حق توكيل الغير) identify a standalone power of attorney.
+    phrases:
+      - {text: المملكة العربية السعودية,  reason: "On every instrument."}
+      - {text: وزارة العدل,                reason: "On every instrument."}
+      - {text: الحمد لله وحده,             reason: "Standard دیباجة."}
+      - {text: بسم الله الرحمن الرحيم,     reason: "Standard بسملة."}
+      - {text: وصلى الله على نبينا محمد,   reason: "Standard closing."}
+      - {text: شهادة الوفاة,               reason: "Cited as evidence BY hasr_warathah; not evidence against it."}
+
+  # --- Anchor gating vocabulary --------------------------------------------
+  # Five templates independently observed that their own title string is seen
+  # CITED inside other deeds more often than it is seen as their own title, and
+  # each invented a different partial defence. These are the shared constructs
+  # that replace all of them.
+  gating:
+    voice:
+      values: [operative, cited, any]
+      default: any
+      note: "operative = the instrument is performing the act; cited = it is reciting another instrument that performed it."
+    not_preceded_by:
+      note: "Anchor does not fire if any listed phrase appears within `window` characters BEFORE it."
+      default_window: 40
+      common_citation_markers: [بموجب, استناداً إلى, صادر بموجب, بناءً على, المشار إليه, المرفق, وفق الصك رقم]
+    co_occurs_with:
+      note: "Anchor fires only if a companion phrase appears within `within` characters."
+    in_section:
+      note: "Anchor fires only inside the named section. Requires Surya's layout labels to have resolved a heading."
+
+
+# =============================================================================
+# 5. FAMILIES  (stage 1)
+# =============================================================================
+families:
+
+  - id: property
+    name_ar: صكوك ووثائق عقارية
+    members: [sakk_milkiyyah_aqar, sakk_hibah, sakk_waqf, sakk_rahn_aqari, sakk_qismah]
+    evidence: [property_description, boundaries]
+    note: >
+      Membership is cheap to establish and says nothing about WHICH property
+      instrument this is. Stage 2 must decide on the operative clause alone.
+
+  - id: estate
+    name_ar: صكوك التركات والوصايا
+    members: [sakk_hasr_warathah, sakk_wasiyyah, sakk_qismah]
+    evidence_phrases: [الورثة, التركة, انحصر إرثه, الموصى له, ولا وارث له سواهم]
+    note: "sakk_qismah is deliberately in two families — قسمة تركة is both."
+
+  - id: family_status
+    name_ar: صكوك الأحوال الشخصية
+    members: [aqd_nikah, sakk_talaq]
+    evidence_phrases: [الزوج, الزوجة, الصداق, الطلاق, المأذون, العدة]
+
+  - id: representation
+    name_ar: وثائق الوكالة
+    members: [wakalah_shariyyah]
+    evidence_phrases: [رقم الوكالة, حالة الوكالة, نص الوكالة, حق توكيل الغير]
+    note: "Header-field evidence only, never the bare words الموكل/الوكيل."
+
+
+# =============================================================================
+# 6. TEMPLATES
+# =============================================================================
+templates:
+
+# -----------------------------------------------------------------------------
+- id: sakk_milkiyyah_aqar
+  version: 1
+  name_ar: صك ملكية عقار
+  name_en: Real-estate title deed
+  family: property
+  description: >
+    The principal instrument of real-property ownership, issued by وزارة العدل
+    through a المحكمة العامة or كتابة العدل and today produced electronically
+    via ناجز. Default target for any Saudi property document whose printed title
+    is a bare صك with no qualifying transaction word.
+  issuer_notes: >
+    Two layouts, both must parse. (1) ELECTRONIC (2017+): laser-printed A4,
+    labelled key/value blocks, a بيانات الملاك table, a boundaries grid with
+    الحد/الطول/الوصف columns, a QR and رمز التحقق. Labels are printed and
+    stable, so label matching works. (2) HANDWRITTEN / LEGACY: free-running
+    prose opening with the بسملة and closing with وجرى ضبطه وتحريره, almost no
+    printed labels, boundaries as running text (يحده من الشمال ... بطول ...),
+    the Hijri date spelled in month words, the owner identified by حفيظة نفوس
+    rather than a 10-digit ID, and the instrument cited as صك رقم ... في سجل
+    رقم ... صفحة رقم .... Because layout (2) carries almost no labels, the
+    required set below is deliberately minimal.
+
+  anchors:
+    - {text: أصبح ملكاً له, weight: 3, group: operative, voice: operative,
+       note: "The operative ownership clause. This — not the property block — is what makes a title deed a title deed."}
+    - {text: صار ملكاً له, weight: 3, group: operative, voice: operative}
+    - {text: بيانات الملاك, weight: 2, group: owner_block}
+    - {text: بيانات المالك, weight: 2, group: owner_block}
+    - {text: صك ملكية, weight: 2, group: title,
+       note: "Many ناجز outputs are headed simply صك and the ownership nature is inferred from the owner block, so this cannot be weight 3."}
+    - {text: سند ملكية, weight: 1, group: title}
+    - {text: وجرى ضبطه وتحريره, weight: 1, group: layout,
+       note: "Identifies the handwritten SUB-LAYOUT, not the document type. Never let it raise type confidence alone."}
+
+  # NOTE — unlike anchors, which are normalised at load, a regex PATTERN is
+  # compiled exactly as written and run against normalised page text. So its
+  # Arabic literals must already be in normalised form: ا not أ, ه not ة, and
+  # no tashkeel. The loader rejects the registry if a pattern is not. Do not
+  # "fix" this by normalising the pattern source — stripping the tanween from
+  # ملكاً? would rebind the ? to the alef and match ملك with no alef at all.
+  anchor_regexes:
+    - {name: ownership_clause, weight: 3, group: operative, voice: operative,
+       pattern: '(?:اصبح|اصبحت|صار|صارت)\s*(?:ذلك\s*)?ملكا\s*(?:له|لها|لهم|لهما|للمالك)'}
+
+  # Property-block anchors intentionally absent — see classification.neutral_evidence.
+
+  negative_anchors:
+    - {text: وهب هبة شرعية منجزة, reason: "Gift in the operative voice."}
+    - {text: وقفاً صحيحاً شرعياً مؤبداً, reason: "Endowment in the operative voice."}
+    - {text: المتقاسمون, reason: "Partition parties."}
+    - {text: وقع في نصيب, reason: "Partition allotment clause."}
+    - {text: درجة الرهن, reason: "Mortgage rank — only a mortgage deed states it."}
+  # NOT negatives, deliberately: الراهن / المرتهن / القيود والرهون (a mortgage
+  # annotation is normal on a live title deed), and سبب التملك: هبة | قسمة | إرث
+  # (the acquisition-cause block recites how title was acquired and must never
+  # reroute classification).
+
+  sections: [الترويسة والبسملة, بيانات الصك, بيانات الملاك, بيانات العقار,
+             حدود وأطوال العقار, الإحداثيات, القيود والرهون, نص الصك, التصديق والتوقيع والختم]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: property_description, require: [property_city, total_area_sqm], section: بيانات العقار}
+    - {use: boundaries, section: حدود وأطوال العقار}
+    - {use: source_deed, section: نص الصك}
+    - {use: attestation, section: التصديق والتوقيع والختم}
+    - {use: agency, section: بيانات الملاك}
+    - {use: share, section: بيانات الملاك}
+    - use: person_identity
+      instances:
+        - {role: owner, prefix: owner, label_ar: المالك, repeatable: true, require: [name], section: بيانات الملاك}
+
+  fields:
+    - {key: ownership_clause, type: long_text, required: true, section: نص الصك,
+       label_ar: نص التملك, label_en: Ownership clause,
+       aliases_ar: [أصبح ملكاً له, صار ملكاً له]}
+    - {key: acquisition_reason, type: enum, required: false, section: بيانات الصك,
+       label_ar: سبب التملك, label_en: How title was acquired,
+       enum_values_ar: [شراء, إرث, هبة, قسمة, وصية, إحياء, منحة],
+       aliases_ar: [نوع الإفراغ, سبب الإفراغ],
+       classification_weight: 0,
+       note: "ZERO classification weight. This block recites a past transaction; it is not the operative act."}
+    - {key: restrictions_and_mortgages, type: long_text, required: false, section: القيود والرهون,
+       label_ar: القيود والرهون, label_en: Registered restrictions and mortgages}
+
+  uncertainties:
+    - "Electronic deed-number length is unconfirmed; deed_number's window is wide on purpose."
+    - "Whether coordinates are printed as decimal degrees or UTM varies by issuing office; both branches are accepted."
+
+# -----------------------------------------------------------------------------
+- id: sakk_hasr_warathah
+  version: 1
+  name_ar: صك حصر ورثة
+  name_en: Inheritance / heirs inventory deed
+  family: estate
+  description: >
+    Court instrument establishing a person's death and enumerating every lawful
+    heir with relationship and share. Closed list: the operative content is the
+    confinement clause plus the heir table.
+  issuer_notes: >
+    THIS DEED IS CITED MORE OFTEN THAN IT IS SUBMITTED. قسمة تركة, الفريضة
+    الشرعية, إفراغ and وكالة instruments all quote the confinement clause and
+    reproduce an identical الاسم / صلة القرابة table. Every title anchor below
+    is therefore gated to the operative voice.
+
+  anchors:
+    - {text: صك حصر ورثة, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على, صادر بموجب], window: 40}
+    - {text: حجة حصر ورثة, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على], window: 40}
+    - {text: صك إثبات وفاة وحصر ورثة, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى], window: 40}
+    - {text: حصر الورثة, weight: 2, group: title, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى], window: 40}
+    # ناجز electronic format: issued by كتابة العدل through the e-notarisation
+    # system as a وثيقة, not a صك. Different title, different confinement
+    # wording, and a heir table headed صلة القرابة | الاسم | الجنسية |
+    # الهوية الوطنية | تاريخ الميلاد | حالة الوارث. Without these the sample
+    # scored 0.10 here (صلة القرابة alone) and routing rested on the model.
+    - {text: وثيقة ورثة متوفى, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على], window: 40}
+    - {text: تم توثيق ورثة, weight: 2, group: ruling, voice: operative,
+       note: "The e-notary's operative act, in place of a court's حكمت بثبوت وفاة."}
+    - {text: وانحصر ورثته في, weight: 3, group: confinement, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على, المشار إليه], window: 40}
+    - {text: وانحصر ورثتها في, weight: 3, group: confinement, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على, المشار إليه], window: 40}
+    - {text: حالة الوارث, weight: 1, group: heir_block,
+       note: "ناجز heir-table column (راشد / قاصر)."}
+    - {text: انحصر إرثه, weight: 3, group: confinement, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على, المشار إليه], window: 40,
+       co_occurs_with: [في, ورثته], within: 60,
+       note: "Must immediately govern a list of persons. Recited as background in قسمة تركة."}
+    - {text: انحصر إرثها, weight: 3, group: confinement, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, بناءً على], window: 40}
+    - {text: ولا وارث له سواهم, weight: 3, group: confinement, voice: operative}
+    - {text: لا يعلمون له وارثاً سواهم, weight: 2, group: confinement, voice: operative}
+    - {text: ولا فرض غيرهم, weight: 2, group: confinement, voice: operative}
+    - {text: حكمت بثبوت وفاة, weight: 2, group: ruling, voice: operative}
+    - {text: بيانات الورثة, weight: 2, group: heir_block}
+    - {text: صلة القرابة, weight: 1, group: heir_block,
+       note: "Identical table header on قسمة تركة and الفريضة الشرعية."}
+
+  negative_anchors:
+    - {text: وقع في نصيب, reason: "Physical allotment ⇒ قسمة, not enumeration."}
+    - {text: الحصة المفرزة, reason: "Demarcated share ⇒ قسمة."}
+    - {text: معدل القسمة, reason: "Partition equalisation payment."}
+    - {text: الموصى له, reason: "Legatee ⇒ وصية. NOTE: relies on ى NOT being folded to ي."}
+  # NOT a negative: شهادة الوفاة — this deed CITES the death certificate as
+  # evidence, so the phrase on the page is neutral.
+  # NOT negatives: the property block. A حصر ورثة may list estate real property.
+
+  sections: [الترويسة, بيانات الصك, بيانات المتوفى, بيانات الوفاة, بيانات الورثة,
+             منطوق الصك, الشهود, التوقيع والختم]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: attestation, require: [attesting_officer_name], section: التوقيع والختم}
+    - {use: agency, section: بيانات الورثة}
+    # `share` deliberately NOT used here: its الحصة / النصيب الشرعي / سهام
+    # labels are the same words as the per-heir heir_share below, and a label
+    # two fields claim is never aligned. The heir's share IS heir_share.
+    - {use: minor_guardianship, section: بيانات الورثة}
+    - use: person_identity
+      instances:
+        - {role: deceased, prefix: deceased, label_ar: المتوفى, require: [name], section: بيانات المتوفى}
+        - {role: heir, prefix: heir, label_ar: الوارث, repeatable: true, require: [name], section: بيانات الورثة}
+
+  fields:
+    - {key: death_date_hijri, type: date_hijri, required: false, section: بيانات الوفاة,
+       label_ar: تاريخ الوفاة, label_en: Date of death (Hijri),
+       aliases_ar: [توفي بتاريخ, تاريخ وفاته]}
+    - {key: death_certificate_number, type: text, required: false, section: بيانات الوفاة,
+       label_ar: رقم شهادة الوفاة, label_en: Death certificate number}
+    - {key: heir_relation, type: enum, required: true, repeatable: true, section: بيانات الورثة,
+       label_ar: صلة القرابة, label_en: Relationship to the deceased,
+       enum_values_ar: [زوجة, زوج, ابن, ابنة, أب, أم, أخ شقيق, أخت شقيقة, أخ لأب, أخت لأب, أخ لأم, أخت لأم, جد, جدة, عم, ابن أخ],
+       aliases_ar: [القرابة, الصلة, صفة الوارث]}
+    - {key: heir_share, type: share_fraction, required: false, repeatable: true, section: بيانات الورثة,
+       label_ar: النصيب الشرعي, label_en: Lawful share,
+       aliases_ar: [الحصة, نصيبه, سهام]}
+    - {key: heir_status, type: text, required: false, repeatable: true, section: بيانات الورثة,
+       label_ar: حالة الوارث, label_en: Heir status (راشد / قاصر),
+       note: "ناجز heir-table column. Legal standing of the heir, not a capacity to act."}
+    - {key: confinement_statement, type: long_text, required: true, section: منطوق الصك,
+       label_ar: منطوق الصك, label_en: Confinement clause,
+       aliases_ar: [نص الصك, المنطوق]}
+
+  uncertainties:
+    - "Legacy handwritten حجج may carry a 1-5 digit serial; deed_number must fall back to legacy_deed_number when legacy_register is populated."
+
+# -----------------------------------------------------------------------------
+- id: wakalah_shariyyah
+  version: 1
+  name_ar: وكالة شرعية
+  name_en: Sharia power of attorney
+  family: representation
+  description: >
+    A standalone notarised grant of authority, issued via ناجز or كتابة العدل.
+    Identified by its OWN header fields, never by the words الموكل / الوكيل,
+    which appear on any instrument executed through an agent.
+  issuer_notes: >
+    The discriminator against "an ordinary deed executed بالوكالة" is structural:
+    a standalone wakalah has رقم الوكالة، حالة الوكالة، نص الوكالة،
+    تاريخ انتهاء الوكالة، حق توكيل الغير as its own header. A deed executed by an
+    agent cites the PoA inside a party block and has its own subject matter
+    (property, heirs, a marriage).
+
+  anchors:
+    - {text: وكالة شرعية, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, بمقتضى, استناداً إلى, الصادرة], window: 40}
+    - {text: رقم الوكالة, weight: 3, group: header, in_section: [بيانات الوكالة, الترويسة],
+       note: "As the instrument's OWN header field. Cited inside a party block it is agency.power_of_attorney_number."}
+    - {text: حالة الوكالة, weight: 3, group: header,
+       note: "سارية / ملغاة / منتهية. Only a standalone wakalah carries a status line."}
+    - {text: نص الوكالة, weight: 3, group: header}
+    - {text: حق توكيل الغير, weight: 3, group: header}
+    - {text: تاريخ انتهاء الوكالة, weight: 2, group: header}
+    - {text: مدة الوكالة, weight: 2, group: header}
+    - {text: موضوع الوكالة, weight: 2, group: header}
+    - {text: الصلاحيات الممنوحة, weight: 1, group: header,
+       note: "Shared with قرار تفويض; the party label is the real discriminator."}
+    - {text: وكالة إلكترونية, weight: 2, group: title}
+    - {text: وكلت, weight: 2, group: operative, voice: operative}
+    - {text: أقر بأنه وكل, weight: 2, group: operative, voice: operative}
+
+  negative_anchors:
+    - {text: المفوض له, reason: "Administrative delegation (تفويض), not a notarised wakalah."}
+    - {text: قرار تفويض, reason: "Same."}
+    - {text: تفويض صلاحيات, reason: "Same."}
+  # NOT negatives: the property block. A wakalah بالبيع والإفراغ legitimately
+  # describes the parcel it authorises dealing in.
+
+  sections: [الترويسة, بيانات الوكالة, بيانات الموكل, بيانات الوكيل, موضوع الوكالة ونوعها,
+             نص الوكالة والصلاحيات الممنوحة, مدة الوكالة وتاريخ انتهائها, التصديق والجهة المصدرة]
+
+  groups:
+    - {use: deed_identity, require: [issuing_authority], section: بيانات الوكالة}
+    - {use: attestation, section: التصديق والجهة المصدرة}
+    - use: person_identity
+      instances:
+        - {role: principal, prefix: principal, label_ar: الموكل, repeatable: true, require: [name, id_number], section: بيانات الموكل}
+        - {role: agent, prefix: agent, label_ar: الوكيل, repeatable: true, require: [name], section: بيانات الوكيل}
+
+  fields:
+    - {key: wakala_number, type: wakala_number, required: true, section: بيانات الوكالة,
+       label_ar: رقم الوكالة, label_en: Power-of-attorney number}
+    - {key: wakala_issue_date_hijri, type: date_hijri, required: true, section: بيانات الوكالة,
+       label_ar: تاريخ الوكالة, label_en: Issue date (Hijri)}
+    - {key: wakala_text, type: long_text, required: true, section: نص الوكالة والصلاحيات الممنوحة,
+       label_ar: نص الوكالة, label_en: Text of the grant}
+    - {key: wakala_status, type: enum, required: false, section: بيانات الوكالة,
+       label_ar: حالة الوكالة, label_en: Status,
+       enum_values_ar: [سارية, ملغاة, منتهية, موقوفة]}
+    - {key: wakala_scope, type: enum, required: false, section: موضوع الوكالة ونوعها,
+       label_ar: نوع الوكالة, label_en: Scope,
+       enum_values_ar: [عامة, خاصة]}
+    - {key: wakala_subject, type: text, required: false, section: موضوع الوكالة ونوعها,
+       label_ar: موضوع الوكالة, label_en: Subject matter}
+    - {key: wakala_expiry_date_hijri, type: date_hijri, required: false, section: مدة الوكالة وتاريخ انتهائها,
+       label_ar: تاريخ انتهاء الوكالة, label_en: Expiry date (Hijri)}
+    - {key: substitution_allowed, type: enum, required: false, section: نص الوكالة والصلاحيات الممنوحة,
+       label_ar: حق توكيل الغير, label_en: Right to appoint a substitute agent,
+       enum_values_ar: [نعم, لا]}
+
+# -----------------------------------------------------------------------------
+- id: aqd_nikah
+  version: 1
+  name_ar: عقد نكاح (وثيقة عقد زواج)
+  name_en: Marriage contract
+  family: family_status
+  description: >
+    The marriage documentation instrument executed by a مأذون أنكحة, recording
+    the parties, the bride's ولي, the صداق, any agreed conditions, the offer and
+    acceptance formula, and the witnesses.
+
+  anchors:
+    - {text: وثيقة عقد نكاح, weight: 3, group: title, voice: operative}
+    - {text: وثيقة عقد زواج, weight: 3, group: title, voice: operative}
+    - {text: مأذون أنكحة, weight: 3, group: officiant,
+       note: "A مأذون line in the header is the sharpest single discriminator against إثبات زواج (a court instrument proving an unregistered marriage, which quotes the same offer-and-acceptance formula)."}
+    - {text: عقد نكاح, weight: 2, group: title, voice: operative,
+       not_preceded_by: [بموجب, رقم, تاريخ, بيانات], window: 25,
+       note: "Gated because sakk_talaq prints بيانات عقد النكاح / رقم عقد النكاح in its own header."}
+    - {text: زوجتك موليتي, weight: 3, group: formula, voice: operative}
+    - {text: قبلت هذا النكاح, weight: 3, group: formula, voice: operative}
+    - {text: على كتاب الله وسنة رسوله, weight: 2, group: formula}
+    - {text: الصداق المعجل, weight: 2, group: dowry}
+    - {text: الصداق المؤجل, weight: 2, group: dowry}
+    - {text: ولي الزوجة, weight: 2, group: parties}
+
+  negative_anchors:
+    - {text: نوع الطلاق, reason: "Divorce-type line ⇒ talaq."}
+    - {text: تاريخ وقوع الطلاق, reason: "Divorce-effect line ⇒ talaq."}
+    - {text: بائن بينونة, reason: "Divorce classification ⇒ talaq."}
+    - {text: انقضاء العدة, reason: "Post-divorce waiting period."}
+    - {text: دعوى إثبات زواج, reason: "Court proof-of-marriage suit, not a مأذون contract."}
+    - {text: المدعى عليها, reason: "Adversarial party label ⇒ a court ruling."}
+
+  sections: [ترويسة الوثيقة وبياناتها, بيانات الزوج, بيانات الزوجة, بيانات ولي الزوجة,
+             بيانات الوكيل, الصداق, الشروط المتفق عليها, صيغة العقد (الإيجاب والقبول),
+             الشهود, التوثيق والتصديق]
+
+  groups:
+    - {use: deed_identity, require: [deed_date_hijri], section: ترويسة الوثيقة وبياناتها}
+    - {use: legacy_register, section: ترويسة الوثيقة وبياناتها}
+    - {use: attestation, require: [witness_name], section: التوثيق والتصديق}
+    - {use: agency, section: بيانات الوكيل}
+    - use: person_identity
+      instances:
+        - {role: husband, prefix: husband, label_ar: الزوج, require: [name], section: بيانات الزوج}
+        - {role: wife, prefix: wife, label_ar: الزوجة, require: [name], section: بيانات الزوجة}
+        - {role: bride_guardian, prefix: guardian, label_ar: ولي الزوجة, require: [name],
+           section: بيانات ولي الزوجة,
+           note: "The ولي is a PRINCIPAL PARTY here, not a guardian of a minor. Keyed apart from minor_guardianship.minor_guardian_name deliberately."}
+
+  fields:
+    - {key: dowry_amount, type: amount_sar, required: true, section: الصداق,
+       label_ar: الصداق, label_en: Dowry,
+       aliases_ar: [المهر, الصداق المعجل, مهر المثل]}
+    - {key: dowry_deferred_amount, type: amount_sar, required: false, section: الصداق,
+       label_ar: الصداق المؤجل, label_en: Deferred dowry,
+       aliases_ar: [المهر المؤجل]}
+    - {key: officiant_name, type: name, required: true, section: التوثيق والتصديق,
+       label_ar: اسم المأذون, label_en: Officiant,
+       aliases_ar: [المأذون, مأذون الأنكحة]}
+    - {key: contract_formula, type: long_text, required: false, section: صيغة العقد (الإيجاب والقبول),
+       label_ar: صيغة العقد, label_en: Offer and acceptance formula}
+    - {key: agreed_conditions, type: long_text, required: false, repeatable: true, section: الشروط المتفق عليها,
+       label_ar: الشروط المتفق عليها, label_en: Agreed conditions}
+    - {key: guardianship_basis, type: enum, required: false, section: بيانات ولي الزوجة,
+       label_ar: صفة الولي, label_en: Basis of the bride's guardianship,
+       enum_values_ar: [أب, جد, أخ, عم, ابن, القاضي, ولي أمر]}
+
+# -----------------------------------------------------------------------------
+- id: sakk_talaq
+  version: 1
+  name_ar: صك طلاق (وثيقة إثبات طلاق)
+  name_en: Divorce deed
+  family: family_status
+  description: >
+    Documents a divorce that has already occurred: the parties, the underlying
+    marriage contract, the type and date of the divorce, the waiting period, and
+    any custody or maintenance arrangement.
+  issuer_notes: >
+    This instrument LEGITIMATELY reproduces the marriage contract's own data —
+    رقم عقد النكاح، تاريخ عقد النكاح، المأذون — in its بيانات عقد النكاح block.
+    Treating عقد نكاح or مأذون الأنكحة as negative evidence here is
+    self-contradictory and was removed.
+
+  anchors:
+    - {text: صك إثبات طلاق, weight: 3, group: title, voice: operative}
+    - {text: وثيقة إثبات طلاق, weight: 3, group: title, voice: operative}
+    - {text: صك طلاق, weight: 3, group: title, voice: operative}
+    - {text: حجة طلاق, weight: 2, group: title, voice: operative}
+    - {text: نوع الطلاق, weight: 3, group: divorce_data,
+       note: "The type line is the sharpest structural discriminator against aqd_nikah."}
+    - {text: تاريخ وقوع الطلاق, weight: 3, group: divorce_data}
+    - {text: بائن بينونة صغرى, weight: 2, group: divorce_type}
+    - {text: بائن بينونة كبرى, weight: 2, group: divorce_type}
+    - {text: طلقة رجعية, weight: 2, group: divorce_type}
+    - {text: عدد الطلقات, weight: 2, group: divorce_data}
+    - {text: أوقع الطلاق, weight: 2, group: operative, voice: operative}
+    - {text: بيانات المطلقة, weight: 2, group: parties}
+
+  negative_anchors:
+    - {text: إثبات رجعة, reason: "Reversal instrument (صك رجعة)."}
+    - {text: راجع مطلقته, reason: "Reversal in the operative voice."}
+    - {text: بدل الخلع, reason: "Consideration paid by the wife ⇒ مخالعة."}
+    - {text: فسخ عقد النكاح, reason: "Judicial dissolution ⇒ فسخ."}
+    - {text: منطوق الحكم, reason: "Judgment structure ⇒ صك حكم, not this documentation instrument."}
+    - {text: الأسباب والحيثيات, reason: "Same."}
+  # REMOVED as negatives: عقد نكاح, مأذون الأنكحة, المهر المعجل, ولي أمر الزوجة —
+  # this deed models all of them as its own fields.
+  #
+  # OPEN DECISION FOR THE REGISTRY OWNER: if divorce-by-court-ruling should also
+  # route here, drop the last two negatives above. Currently unresolved.
+
+  sections: [ترويسة الصك, بيانات الصك, بيانات المطلق, بيانات المطلقة, بيانات عقد النكاح,
+             بيانات الطلاق, بيانات العدة, الحضانة والنفقة, الشهود, التصديق والتوقيع]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: attestation, section: التصديق والتوقيع}
+    - {use: agency, section: بيانات الصك}
+    - {use: minor_guardianship, section: الحضانة والنفقة}
+    - use: person_identity
+      instances:
+        - {role: divorcer, prefix: divorcer, label_ar: المطلق, require: [name], section: بيانات المطلق}
+        - {role: divorcee, prefix: divorcee, label_ar: المطلقة, require: [name], section: بيانات المطلقة}
+
+  fields:
+    - {key: divorce_date_hijri, type: date_hijri, required: true, section: بيانات الطلاق,
+       label_ar: تاريخ وقوع الطلاق, label_en: Date the divorce took effect}
+    - {key: divorce_type, type: enum, required: false, section: بيانات الطلاق,
+       label_ar: نوع الطلاق, label_en: Type of divorce,
+       enum_values_ar: [رجعي, بائن بينونة صغرى, بائن بينونة كبرى, خلع, فسخ]}
+    - {key: divorce_count, type: integer, required: false, section: بيانات الطلاق,
+       label_ar: عدد الطلقات, label_en: Number of prior divorces,
+       aliases_ar: [الطلقة الأولى, الطلقة الثانية, رقم الطلقة]}
+    - {key: marriage_deed_number, type: deed_number, required: false, section: بيانات عقد النكاح,
+       label_ar: رقم عقد النكاح, label_en: Underlying marriage contract number,
+       classification_weight: 0}
+    - {key: marriage_deed_date_hijri, type: date_hijri, required: false, section: بيانات عقد النكاح,
+       label_ar: تاريخ عقد النكاح, label_en: Marriage contract date,
+       classification_weight: 0}
+    - {key: marriage_officiant, type: name, required: false, section: بيانات عقد النكاح,
+       label_ar: المأذون, label_en: Officiant of the original marriage,
+       aliases_ar: [مأذون الأنكحة], classification_weight: 0}
+    - {key: iddah_status, type: text, required: false, section: بيانات العدة,
+       label_ar: العدة, label_en: Waiting period}
+    - {key: custody_arrangement, type: long_text, required: false, section: الحضانة والنفقة,
+       label_ar: الحضانة, label_en: Custody arrangement}
+    - {key: maintenance_amount, type: amount_sar, required: false, section: الحضانة والنفقة,
+       label_ar: النفقة, label_en: Maintenance}
+
+# -----------------------------------------------------------------------------
+- id: sakk_waqf
+  version: 1
+  name_ar: صك وقف (حجة وقف)
+  name_en: Endowment (waqf) deed
+  family: property
+  description: >
+    Creates a perpetual, inalienable endowment: the واقف, the endowed asset, the
+    named beneficiaries or مصرف, the واقف's conditions, and the ناظر.
+  issuer_notes: >
+    Distinguished from sibling waqf-family documents (استبدال الوقف, تعيين ناظر,
+    شهادة تسجيل وقف), which quote the same perpetuity formula inside their
+    حيثيات and cite the original as بموجب صك الوقف رقم. Hence the gating below.
+
+  anchors:
+    - {text: لا يباع ولا يوهب ولا يورث, weight: 3, group: perpetuity, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, صادر بموجب, بناءً على], window: 40,
+       note: "The perpetuity formula. Near-decisive, but ONLY in the creating voice."}
+    - {text: وقفاً صحيحاً شرعياً مؤبداً, weight: 3, group: perpetuity, voice: operative,
+       not_preceded_by: [بموجب, استناداً إلى, صادر بموجب], window: 40}
+    - {text: صك وقف, weight: 2, group: title, voice: operative,
+       not_preceded_by: [بموجب, رقم, استناداً إلى], window: 30}
+    - {text: حجة وقف, weight: 2, group: title, voice: operative}
+    - {text: إشهاد وقف, weight: 2, group: title, voice: operative}
+    - {text: وقفية, weight: 2, group: title}
+    - {text: الموقوف عليهم, weight: 3, group: beneficiary,
+       note: "Beneficiaries of the USUFRUCT of an inalienable asset — cleanly separates waqf from hibah's الموهوب له, who takes ownership."}
+    - {text: مصرف الوقف, weight: 2, group: beneficiary}
+    - {text: العين الموقوفة, weight: 2, group: asset}
+    - {text: ناظر الوقف, weight: 2, group: nazir}
+    - {text: شروط الواقف, weight: 2, group: conditions}
+    - {text: ريع الوقف, weight: 2, group: asset}
+    - {text: لوجه الله تعالى, weight: 1, group: intent,
+       note: "Pious-intent wording is shared with hibah. Weight 1 in both, permanently."}
+
+  negative_anchors:
+    - {text: بعد وفاتي, reason: "Death-deferral ⇒ وصية, even when the full waqf formula is recited (a وصية بالوقف)."}
+    - {text: تنفذ بعد الوفاة, reason: "Same."}
+    - {text: استبدال الوقف, reason: "Sibling waqf-family instrument."}
+    - {text: تعيين ناظر, reason: "Sibling waqf-family instrument."}
+    - {text: عزل الناظر, reason: "Sibling waqf-family instrument."}
+  # REMOVED as negatives: صك وصية / الموصي / الموصى له. A وصية بالوقف genuinely
+  # contains both vocabularies; the death-deferral rule above decides instead.
+
+  sections: [الترويسة والديباجة, بيانات الصك, بيانات الواقف, العين الموقوفة وصيغة الوقف,
+             جهة الوقف والموقوف عليهم, شروط الواقف, النظارة على الوقف,
+             الإقرار والإشهاد والشهود, التصديق والختم]
+
+  groups:
+    - {use: deed_identity, require: [deed_date_hijri], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: property_description, section: العين الموقوفة وصيغة الوقف}
+    - {use: boundaries, section: العين الموقوفة وصيغة الوقف}
+    - {use: source_deed, section: العين الموقوفة وصيغة الوقف}
+    - {use: attestation, section: التصديق والختم}
+    - {use: agency, section: بيانات الواقف}
+    - {use: share, section: جهة الوقف والموقوف عليهم}
+    - use: person_identity
+      instances:
+        - {role: waqif, prefix: waqif, label_ar: الواقف, require: [name], section: بيانات الواقف}
+        - {role: nazir, prefix: nazir, label_ar: ناظر الوقف, section: النظارة على الوقف}
+
+  fields:
+    - {key: waqf_declaration_text, type: long_text, required: true, section: العين الموقوفة وصيغة الوقف,
+       label_ar: صيغة الوقف, label_en: Endowment formula}
+    - {key: waqf_asset_description, type: long_text, required: true, section: العين الموقوفة وصيغة الوقف,
+       label_ar: وصف العين الموقوفة, label_en: Description of the endowed asset}
+    - {key: waqf_beneficiaries, type: long_text, required: true, section: جهة الوقف والموقوف عليهم,
+       label_ar: الموقوف عليهم, label_en: Beneficiaries,
+       aliases_ar: [مصرف الوقف, جهة الوقف]}
+    - {key: waqf_type, type: enum, required: false, section: جهة الوقف والموقوف عليهم,
+       label_ar: نوع الوقف, label_en: Type of endowment,
+       enum_values_ar: [ذري, خيري, مشترك]}
+    - {key: waqif_conditions, type: long_text, required: false, repeatable: true, section: شروط الواقف,
+       label_ar: شروط الواقف, label_en: Conditions imposed by the endower}
+    - {key: nazir_powers, type: long_text, required: false, section: النظارة على الوقف,
+       label_ar: صلاحيات الناظر, label_en: Powers of the administrator}
+
+# -----------------------------------------------------------------------------
+- id: sakk_hibah
+  version: 1
+  name_ar: صك هبة
+  name_en: Gift (hiba) deed
+  family: property
+  description: >
+    Transfers ownership without consideration: the واهب, the موهوب له, the
+    subject of the gift, the gift formula, and the acceptance and taking of
+    possession.
+  issuer_notes: >
+    Route here ONLY on the operative gift act. An ordinary electronic title deed
+    whose acquisition-cause block reads سبب التملك: هبة is a TITLE DEED — it
+    recites how title was acquired, it does not perform the gift.
+
+  anchors:
+    - {text: وهب هبة شرعية منجزة نافذة, weight: 3, group: formula, voice: operative}
+    - {text: هبة منجزة نافذة, weight: 3, group: formula, voice: operative}
+    - {text: هبة شرعية منجزة, weight: 3, group: formula, voice: operative}
+    - {text: إفراغ هبة, weight: 3, group: title, voice: operative,
+       in_section: [الترويسة, بيانات الصك],
+       note: "Only as a TITLE line. In a cause block it is neutral."}
+    - {text: صك هبة, weight: 2, group: title, voice: operative,
+       not_preceded_by: [بموجب, رقم, استناداً إلى], window: 30}
+    - {text: وثيقة هبة, weight: 2, group: title, voice: operative}
+    - {text: الموهوب له, weight: 3, group: parties,
+       co_occurs_with: [الواهب], within: 120,
+       note: "The donor/donee PAIR within ~120 chars is the reliable signal, not either word alone."}
+    - {text: الموهوب لها, weight: 3, group: parties, co_occurs_with: [الواهب], within: 120}
+    - {text: وقبل الموهوب له الهبة, weight: 3, group: acceptance, voice: operative}
+    - {text: العين الموهوبة, weight: 2, group: asset}
+    - {text: لوجه الله تعالى, weight: 1, group: intent,
+       note: "Shared with waqf. Weight 1 in both, permanently."}
+    - {text: سبب التملك هبة, weight: 0, group: cause,
+       note: "ZERO. Acquisition-cause block on a title deed. Kept listed so nobody re-adds it with a weight."}
+    - {text: نوع الإفراغ هبة, weight: 0, group: cause, note: "ZERO, same reason."}
+
+  negative_anchors:
+    - {text: بالثمن الحال والمقبوض, reason: "Stated consideration ⇒ sale."}
+    - {text: بثمن قدره, reason: "Stated consideration ⇒ sale."}
+    - {text: قبض البائع الثمن, reason: "Stated consideration ⇒ sale."}
+    - {text: بيعاً شرعياً, reason: "Sale in the operative voice."}
+    - {text: بعد وفاتي, reason: "Death-deferral ⇒ وصية, not a منجزة gift."}
+    - {text: لا يباع ولا يوهب ولا يورث, reason: "Perpetuity formula ⇒ وقف. Present only in waqf."}
+  # NOTE: the ABSENCE of an explicit no-consideration phrase proves nothing —
+  # the word هبة already entails it, and إفراغ-generated electronic instruments
+  # often print no such clause. That is why no_consideration_statement is
+  # optional below, not required.
+
+  sections: [الترويسة, بيانات الصك, بيانات الواهب, بيانات الموهوب له, بيانات العقار,
+             حدود وأطوال العقار, صيغة الهبة والإقرارات, القبول والقبض,
+             سند الملكية السابق, التوقيعات والتصديق]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: property_description, section: بيانات العقار}
+    - {use: boundaries, section: حدود وأطوال العقار}
+    - {use: source_deed, section: سند الملكية السابق}
+    - {use: attestation, section: التوقيعات والتصديق}
+    - {use: agency, section: بيانات الواهب}
+    - {use: share, section: بيانات العقار}
+    - {use: minor_guardianship, section: بيانات الموهوب له}
+    - use: person_identity
+      instances:
+        - {role: donor, prefix: donor, label_ar: الواهب, repeatable: true, require: [name], section: بيانات الواهب}
+        - {role: donee, prefix: donee, label_ar: الموهوب له, repeatable: true, require: [name], section: بيانات الموهوب له}
+
+  fields:
+    - {key: gift_subject_description, type: long_text, required: true, section: صيغة الهبة والإقرارات,
+       label_ar: الموهوب, label_en: Subject of the gift,
+       aliases_ar: [العين الموهوبة, الموهوب به]}
+    - {key: gift_declaration, type: long_text, required: true, section: صيغة الهبة والإقرارات,
+       label_ar: صيغة الهبة, label_en: Gift formula}
+    - {key: acceptance_statement, type: long_text, required: false, section: القبول والقبض,
+       label_ar: القبول والقبض, label_en: Acceptance and taking of possession}
+    - {key: donor_donee_relation, type: text, required: false, section: بيانات الموهوب له,
+       label_ar: صلة القرابة, label_en: Relationship between donor and donee}
+    - {key: no_consideration_statement, type: long_text, required: false, section: صيغة الهبة والإقرارات,
+       label_ar: إقرار عدم المقابل, label_en: Statement of no consideration,
+       aliases_ar: [بدون عوض, دون مقابل]}
+
+# -----------------------------------------------------------------------------
+- id: sakk_wasiyyah
+  version: 1
+  name_ar: صك وصية
+  name_en: Will / testament deed
+  family: estate
+  description: >
+    A bequest taking effect on death: the موصي, what is bequeathed, to whom, the
+    executor, and the third-of-the-estate limit.
+  issuer_notes: >
+    ORTHOGRAPHY HAZARD. This template depends entirely on الموصى (legatee, alef
+    maqsura) being distinguishable from الموصي (testator, yaa). The registry's
+    normaliser has unify_alef_maqsura DISABLED for exactly this reason. If that
+    setting is ever flipped on, every anchor in the `legatee` group below
+    silently collapses into the `testator` group and this template stops working.
+
+  anchors:
+    - {text: صك وصية, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, رقم, استناداً إلى], window: 30}
+    - {text: إثبات وصية, weight: 3, group: title, voice: operative}
+    - {text: حجة وصية, weight: 2, group: title, voice: operative}
+    - {text: لا وصية لوارث, weight: 3, group: doctrine, voice: operative}
+    - {text: الموصى له, weight: 3, group: legatee}
+    - {text: الموصى لهم, weight: 3, group: legatee}
+    - {text: الموصى به, weight: 3, group: legatee}
+    - {text: الموصي, weight: 2, group: testator}
+    - {text: في حدود الثلث, weight: 2, group: third}
+    - {text: ثلث مالي, weight: 2, group: third}
+    - {text: الثلث الشرعي, weight: 2, group: third}
+    - {text: إلا بإجازة الورثة, weight: 2, group: doctrine}
+    - {text: بعد وفاتي, weight: 2, group: deferral, voice: operative}
+    - {text: تنفذ بعد الوفاة, weight: 2, group: deferral, voice: operative}
+    - {text: أوصيت, weight: 2, group: operative, voice: operative}
+    - {text: الناظر على الوصية, weight: 2, group: executor}
+    - {text: منفذ الوصية, weight: 2, group: executor}
+    - {text: الرجوع عن الوصية, weight: 2, group: doctrine}
+    - {text: بحال صحته وسلامة عقله, weight: 2, group: capacity}
+
+  negative_anchors:
+    - {text: المشمولين بالوصاية, reason: "Guardianship appointment (صك وصاية), which bequeaths nothing."}
+    - {text: الولاية على مال القاصر, reason: "Same."}
+    - {text: انحصر إرثه, reason: "Confinement clause ⇒ حصر ورثة."}
+    - {text: ولا وارث له سواهم, reason: "Same."}
+  # NOT a negative: القاصر / القصر — a will naming minor children as legatees
+  # says exactly that.
+  # REMOVED as negatives: صك وقف / حجة وقف / وقفية / الواقف / الناظر على الوقف.
+  # A وصية بالوقف recites the full waqf formula; death-deferral decides instead.
+
+  sections: [بيانات الصك والمحكمة, بيانات الموصي, نص الوصية, الموصى به, الموصى لهم,
+             الوصي والناظر على الوصية, شروط الوصية وقيودها, الشهود, المصادقة والتوثيق]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك والمحكمة}
+    - {use: legacy_register, section: بيانات الصك والمحكمة}
+    - {use: property_description, section: الموصى به}
+    - {use: source_deed, section: الموصى به}
+    - {use: attestation, require: [witness_name], section: المصادقة والتوثيق}
+    - {use: agency, section: بيانات الموصي}
+    - {use: share, section: الموصى لهم}
+    - {use: minor_guardianship, section: الموصى لهم}
+    - use: person_identity
+      instances:
+        - {role: testator, prefix: testator, label_ar: الموصي, require: [name], section: بيانات الموصي}
+        - {role: legatee, prefix: legatee, label_ar: الموصى له, repeatable: true, require: [name], section: الموصى لهم}
+        - {role: executor, prefix: executor, label_ar: الوصي على تنفيذ الوصية, section: الوصي والناظر على الوصية}
+
+  fields:
+    - {key: will_text, type: long_text, required: true, section: نص الوصية,
+       label_ar: نص الوصية, label_en: Text of the will,
+       aliases_ar: [صيغة الوصية]}
+    - {key: bequeathed_item, type: long_text, required: true, repeatable: true, section: الموصى به,
+       label_ar: الموصى به, label_en: Bequeathed item}
+    - {key: third_limit_statement, type: long_text, required: false, section: شروط الوصية وقيودها,
+       label_ar: حدود الثلث, label_en: Third-of-estate limit statement}
+    - {key: will_effective_on, type: enum, required: false, section: شروط الوصية وقيودها,
+       label_ar: نفاذ الوصية, label_en: When the will takes effect,
+       enum_values_ar: [بعد الوفاة, منجزة]}
+    - {key: testator_capacity_statement, type: long_text, required: false, section: بيانات الموصي,
+       label_ar: إقرار الأهلية, label_en: Statement of legal capacity,
+       aliases_ar: [بحال صحته وسلامة عقله]}
+
+# -----------------------------------------------------------------------------
+- id: sakk_rahn_aqari
+  version: 1
+  name_ar: صك رهن عقاري (سند رهن)
+  name_en: Real-estate mortgage deed
+  family: property
+  description: >
+    Pledges a parcel as security for a named debt: the راهن, the مرتهن (normally
+    a bank, finance company or صندوق التنمية العقارية), the secured amount, the
+    rank of the mortgage, and its registration.
+  issuer_notes: >
+    The Ministry of Justice routinely executes conveyance and mortgage as ONE
+    transaction (إفراغ ورهن), so إفراغ / نقل ملكية / البائع / المشتري are NOT
+    evidence against a mortgage. Where both a conveyance clause and a mortgage
+    clause with درجة الرهن plus a secured amount are present, emit BOTH
+    classifications as a composite instrument rather than forcing one winner.
+
+  anchors:
+    - {text: سند رهن عقاري, weight: 3, group: title, voice: operative}
+    - {text: عقد رهن عقاري, weight: 3, group: title, voice: operative}
+    - {text: وثيقة رهن عقاري, weight: 2, group: title, voice: operative}
+    - {text: درجة الرهن, weight: 3, group: rank,
+       note: "Only a mortgage deed states its rank. With a secured amount bound to a named creditor, this is decisive."}
+    - {text: رهناً من الدرجة الأولى, weight: 3, group: rank, voice: operative}
+    - {text: الدين المضمون بالرهن, weight: 3, group: debt}
+    - {text: العقار المرهون, weight: 2, group: asset}
+    - {text: قيد الرهن, weight: 2, group: registration}
+    - {text: نظام الرهن العقاري المسجل, weight: 2, group: registration}
+    - {text: القيود والرهون, weight: 0, group: annotation,
+       note: "ZERO. This is the ANNOTATION block on a title deed. Mortgage vocabulary inside it means a mortgage-annotated title deed, not a mortgage instrument."}
+
+  negative_anchors:
+    - {text: سند فك رهن, reason: "Release instrument."}
+    - {text: شهادة فك الرهن, reason: "Release instrument."}
+    - {text: شطب قيد الرهن, reason: "Release in the operative voice."}
+    - {text: تم فك الرهن عن العقار, reason: "Release in the operative voice."}
+    - {text: خال من الرهون والقيود, reason: "Clear-title statement."}
+    - {text: رهن حيازي, reason: "Possessory pledge — different instrument."}
+  # DELIBERATELY NOT a negative: the bare فك الرهن. A live mortgage normally
+  # contains a release CONDITION (يفك الرهن عند سداد كامل الدين); matching the
+  # bare phrase is a false-negative generator. Match only the longer
+  # release-specific phrases above.
+
+  sections: [ترويسة الوثيقة والجهة المصدرة, بيانات سند الرهن, أطراف الرهن,
+             بيانات العقار المرهون, الحدود والأطوال, بيانات الدين المضمون,
+             شروط الرهن والتزامات الراهن, قيد الرهن والتسجيل, التوقيعات والختم والتحقق]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات سند الرهن}
+    - {use: legacy_register, section: بيانات سند الرهن}
+    - {use: property_description, require: [property_city], section: بيانات العقار المرهون}
+    - {use: boundaries, section: الحدود والأطوال}
+    - {use: source_deed, require: [source_deed_number], section: بيانات العقار المرهون}
+    - {use: attestation, section: التوقيعات والختم والتحقق}
+    - {use: agency, section: أطراف الرهن}
+    - use: person_identity
+      instances:
+        - {role: rahin, prefix: rahin, label_ar: الراهن, require: [name], section: أطراف الرهن}
+        - {role: murtahin, prefix: murtahin, label_ar: المرتهن, require: [name],
+           section: أطراف الرهن,
+           note: "Normally a legal person — expect organization_name, commercial_register or unified_number_700 rather than a personal ID."}
+
+  fields:
+    - {key: secured_amount_sar, type: amount_sar, required: true, section: بيانات الدين المضمون,
+       label_ar: مبلغ الدين المضمون, label_en: Secured amount,
+       aliases_ar: [قيمة الدين, مبلغ الرهن, أصل الدين]}
+    - {key: secured_amount_in_words, type: text, required: false, section: بيانات الدين المضمون,
+       label_ar: المبلغ كتابةً, label_en: Secured amount in words,
+       note: "Cross-check against secured_amount_sar. A mismatch is a high-value extraction finding."}
+    - {key: mortgage_rank, type: enum, required: false, section: بيانات سند الرهن,
+       label_ar: درجة الرهن, label_en: Rank,
+       enum_values_ar: [الأولى, الثانية, الثالثة]}
+    - {key: mortgage_term, type: text, required: false, section: شروط الرهن والتزامات الراهن,
+       label_ar: مدة الرهن, label_en: Term}
+    - {key: maturity_date_hijri, type: date_hijri, required: false, section: بيانات الدين المضمون,
+       label_ar: تاريخ الاستحقاق, label_en: Maturity date (Hijri)}
+    - {key: mortgage_registration_number, type: text, required: false, section: قيد الرهن والتسجيل,
+       label_ar: رقم قيد الرهن, label_en: Registration number}
+    - {key: creditor_iban, type: iban, required: false, section: أطراف الرهن,
+       label_ar: الآيبان, label_en: Creditor IBAN}
+    - {key: mortgage_conditions, type: long_text, required: false, repeatable: true, section: شروط الرهن والتزامات الراهن,
+       label_ar: شروط الرهن, label_en: Conditions and obligations}
+
+# -----------------------------------------------------------------------------
+- id: sakk_qismah
+  version: 1
+  name_ar: صك قسمة
+  name_en: Partition deed
+  family: [property, estate]
+  description: >
+    Divides a jointly-held property among its co-owners: the متقاسمون, the
+    undivided property, each partner's demarcated allotment, any equalisation
+    payment, and the new deeds issued as a result.
+  issuer_notes: >
+    A قسمة تركة legitimately recites the حصر ورثة confinement clause as
+    background. Enumeration WITHOUT division is حصر ورثة; division WITH
+    demarcated allotments is this template. Distinguished from a municipal
+    قرار فرز وحدات عقارية by issuer: وزارة العدل with named متقاسمون here,
+    الأمانة or البلدية with no named co-owners there.
+
+  anchors:
+    - {text: صك قسمة, weight: 3, group: title, voice: operative,
+       not_preceded_by: [بموجب, رقم, استناداً إلى], window: 30}
+    - {text: قسمة رضائية, weight: 3, group: title, voice: operative}
+    - {text: المتقاسمون, weight: 3, group: parties}
+    - {text: المتقاسمين, weight: 3, group: parties}
+    - {text: المقتسمين, weight: 2, group: parties}
+    - {text: وقع في نصيب, weight: 3, group: allotment, voice: operative,
+       note: "The allotment clause. With named partners this is the decisive separator from حصر ورثة."}
+    - {text: أنصبة المتقاسمين, weight: 3, group: allotment}
+    - {text: النصيب المفرز, weight: 2, group: allotment}
+    - {text: الحصة المفرزة, weight: 2, group: allotment}
+    - {text: اقتسموا, weight: 2, group: operative, voice: operative}
+    - {text: معدل القسمة, weight: 2, group: equalisation}
+    - {text: العقار المشاع, weight: 2, group: asset}
+    - {text: قسمة إجبارية, weight: 2, group: title}
+    - {text: بالقرعة, weight: 2, group: method}
+    - {text: فرز الحصص, weight: 1, group: method,
+       note: "Shared with the municipal فرز وحدات decision. Weight 1, permanently."}
+
+  negative_anchors:
+    - {text: قرار فرز وحدات عقارية, reason: "Municipal administrative decision, out of this registry."}
+    - {text: الأمانة, reason: "Municipal issuer.", weight_hint: weak}
+    - {text: حجة استحكام, reason: "Title-establishment instrument."}
+    - {text: قبض البائع الثمن, reason: "Sale."}
+    - {text: الموهوب له, reason: "Gift."}
+  # REMOVED as negatives: انحصر إرثه في / لا وارث له سواهم. A قسمة تركة recites
+  # the confinement clause as background and was being rejected by its own type.
+
+  sections: [بيانات الصك, المقدمة, المتقاسمون, بيانات العقار محل القسمة,
+             الحدود والأطوال والمساحة, الأنصبة بعد القسمة, معدل القسمة وفروق الأنصبة,
+             الشروط والإقرارات, الصكوك الصادرة بموجب القسمة, التصديق والخاتمة]
+
+  groups:
+    - {use: deed_identity, require: [deed_number, deed_date_hijri, issuing_authority], section: بيانات الصك}
+    - {use: legacy_register, section: بيانات الصك}
+    - {use: property_description, section: بيانات العقار محل القسمة}
+    - {use: boundaries, section: الحدود والأطوال والمساحة}
+    - {use: source_deed, require: [source_deed_number], section: بيانات العقار محل القسمة}
+    - {use: attestation, section: التصديق والخاتمة}
+    - {use: agency, section: المتقاسمون}
+    - {use: share, section: الأنصبة بعد القسمة}
+    - {use: minor_guardianship, section: المتقاسمون}
+    - use: person_identity
+      instances:
+        - {role: partner, prefix: partner, label_ar: المتقاسم, repeatable: true, require: [name], section: المتقاسمون}
+
+  fields:
+    - {key: property_description_text, type: long_text, required: true, section: بيانات العقار محل القسمة,
+       label_ar: وصف العقار محل القسمة, label_en: Description of the property being divided}
+    - {key: partner_share_after, type: long_text, required: true, repeatable: true, section: الأنصبة بعد القسمة,
+       label_ar: نصيب المتقاسم, label_en: Partner's allotment after partition}
+    - {key: partition_type, type: enum, required: false, section: بيانات الصك,
+       label_ar: نوع القسمة, label_en: Type of partition,
+       enum_values_ar: [رضائية, إجبارية, قضائية, تصفية, أعيان]}
+    - {key: partition_method, type: enum, required: false, section: الأنصبة بعد القسمة,
+       label_ar: طريقة القسمة, label_en: Method,
+       enum_values_ar: [بالقرعة, بالتراضي, بحكم قضائي]}
+    - {key: equalisation_payment, type: amount_sar, required: false, section: معدل القسمة وفروق الأنصبة,
+       label_ar: معدل القسمة, label_en: Equalisation payment,
+       aliases_ar: [فروق الأنصبة, التعويض]}
+    - {key: resulting_deed_number, type: deed_number, required: false, repeatable: true, section: الصكوك الصادرة بموجب القسمة,
+       label_ar: رقم الصك الصادر, label_en: New deed issued as a result}
+
+
+# =============================================================================
+# 7. PAIRWISE DISAMBIGUATION
+# =============================================================================
+# Consulted when stage 2 leaves two templates within the review margin, and
+# injected into the tier-3 LLM prompt as the deciding question.
+disambiguation:
+
+  - between: [sakk_milkiyyah_aqar, "*"]
+    rule: >
+      CROSS-CUTTING, resolves the registry's largest false-positive class. The
+      property description block — رقم الصك، تاريخ الصك، بيانات العقار، نوع
+      العقار، رقم المخطط، رقم القطعة، المساحة، الحدود والأطوال، الإحداثيات — is
+      reproduced verbatim by every instrument that encumbers, gifts, endows,
+      bequeaths or divides the parcel. It carries ZERO template weight. Decide
+      on the operative clause alone.
+
+  - between: [sakk_milkiyyah_aqar, sakk_hibah]
+    rule: >
+      Route to hibah only if the donor/donee pair co-occurs within ~120 chars,
+      OR a gift formula appears in the performative voice, OR the title line
+      reads إفراغ هبة. A deed whose cause block merely reads سبب التملك: هبة,
+      carrying an owner table and a boundary grid, is a title deed.
+
+  - between: [sakk_milkiyyah_aqar, sakk_qismah]
+    rule: >
+      المتقاسمون plus a per-partner allotment clause ⇒ qismah. A single owner
+      table listing several owners على الشيوع, with no demarcated portion
+      allotted to each, is a title deed. The word قسمة in the cause block must
+      not reroute.
+
+  - between: [sakk_milkiyyah_aqar, sakk_rahn_aqari]
+    rule: >
+      A secured amount bound to a named creditor is decisive for rahn (درجة
+      الرهن, الدين المضمون بالرهن, a مرتهن that is a bank or finance company).
+      Mortgage vocabulary inside a القيود والرهون annotation block on a deed
+      that also has an owner table and an ownership clause is a
+      mortgage-annotated TITLE deed.
+
+  - between: [sakk_milkiyyah_aqar, sakk_waqf]
+    rule: >
+      The perpetuity formula in the creating voice plus a named مصرف or موقوف
+      عليهم ⇒ waqf, regardless of how much property description it copies. A
+      title deed requires a personal owner acquiring title.
+
+  - between: [sakk_waqf, sakk_wasiyyah]
+    rule: >
+      WHEN does the dedication take effect. Deferral to death (بعد وفاتي,
+      تنفذ بعد الوفاة) together with الموصى له or الموصى به or لا وصية لوارث ⇒
+      wasiyyah, EVEN when the full waqf perpetuity formula is recited (a وصية
+      بالوقف). Immediate dedication with a named ناظر and no death-deferral ⇒
+      waqf.
+
+  - between: [sakk_hibah, sakk_waqf]
+    rule: >
+      The beneficiary term separates them cleanly. الموهوب له takes OWNERSHIP;
+      الموقوف عليهم take the USUFRUCT of an inalienable asset. Both may recite
+      لوجه الله تعالى, so pious-intent wording stays weight 1 in both. The
+      perpetuity formula is present only in waqf and is near-decisive.
+
+  - between: [sakk_hibah, sale_or_conveyance]
+    rule: >
+      A stated consideration is decisive for sale (ثمن قدره, بالثمن الحال
+      والمقبوض, قبض البائع الثمن, بيعاً شرعياً). The ABSENCE of a
+      no-consideration phrase proves nothing — هبة already entails it.
+
+  - between: [sakk_hasr_warathah, cited_by_other_instruments]
+    rule: >
+      THE most important rule in the registry, because this deed is cited more
+      often than it is submitted. Require the confinement clause in the
+      OPERATIVE voice, immediately governing a list of persons, NOT preceded
+      within ~40 chars by بموجب صك حصر الورثة رقم or استناداً إلى. A heirs table
+      alone is insufficient — قسمة التركة and الفريضة الشرعية carry an identical
+      الاسم / صلة القرابة table.
+
+  - between: [sakk_hasr_warathah, sakk_qismah]
+    rule: >
+      Enumeration without division ⇒ hasr_warathah. Division with demarcated
+      allotments ⇒ qismah. Physical allotment vocabulary (وقع في نصيب, الحصة
+      المفرزة, per-share boundaries, معدل القسمة) with the heirs named as
+      partners routes to qismah even when the confinement clause is recited as
+      background.
+
+  - between: [sakk_wasiyyah, sakk_hasr_warathah]
+    rule: >
+      The legatee term decides: الموصى له / الموصى لهم / الموصى به / لا وصية
+      لوارث ⇒ wasiyyah. The confinement clause plus an enumerated heirs block ⇒
+      hasr_warathah. A testator's death date alone decides nothing — an إثبات
+      وصية issued after death carries one and may cite the حصر ورثة number.
+      DEPENDS on ى not folding to ي.
+
+  - between: [sakk_wasiyyah, sakk_wisayah]
+    rule: >
+      Both use the root وص. A bequest requires الموصى به and/or الموصى له; a
+      guardianship instrument speaks of القاصر, المشمولين بالوصاية, الولاية على
+      مال القاصر and bequeaths nothing. Do NOT use القاصر as a negative on
+      wasiyyah — a will naming minor children says exactly that.
+
+  - between: [aqd_nikah, sakk_talaq]
+    rule: >
+      Offer-and-acceptance in the performative voice plus a مأذون أنكحة line ⇒
+      nikah. A divorce type or effect line (نوع الطلاق, طلقة رجعية, بائن
+      بينونة, تاريخ وقوع الطلاق) ⇒ talaq — even though a talaq deed legitimately
+      prints رقم عقد النكاح and the original المأذون in its own header.
+
+  - between: [aqd_nikah, sakk_ithbat_zawaj]
+    rule: >
+      Litigation vocabulary decides: دعوى إثبات زواج, المدعي, المدعى عليها,
+      لائحة الدعوى plus the ABSENCE of a مأذون line ⇒ a court proof-of-marriage
+      instrument, which may quote the very same offer-and-acceptance formula.
+
+  - between: [sakk_talaq, sakk_rajaa_khula_faskh]
+    rule: >
+      Reversal in the operative voice (راجع مطلقته, إثبات رجعة) ⇒ رجعة. A
+      consideration paid by the wife (بدل الخلع, مخالعة) ⇒ خلع. Judicial
+      dissolution (فسخ عقد النكاح) ⇒ فسخ. Each narrates the underlying divorce
+      in talaq's own words, which is why talaq's type line cannot be decisive on
+      its own.
+
+  - between: [wakalah_shariyyah, any_deed_executed_by_agent]
+    rule: >
+      A standalone wakalah has the agency data as its OWN header (رقم الوكالة,
+      حالة الوكالة, نص الوكالة, حق توكيل الغير). An ordinary deed executed
+      بالوكالة cites the PoA inside a party block and has its own subject
+      matter. The bare tokens الموكل / الوكيل / وكالة شرعية are evidence for
+      NOTHING.
+
+  - between: [wakalah_shariyyah, tafwid_idari]
+    rule: >
+      المفوض له, قرار تفويض, تفويض صلاحيات ⇒ administrative delegation. The
+      shared term الصلاحيات الممنوحة is why it sits at weight 1; the
+      discriminator is the party label plus a wakalah status line.
+
+  - between: [sakk_rahn_aqari, sakk_fak_rahn]
+    rule: >
+      Release in the operative voice (شطب قيد الرهن, تم فك الرهن عن العقار, سند
+      فك رهن, خال من الرهون والقيود) ⇒ release. A release CONDITION inside the
+      terms block (يفك الرهن عند سداد كامل الدين) is normal on a live mortgage.
+      Match only the longer release-specific phrases, never the bare فك الرهن.
+
+  - between: [sakk_rahn_aqari, sakk_ifragh_aqari]
+    rule: >
+      إفراغ ورهن is routinely ONE transaction, so conveyance vocabulary is not
+      evidence against a mortgage. Where both a conveyance clause and a mortgage
+      clause with a rank and secured amount appear, emit BOTH classifications as
+      a composite instrument.
+
+  - between: [sakk_qismah, qarar_farz_wahadat]
+    rule: >
+      Issuer decides. وزارة العدل / كتابة العدل with المتقاسمون ⇒ qismah.
+      الأمانة or البلدية issuing قرار فرز وحدات عقارية with no named co-owners ⇒
+      an administrative decision, out of this registry.
+
+  - between: [sakk_hasr_warathah, shahadat_wafah]
+    rule: >
+      الأحوال المدنية issuing a death record with no enumerated heirs and no
+      confinement clause ⇒ death certificate. hasr_warathah CITES the death
+      certificate number as evidence, so شهادة الوفاة on the page is neutral.
+
+
+# =============================================================================
+# 8. OPEN ITEMS  (decide before this registry goes to production)
+# =============================================================================
+open_items:
+  - id: composite_instruments
+    question: "إفراغ ورهن is one transaction producing one document. Emit two template_ids, or add a composite template?"
+    current_behaviour: "Emit both (see sakk_rahn_aqari disambiguation)."
+    blocking: false
+
+  - id: talaq_by_ruling
+    question: "Should a court ruling dissolving a marriage route to sakk_talaq, or to a separate hukm template?"
+    current_behaviour: "Excluded — منطوق الحكم and الأسباب والحيثيات are negatives on sakk_talaq."
+    blocking: true
+
+  - id: weight_calibration
+    question: >
+      Weights were authored per-template and are not yet comparable across the
+      set. max_per_group scoring plus normalize_by max_possible_score is the
+      first-order fix; the thresholds in classification.tiers still need to be
+      fitted against a held-out labelled set rather than chosen by feel.
+    blocking: true
+
+  - id: bundles
+    question: "One PDF holding a deed plus an ID copy plus an attachment. Per-page prediction then segment runs of the same template?"
+    current_behaviour: "One document per file assumed."
+    blocking: false
+
+  - id: template_versioning
+    question: "Ministry forms change. Two versions sharing field keys under one id, or separate ids?"
+    current_behaviour: "version: 1 on every template; no migration path defined."
+    blocking: false
+
+  - id: legacy_deed_number_fallback
+    question: "deed_number (6-15 digits) rejects legacy 1-5 digit serials. Loader must fall back to legacy_deed_number when legacy_register is populated — not yet implemented."
+    blocking: true

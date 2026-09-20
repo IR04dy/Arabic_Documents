@@ -1,0 +1,120 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" version="24.7.7">
+  <diagram name="Arabic Document Pipeline" id="arabic-pipeline">
+    <mxGraphModel dx="900" dy="650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Arabic Document Pipeline &#8212; one FastAPI process (app.py, :8100) &#183; local-only &#183; 3 GPU models via vendored llama.cpp" style="text;html=1;fontSize=15;fontStyle=1;align=center;verticalAlign=middle;fontColor=#1f2d3d;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1010" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ==== Main pipeline stages ==== -->
+        <mxCell id="upload" value="Upload&#10;PDF  or  image  (PNG &#183; JPEG &#183; WEBP &#183; TIFF &#183; BMP)&#10;detect_kind() &#8212; magic bytes, extension fallback" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="250" y="66" width="300" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ocr" value="&#9312;  /extract  &#8212;  OCR   (extract.py)&#10;Surya 2 recognition (full_page)&#10;PDF &#8594; pypdfium2 @ 300 dpi   &#183;   image &#8594; Pillow (1 page)&#10;&#8594; full_text, pages[]  (blocks sorted by reading order)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#12243f;" vertex="1" parent="1">
+          <mxGeometry x="230" y="170" width="340" height="96" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proofread" value="&#9313;  /proofread  &#8212;  ALLaM-7B  (proofread.py + guard.py)&#10;spelling / grammar only&#10;freeze-guard: numbers &#183; IDs &#183; IBANs &#183; emails &#183; dates frozen&#10;reverted pages kept as raw OCR&#10;edits highlighted inline &#183; reading aid (NOT fed downstream)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#3a2b45;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="318" width="340" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="structure" value="&#9314;  /structure  &#8212;  Qwen3-4B  (structure.py)&#10;JSON-schema-constrained grammar (no off-schema keys)&#10;&#8594; { document_type, sections[] of { label, value } }&#10;fed the RAW OCR text  (input capped &#8804; 12 000 chars)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#4a3300;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="410" y="316" width="330" height="112" as="geometry" />
+        </mxCell>
+
+        <mxCell id="chat" value="&#9315;  /chat  &#8212;  Qwen3-4B  (chat.py)&#10;system prompt = structured fields + DATA-fenced OCR text&#10;+ injection guard &#183; history windowed to context&#10;streamed as NDJSON &#183; rendered via textContent (XSS-safe)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#4a3d00;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="410" y="486" width="330" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="export" value="/export/docx        &#8594;  plain .docx (python-docx)&#10;/export/layout-docx &#8594;  formatted .docx&#10;    re-render (pypdfium2 @ 200) + Surya FastLayoutPredictor (CPU)&#10;    RTL fix: w:bidi + OMIT w:jc  (title = w:jc center)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#204020;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="498" width="340" height="118" as="geometry" />
+        </mxCell>
+
+        <!-- ==== Inference runtime panel ==== -->
+        <mxCell id="rt" value="Inference runtime &#8212; vendored llama.cpp CUDA (llama-server.exe)&#10;bound to 127.0.0.1 &#183; RTX 5080, 16 GB &#183; resident ~9 GB" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=none;strokeColor=#8a8a8a;dashed=1;verticalAlign=top;align=center;fontStyle=1;fontColor=#444444;spacingTop=6;container=1;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="778" y="170" width="292" height="416" as="geometry" />
+        </mxCell>
+
+        <mxCell id="srv_surya" value="Surya OCR server&#10;surya-2.gguf + mmproj&#10;ephemeral port &#183; resident after 1st /extract&#10;-ngl 99 &#183; ctx 16384 &#183; parallel 1&#10;~3.4 GB" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#12243f;fontSize=11;" vertex="1" parent="rt">
+          <mxGeometry x="20" y="48" width="252" height="104" as="geometry" />
+        </mxCell>
+
+        <mxCell id="srv_struct" value="STRUCT server  :8123&#10;Qwen3-4B-Instruct-2507 (Q8)&#10;resident &#183; ctx 8192 &#183; parallel 1&#10;serves /structure + /chat&#10;~4.8 GB" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#4a3300;fontSize=11;" vertex="1" parent="rt">
+          <mxGeometry x="20" y="164" width="252" height="104" as="geometry" />
+        </mxCell>
+
+        <mxCell id="srv_proof" value="PROOF server  :8124&#10;ALLaM-7B-Instruct (Q4_K_M)&#10;LAZY &#8212; loaded per /proofread, freed after&#10;ctx 4096&#10;~5 GB (fits headroom)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#3a2b45;fontSize=11;" vertex="1" parent="rt">
+          <mxGeometry x="20" y="280" width="252" height="112" as="geometry" />
+        </mxCell>
+
+        <!-- ==== Notes ==== -->
+        <mxCell id="notes" value="Data flow:  raw OCR text feeds /structure, /chat and /export.  Proofread output is a reading aid shown in the UI only (not fed downstream).&#10;Security:  no auth, 127.0.0.1 only &#183; CSP + X-Content-Type-Options nosniff &#183; uploads &#8804; 100 MB, export bodies &#8804; 16 MB &#183; chat DATA-fence + injection guard.&#10;Licensing:  Qwen3 Apache-2.0 &#183; pypdfium2 Apache/BSD &#183; llama.cpp MIT &#183; python-docx MIT.  No PyMuPDF / Tesseract / Poppler.  Surya weights: verify commercial terms." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontColor=#555555;align=left;spacingLeft=10;spacingTop=6;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="644" width="1040" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ==== Solid data-flow edges ==== -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="upload" target="ocr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="full_text (pages)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ocr" target="proofread">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="raw OCR text" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ocr" target="structure">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="OCR text + original doc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ocr" target="export">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="15" y="218" />
+              <mxPoint x="15" y="557" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e5" value="raw OCR (grounding)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="ocr" target="chat">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="758" y="218" />
+              <mxPoint x="758" y="526" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e6" value="fields" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;jettySize=auto;orthogonalLoop=1;strokeColor=#33475b;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="structure" target="chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==== Dashed "runs on" edges (stage -> llama-server) ==== -->
+        <mxCell id="d1" value="OCR VLM" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;strokeColor=#9aa4ad;fontSize=10;fontColor=#788089;labelBackgroundColor=#ffffff;exitX=1;exitY=0.4;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ocr" target="srv_surya">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;strokeColor=#9aa4ad;fontSize=10;fontColor=#788089;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="structure" target="srv_struct">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;strokeColor=#9aa4ad;fontSize=10;fontColor=#788089;labelBackgroundColor=#ffffff;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="chat" target="srv_struct">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;strokeColor=#9aa4ad;fontSize=10;fontColor=#788089;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="proofread" target="srv_proof">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="632" />
+              <mxPoint x="925" y="632" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

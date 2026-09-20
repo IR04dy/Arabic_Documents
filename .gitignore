@@ -1,0 +1,11 @@
+# Vendored GPU runtime for the structured-data stage (~1.5 GB).
+# Reinstall with:  ./fetch_llama_server.ps1
+vendor/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local logs / outputs
+*.log
+models/

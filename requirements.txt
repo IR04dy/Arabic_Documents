@@ -1,0 +1,41 @@
+# Web server and local QR HTTP adapter (qr_client.py).
+fastapi>=0.115,<1
+pydantic>=2.9,<3
+uvicorn[standard]>=0.30,<1
+python-multipart>=0.0.20,<1
+
+# QR Bot runs in its own environment. Install QR_Code_Scanner/requirements.txt
+# using QR_Code_Scanner/.venv/Scripts/python.exe. The parent adapter uses stdlib
+# urllib; QR decoding and browser packages belong to the QR service/worker.
+
+# PDF rendering (Apache/BSD licensed — no Poppler, no PyMuPDF)
+pypdfium2>=4.30
+pillow>=10.0
+
+# Formatted Word export (docx_export.py and layout_docx.py).
+numpy>=1.26
+python-docx>=1.1,<2
+
+# Surya OCR + GPU stack. torch/torchvision MUST be a CUDA build matching your GPU
+# — install it from the official index first, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+# then the rest. Surya's foundation OCR VLM runs on the vendored llama.cpp server
+# (see below); surya-ocr also brings the layout/detection models used by the
+# formatted Word export.
+torch
+torchvision
+transformers>=5.12
+accelerate>=0.26
+surya-ocr>=0.22
+
+# Structured-data stage (Option C.2): Qwen3-4B runs on the GPU via the official
+# llama.cpp `llama-server.exe`, talked to over local HTTP (see structure.py).
+# There is no Python package for it — fetch the binary once with:
+#   ./fetch_llama_server.ps1
+# (We use the CUDA 13.3 build because it supports Blackwell/sm_120; the prebuilt
+# llama-cpp-python CUDA wheels are 12.4 and crash on that GPU.)
+
+# Input layer: deed/document template registry (templates/*.yaml) is parsed at
+# startup by the classifier. Already present in the system Python, but a clean
+# install needs it declared.
+pyyaml>=6.0
