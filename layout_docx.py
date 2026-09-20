@@ -79,7 +79,7 @@ def _labels() -> set:
     """Every Arabic field label and alias the registry declares, normalised."""
     global _LABEL_CACHE
     if _LABEL_CACHE is None:
-        out, secs = set(), set()
+        out, secs, titles = set(), set(), set()
         try:
             from registry import get_registry
             reg = get_registry()
@@ -98,22 +98,41 @@ def _labels() -> set:
                     n = reg.normalize(name or "").strip()
                     if n:
                         secs.add(n)
-            _LABEL_CACHE = (out, secs, reg.normalize)
+                # What this KIND of instrument is called: the template's own
+                # name, plus the phrases its title-group anchors match on. The
+                # document's title line is one of these, and nothing else on the
+                # page is — which is how the letterhead stops stealing the
+                # title style from "وكالة شرعية".
+                titles.add(reg.normalize(tpl.name_ar or "").strip())
+                for a in tpl.anchors:
+                    if getattr(a, "group", "") == "title":
+                        n = reg.normalize(a.text or "").strip()
+                        if n:
+                            titles.add(n)
+            titles.discard("")
+            _LABEL_CACHE = (out, secs, titles, reg.normalize)
         except Exception as exc:              # registry unavailable -> no folding
             print("layout export: registry labels unavailable:", repr(exc))
-            _LABEL_CACHE = (set(), set(), lambda t: (t or "").strip())
+            _LABEL_CACHE = (set(), set(), set(), lambda t: (t or "").strip())
     return _LABEL_CACHE
 
 
 def _is_label(text: str) -> bool:
-    labels, secs, norm = _labels()
+    labels, secs, _titles_, norm = _labels()
     n = norm(text or "").strip()
     return bool(labels) and n in labels and n not in secs
 
 
 def _is_section(text: str) -> bool:
-    _, secs, norm = _labels()
+    _l, secs, _t, norm = _labels()
     return norm(text or "").strip() in secs
+
+
+def _is_doc_title(text: str) -> bool:
+    """Is this line the document's own title (وكالة شرعية), as opposed to the
+    letterhead above it (المملكة العربية السعودية)?"""
+    _l, _s, titles, norm = _labels()
+    return norm(text or "").strip() in titles
 
 
 def _label_prefix(s: str):
@@ -162,6 +181,10 @@ TITLE_PT = 18
 HEADING_PT = 13
 BODY_PT = 11
 LABEL_PT = 11
+# A form's caption is not the content. These instruments print the label quiet
+# and the value strong; bolding the label instead inverts the page's emphasis
+# and makes every row shout.
+LABEL_COLOR = (0x59, 0x59, 0x59)
 
 _LP = None
 _LOCK = threading.Lock()      # serialize Surya init + inference (one CPU model)
@@ -516,11 +539,13 @@ def _emit_table(doc, rows):
             else:                                # omit jc on RTL (leading = right)
                 p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             if txt:
-                _run(p, txt, rtl=rtl, bold=(form and col == 0), size_pt=LABEL_PT)
+                caption = form and col == 0
+                _run(p, txt, rtl=rtl, bold=(form and col == 1), size_pt=LABEL_PT,
+                     color=LABEL_COLOR if caption else None)
     doc.add_paragraph()
 
 
-def _emit_page(doc, text, title_color, heading_color):
+def _emit_page(doc, text, title_color, heading_color, first_page=True):
     lines = [ln.strip() for ln in (text or "").split("\n") if ln.strip()]
     lines = _fold_pairs(lines)
     kinds = [_classify(ln) for ln in lines]
@@ -533,6 +558,16 @@ def _emit_page(doc, text, title_color, heading_color):
             if nxt == "row":
                 kinds[i] = "label"
 
+    # Which line, if any, carries the document title. Without this the style
+    # went to the FIRST heading on the page, which on every instrument in this
+    # corpus is the ministry letterhead, not the title.
+    title_at = next((k for k, ln in enumerate(lines)
+                     if kinds[k] == "heading" and _is_doc_title(ln)), None)
+    # Only page 1 may fall back to "first heading wins", and only when the page
+    # never names itself. The letterhead repeats on every page of these
+    # instruments, so without this a continuation page crowns its own header.
+    if title_at is None and not first_page:
+        title_at = -1
     title_used = False
     i = 0
     n = len(lines)
@@ -562,7 +597,10 @@ def _emit_page(doc, text, title_color, heading_color):
         line = lines[i]
         rtl = _has_arabic(line)
         if k == "heading":
-            if not title_used and title_color is not None:
+            # The title style belongs to `title_at` when the page names itself,
+            # and only then falls back to "first heading wins".
+            is_title = (i == title_at) if title_at is not None else not title_used
+            if is_title and title_color is not None:
                 _run(_para(doc, rtl, center=True), line, rtl=rtl, bold=True,
                      size_pt=TITLE_PT, color=title_color)
                 title_used = True
@@ -626,7 +664,7 @@ def build_layout_docx(doc_bytes: bytes, pages_text, filename: str = "document") 
             if pi > 0:
                 doc.add_page_break()
             text = pages_text[pi] if pi < len(pages_text) else ""
-            _emit_page(doc, text, title_color, heading_color)
+            _emit_page(doc, text, title_color, heading_color, first_page=(pi == 0))
     finally:
         if pdf is not None:
             pdf.close()
