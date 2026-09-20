@@ -58,6 +58,101 @@ _FIELD = re.compile(r"^\s*(?P<k>[^:：]{1,32}?)\s*[:：]\s*(?P<v>.+\S)\s*$")
 # pipes still in it. Both separators are now honoured.
 _PIPE = re.compile(r"\s*\|\s*")
 
+# Surya linearises a two-column form in two other shapes, neither of which
+# carries a separator to split on:
+#
+#     رقم الوكالة ٤٣٨٢١٩٠٠٥١١٢        label and value space-joined, one line
+#     الاسم                            label and value on consecutive lines
+#     محمد بن عبدالله بن سالم السالم
+#
+# Splitting those on shape alone (first N words, short line, …) would cut real
+# sentences in half. The registry already declares, per template, the exact
+# Arabic label every field is printed under plus its aliases — a curated
+# vocabulary the classifier is built on. Matching against THAT is exact, not a
+# guess: a line is a label because a template says those words are one.
+_LABEL_CACHE = None
+LABEL_LINE_MAX = 60           # a form label+value line is short; prose is not
+LABEL_MAX_WORDS = 5
+
+
+def _labels() -> set:
+    """Every Arabic field label and alias the registry declares, normalised."""
+    global _LABEL_CACHE
+    if _LABEL_CACHE is None:
+        out, secs = set(), set()
+        try:
+            from registry import get_registry
+            reg = get_registry()
+            for tpl in reg.templates.values():
+                for f in tpl.fields:
+                    for name in (f.label_ar,) + tuple(f.all_aliases_ar):
+                        n = reg.normalize(name or "").strip()
+                        if n:
+                            out.add(n)
+                # Section headings are declared too, and several OPEN WITH a
+                # field label: "موضوع الوكالة ونوعها" begins with the field
+                # موضوع الوكالة, "نص الوكالة والصلاحيات الممنوحة" with نص
+                # الوكالة. Splitting those would turn the page's own headings
+                # into nonsense rows, so they are held out by name.
+                for name in tpl.sections:
+                    n = reg.normalize(name or "").strip()
+                    if n:
+                        secs.add(n)
+            _LABEL_CACHE = (out, secs, reg.normalize)
+        except Exception as exc:              # registry unavailable -> no folding
+            print("layout export: registry labels unavailable:", repr(exc))
+            _LABEL_CACHE = (set(), set(), lambda t: (t or "").strip())
+    return _LABEL_CACHE
+
+
+def _is_label(text: str) -> bool:
+    labels, secs, norm = _labels()
+    n = norm(text or "").strip()
+    return bool(labels) and n in labels and n not in secs
+
+
+def _is_section(text: str) -> bool:
+    _, secs, norm = _labels()
+    return norm(text or "").strip() in secs
+
+
+def _label_prefix(s: str):
+    """The registry label this line STARTS with, longest first, or None.
+
+    Bounded to a short line and a few words, and it must leave a value behind:
+    a clause that happens to open with a field's wording is prose, not a row."""
+    if len(s) > LABEL_LINE_MAX or _is_section(s):
+        return None
+    words = s.split()
+    for n in range(min(LABEL_MAX_WORDS, len(words) - 1), 0, -1):
+        head = " ".join(words[:n])
+        if _is_label(head):
+            return head
+    return None
+
+
+def _fold_pairs(lines: list) -> list:
+    """Fold a label line and the value line under it into one row.
+
+    Only when the line is EXACTLY a declared label and the next line is not —
+    so a section caption, a heading or a body line is never swallowed. The two
+    are joined with the pipe the rest of this module already understands; it
+    never reaches the output."""
+    out: list = []
+    i = 0
+    while i < len(lines):
+        nxt = lines[i + 1] if i + 1 < len(lines) else None
+        if (nxt and "|" not in lines[i] and "|" not in nxt
+                and _is_label(lines[i]) and not _is_label(nxt)
+                and not _is_field(lines[i]) and not _is_field(nxt)):
+            out.append("%s | %s" % (lines[i], nxt))
+            i += 2
+        else:
+            out.append(lines[i])
+            i += 1
+    return out
+
+
 HEADING_MAX_WORDS = 6
 HEADING_MAX_CHARS = 48
 
@@ -152,7 +247,12 @@ def _cells(s: str):
         parts = [c.strip() for c in _PIPE.split(s) if c.strip()]
         return parts if len(parts) >= 2 else None
     f = _is_field(s)
-    return [f[0], f[1]] if f else None
+    if f:
+        return [f[0], f[1]]
+    lab = _label_prefix(s)
+    if lab:
+        return [lab, s[len(lab):].strip()]
+    return None
 
 
 def _classify(s: str) -> str:
@@ -422,6 +522,7 @@ def _emit_table(doc, rows):
 
 def _emit_page(doc, text, title_color, heading_color):
     lines = [ln.strip() for ln in (text or "").split("\n") if ln.strip()]
+    lines = _fold_pairs(lines)
     kinds = [_classify(ln) for ln in lines]
 
     # a short heading line immediately followed by a table row is that table's
