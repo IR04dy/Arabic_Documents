@@ -397,6 +397,7 @@ class _Fidelity:
                 return span
         return None
 
+
 def _expiry(text: str, result: StructureResult, fid: "_Fidelity") -> dict | None:
     """The document's own expiry date, and what it means today (expiry.py).
 
@@ -480,15 +481,6 @@ def _merge_generic(a: dict, b: dict) -> dict:
     return {"document_type": str(a.get("document_type") or b.get("document_type") or ""),
             "sections": merged}
 
-def parse_structure(text: str, *, fidelity: "_Fidelity | None" = None,
-                    with_expiry: bool = True) -> StructureResult:
-    result = StructureResult(str(data.get("document_type", "")), sections, truncated,
-                            output_capped=capped)
-    if with_expiry:
-        result.expiry = _expiry(text or "", result, fid)
-    return result
-
-
 def _generic_pass(text: str, depth: int = 0) -> tuple:
     """(data, output_capped). When the model runs out of output tokens the
     text is split and each half structured with the whole budget to itself."""
@@ -504,8 +496,13 @@ def _generic_pass(text: str, depth: int = 0) -> tuple:
     return _merge_generic(d1, d2), c1 or c2
 
 
-def parse_structure(text: str, *, fidelity: "_Fidelity | None" = None) -> StructureResult:
-    """Structure OCR/proofread text into section-grouped label/value fields."""
+def parse_structure(text: str, *, fidelity: "_Fidelity | None" = None,
+                    with_expiry: bool = True) -> StructureResult:
+    """Structure OCR/proofread text into section-grouped label/value fields.
+
+    `with_expiry` is False for the generic pass run INSIDE the template path:
+    that result is scaffolding for alignment, and detecting expiry on it would
+    run the whole detection twice per request."""
     cleaned, truncated = _clean(text or "")
     if not cleaned:
         return StructureResult("", [], truncated)
@@ -529,8 +526,11 @@ def parse_structure(text: str, *, fidelity: "_Fidelity | None" = None) -> Struct
         for s in data.get("sections", [])
         if isinstance(s, dict)
     ]
-    return StructureResult(str(data.get("document_type", "")), sections, truncated,
-                           output_capped=capped)
+    result = StructureResult(str(data.get("document_type", "")), sections, truncated,
+                             output_capped=capped)
+    if with_expiry:
+        result.expiry = _expiry(text or "", result, fid)
+    return result
 
 
 # =============================================================================
@@ -881,7 +881,7 @@ def parse_structure_for_template(text: str, template, reg) -> StructureResult:
     fidelity = _Fidelity(text or "", reg.normalizer)
 
     # 1) the generic pass reads the whole document exactly as it always has
-    free = parse_structure(text, fidelity=fidelity)
+    free = parse_structure(text, fidelity=fidelity, with_expiry=False)
     truncated = truncated or free.truncated
 
     # 2) deterministic alignment onto declared keys and record rows
@@ -942,9 +942,11 @@ def parse_structure_for_template(text: str, template, reg) -> StructureResult:
             if value and not values.get(f.key, "").strip():
                 values[f.key] = value
 
-    return _assemble(template, reg, values, extras, truncated, passes,
-                     aligned_keys, records=records, record_origin=record_origin,
-                     output_capped=free.output_capped, fidelity=fidelity)
+    result = _assemble(template, reg, values, extras, truncated, passes,
+                       aligned_keys, records=records, record_origin=record_origin,
+                       output_capped=free.output_capped, fidelity=fidelity)
+    result.expiry = _expiry(text or "", result, fidelity)
+    return result
 
 
 def _assemble(template, reg, values: dict, extras: list,

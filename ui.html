@@ -678,6 +678,7 @@ function resetResults(){
   $("#suglist").innerHTML='<div class="empty">تظهر اقتراحات التصحيح هنا بعد استخراج النص</div>';
   $("#proofnote").classList.add("hidden"); $("#acceptall").disabled=true; $("#dlword").disabled=true; $("#dltxt").disabled=true;
   $("#structstate").innerHTML=""; $("#doctype").classList.add("hidden"); $("#reviewnote").classList.add("hidden");
+  $("#expiry").classList.add("hidden");
   $("#struct").innerHTML='<div class="empty">تظهر الحقول المستخرجة هنا مع مصدر كل قيمة في المستند</div>';
   $("#structnote").classList.add("hidden"); $("#cmpsum").textContent=""; $("#p3").classList.remove("compare");
   $("#compare").disabled=true; $("#compare").textContent="مقارنة بالمستند"; $("#copyjson").disabled=true;
@@ -935,6 +936,7 @@ async function startStructure(text){
   groundText=text||lastText;
   const st=$("#structstate");
   $("#struct").innerHTML=""; $("#structnote").classList.add("hidden"); $("#copyjson").disabled=true;
+  $("#expiry").classList.add("hidden");
   $("#compare").disabled=true; lastVerdict=null;
   st.className="state"; st.innerHTML='<span class="spinner"></span> جارٍ تحديد نوع المستند…';
   try{
@@ -1068,7 +1070,7 @@ function enableChat(fullText, struct){
               sections:(struct&&struct.sections)||[], full_text:fullText||"",
               template_id:(struct&&struct.template_id)||"",
               missing_required:(struct&&struct.missing_required)||[],
-              expiry:(struct&&struct.expiry)||null};
+              expiry:(struct&&struct.expiry)||{}};
   renderContext(struct); renderQuestions(struct);
   $("#chatinput").disabled=false; $("#chatsend").disabled=false;
 }

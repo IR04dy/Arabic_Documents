@@ -99,6 +99,7 @@ def _expiry_block(context: dict) -> str:
         bits.append("- ملاحظة: " + str(e["note"]))
     return "\n".join(bits)
 
+
 def _cite(f: dict) -> str:
     """The field's source tag, [صN سM] = page N, line M — or "" when unknown.
     The same tag the UI turns back into a jump to that line."""

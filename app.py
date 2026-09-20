@@ -333,7 +333,7 @@ class ChatContext(BaseModel):
     full_text: str = ""
     template_id: str = ""
     missing_required: list = Field(default_factory=list)
-    expiry: dict = Field(default_factory=dict)
+    expiry: dict | None = None
 
 
 class ChatIn(BaseModel):
@@ -412,6 +412,7 @@ def _cap_expiry(e) -> dict:
         elif isinstance(v, int):
             out[k] = max(-100000, min(100000, v))
     return out
+
 
 @app.post("/chat")
 async def chat_endpoint(body: ChatIn):
