@@ -3,6 +3,8 @@
 **Audience:** teams integrating with the Arabic PDF Pipeline service.
 **App version:** 3.4.0 · **OCR engine:** Surya 2 (GPU via llama.cpp).
 
+The related-regulations integration adds `POST /regulations/related` (streamed document-level retrieval) and `GET /regulations/source/{source_index}` (local source PDFs). See [REGULATIONS_INTEGRATION.md](REGULATIONS_INTEGRATION.md) for request limits, events, scope and startup.
+
 This service turns an Arabic (or mixed Arabic/English) **PDF or image** into: OCR
 text, an optional proofread version, structured `label → value` fields, and a
 document-grounded chat. Everything runs locally on the host's GPU.
