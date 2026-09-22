@@ -26,11 +26,19 @@
     }
     for(const [sourceIndex,items] of groups){
       const group=node('section',null,'reg-group'), first=items[0];
-      group.append(node('h3',first.official_title_ar||first.pdf_title_candidate||first.website_title));
+      group.append(node('h3',first.document_title||first.official_title_ar||first.pdf_title_candidate||first.website_title));
       group.append(node('p',`${digits(items.length)} مادة · ${first.official_title_ar?'عنوان موثّق':'عنوان يحتاج إلى التحقق'}`,'reg-meta'));
       for(const item of items){
         const card=node('article',null,'reg-card');
-        card.append(node('h4',item.label||'نص اللائحة'));
+        card.append(node('h4',item.clause_title||item.label||'نص اللائحة'));
+        const parents=item.parent_names||[...(item.review_provenance?.context_path||[])].slice(0,-1).reverse();
+        if(parents.length){
+          const hierarchy=node('div',null,'reg-meta reg-hierarchy');
+          hierarchy.append(node('p','التسلسل من الأصل المباشر حتى المستند:'));
+          const names=node('ol');names.setAttribute('aria-label','أسماء المستويات الأعلى حتى اسم المستند');
+          parents.forEach((name,index)=>names.append(node('li',name+(index===parents.length-1?' (المستند)':''))));
+          hierarchy.append(names);card.append(hierarchy);
+        }
         card.append(node('p',`صفحات اللائحة: ${item.page_spans.map(digits).join('، ')} · المراجعة: مسودة`,'reg-meta'));
         if(item.quality_flags.some(f=>f.issue==='amendments_not_consolidated'))card.append(node('p','تتضمن اللائحة تعديلات لم تُدمج في هذا النص. راجع صفحات التعديل قبل الاعتماد عليه.','reg-warning'));
         if(item.quality_flags.some(f=>f.issue==='unrepresented_article_heading'))card.append(node('p','يوجد تنبيه في مراجعة أحد عناوين المواد في هذا المصدر.','reg-warning'));

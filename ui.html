@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="/comparison/ui.css">
 <title>منصة تحليل الصكوك والأحكام</title>
 <style>
 /* Design tokens — taken from deeds_ui_wireframe.drawio (Tahoma, blue #1F6FEB,
@@ -272,9 +273,13 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
   <span class="spacer"></span>
   <span class="enginechip"><span id="enginedot" class="dot busy"></span><span id="enginetxt">جارٍ تحميل النماذج…</span></span>
 </header>
+<nav class="workspace-tabs" role="tablist" aria-label="مساحات العمل">
+  <button type="button" id="analysis-tab" role="tab" aria-selected="true" aria-controls="analysis-workspace">تحليل المستند</button>
+  <button type="button" id="comparison-tab" role="tab" aria-selected="false" aria-controls="comparison-workspace" tabindex="-1">مقارنة المستندات</button>
+</nav>
 <div id="error" class="err hidden" role="alert"><span id="errortxt"></span><button type="button" id="errorclose" title="إغفال">✕</button></div>
 
-<main class="board">
+<main class="board" id="analysis-workspace" role="tabpanel" aria-labelledby="analysis-tab">
 
   <!-- 1) تحويل مستند -->
   <section class="panel" id="p1">
@@ -392,6 +397,56 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
   </section>
 
 </main>
+<section id="comparison-workspace" role="tabpanel" aria-labelledby="comparison-tab" hidden>
+  <div class="cmp-content">
+    <div class="cmp-heading">
+      <div><h2>مقارنة المستندات</h2><p>ارفع مستندين لمقارنة محتواهما: أوجه التشابه والاختلاف والتعارض المحتمل، مع اقتباسات يمكنك الرجوع إليها في المصدر.</p></div>
+      <span class="cmp-local">معالجة محلية</span>
+    </div>
+    <div class="cmp-files">
+      <section class="cmp-file">
+        <h3><label for="cmp-file-a">المستند الأول</label></h3>
+        <input id="cmp-file-a" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp,.txt" aria-describedby="cmp-supported cmp-info-a">
+        <p id="cmp-info-a">لم يتم اختيار مستند</p>
+        <button type="button" id="cmp-view-a" class="cmp-button" hidden>عرض نص المستند الأول</button>
+      </section>
+      <section class="cmp-file">
+        <h3><label for="cmp-file-b">المستند الثاني</label></h3>
+        <input id="cmp-file-b" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp,.txt" aria-describedby="cmp-supported cmp-info-b">
+        <p id="cmp-info-b">لم يتم اختيار مستند</p>
+        <button type="button" id="cmp-view-b" class="cmp-button" hidden>عرض نص المستند الثاني</button>
+      </section>
+    </div>
+    <p class="cmp-support" id="cmp-supported">PDF أو صور أو TXT بترميز UTF-8 · حتى 100 MB للملف و40,000 حرف مستخرج لكل مستند. المقارنة نصية؛ لا تشمل الصور والتوقيعات والتصميم المرئي.</p>
+    <div class="cmp-actions">
+      <button type="button" id="cmp-run" class="cmp-button cmp-primary" disabled>قارن المستندين</button>
+      <button type="button" id="cmp-cancel" class="cmp-button" hidden>إلغاء المقارنة</button>
+      <span id="cmp-status" role="status" aria-live="polite"></span>
+    </div>
+    <progress id="cmp-progress" aria-label="تقدم المقارنة" hidden></progress>
+    <div id="cmp-error" role="alert" hidden></div>
+    <div id="cmp-placeholder" class="cmp-placeholder"><strong>مقارنة تستند إلى محتوى المستندين</strong>تشمل الجوانب المتاحة في النص مثل الغرض والأطراف والتواريخ والمبالغ والالتزامات والإجراءات والنتائج والصياغة، بحسب طبيعة المستندين.</div>
+    <div id="cmp-results" hidden>
+      <section class="cmp-summary" aria-labelledby="cmp-summary-title">
+        <h3 id="cmp-summary-title">نتائج المقارنة</h3>
+        <div id="cmp-stats" class="cmp-stats"></div>
+        <p id="cmp-coverage" class="cmp-coverage"></p>
+        <ul id="cmp-warnings" class="cmp-warnings"></ul>
+      </section>
+      <div class="cmp-filters">
+        <label for="cmp-aspect">الجانب</label><select id="cmp-aspect"></select>
+        <label for="cmp-kind">النتيجة</label><select id="cmp-kind"></select>
+        <span id="cmp-count"></span>
+        <button type="button" id="cmp-download" class="cmp-button">تنزيل التقرير JSON</button>
+      </div>
+      <div id="cmp-findings"></div>
+    </div>
+  </div>
+</section>
+<dialog id="cmp-source" class="cmp-source-dialog" aria-labelledby="cmp-source-title" dir="rtl">
+  <div class="cmp-source-head"><h3 id="cmp-source-title"></h3><button type="button" id="cmp-source-close" class="cmp-button">إغلاق المصدر</button></div>
+  <pre id="cmp-source-text" tabindex="0"></pre>
+</dialog>
 <dialog id="regulations-panel" aria-labelledby="regulations-title" dir="rtl">
   <div class="reg-toolbar"><h2 id="regulations-title">المواد ذات الصلة</h2><button type="button" id="regulations-close" class="btn-out" aria-label="إغلاق نتائج اللوائح">إغلاق ×</button></div>
   <p id="regulations-scope" class="reg-meta">العينة الحالية: ٨ لوائح · ١٩٠ مقطعًا</p>
@@ -1197,6 +1252,7 @@ function hideError(){ $("#error").classList.add("hidden"); }
 $("#errorclose").onclick=hideError;
 </script>
 <script src="/regulations/ui.js" defer></script>
+<script src="/comparison/ui.js" defer></script>
 <script src="/qr/flow.js" defer></script>
 <script src="/qr/ui.js" defer></script>
 </body>

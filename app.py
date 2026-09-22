@@ -53,6 +53,9 @@ app.include_router(create_qr_router(extract_document))
 from regulations_client import create_router as create_regulations_router
 app.include_router(create_regulations_router())
 
+from comparison_api import create_router as create_comparison_router
+app.include_router(create_comparison_router())
+
 MAX_BYTES = 100 * 1024 * 1024        # 100 MB upload ceiling
 PROOFREAD_MAX_CHARS = 40000          # cap on /proofread input
 CHAT_FULLTEXT_MAX = 24000            # cap on chat grounding text

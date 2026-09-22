@@ -4,6 +4,8 @@ After text extraction, the **استرجاع المواد ذات الصلة** but
 
 The results dialog groups candidate clauses by regulation. Each result includes unchanged source text, source pages, review/amendment flags, up to three best matching passages from the uploaded text, and an action to highlight that passage. The source link opens the local regulation PDF at the cited page. Closing an in-progress dialog or pressing Cancel aborts the browser request. Loading another document invalidates previous results and in-flight responses.
 
+Each clause also displays its title and every parent name, starting with the immediate parent and ending with the document name. API results expose `clause_title`, `document_title`, `parent_names` (immediate parent → outer ancestors → document), and `hierarchy_path` (document → ancestors → clause). Names come from the indexed review hierarchy; missing headings are not invented. These fields are included in document retrieval, keyword search and clause enumeration.
+
 ## Services
 
 - Extraction UI and adapter: `http://127.0.0.1:8100`.

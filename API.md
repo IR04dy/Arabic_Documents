@@ -508,6 +508,58 @@ with requests.post(f"{BASE}/chat", json=body, stream=True, timeout=300) as r:
 
 _Questions or access requests: contact the pipeline maintainer._
 
+## Document comparison
+
+The **مقارنة المستندات** tab has independent uploads, extraction state and results.
+It reuses `/extract` for PDFs/images and reads UTF-8 `.txt` directly. It does not
+replace the document in the analysis/chat workspace. DOCX and visual comparison
+are not supported by this first version.
+
+`POST /comparison/run` accepts `application/json`:
+
+```json
+{"a":{"name":"first.txt","text":"First document text","page_count":0,"empty_pages":[]},
+ "b":{"name":"second.txt","text":"Second document text","page_count":0,"empty_pages":[]}}
+```
+
+- Each text is required and limited to **40,000 Unicode characters**, with a
+  1 MiB request-body cap. Oversized documents are rejected, never silently clipped.
+- For OCR, send the original `full_text` with its `--- Page N ---` markers,
+  `page_count`, and any page numbers whose extracted text is empty. Plain text
+  uses `page_count: 0` and citations show line numbers.
+- The response is newline-delimited JSON: `progress`, optional `heartbeat`, then
+  `result` containing `report`, or `error`. Errors after streaming starts are
+  stream events; validation errors use HTTP 400/413/415, busy uses 409.
+- Each finding includes an aspect, status, explanation and verified `a`/`b`
+  citations (source quotes, page/line, Unicode and UTF-16 character offsets).
+  `source` distinguishes local LLM interpretation from deterministic text checks.
+- Reuses Qwen3 through `llm.chat_json`, with a dedicated schema and prompt;
+  single-document `/chat` restrictions and context clipping do not apply.
+  Decoding constrains quotations to actual source spans and requires evidence
+  on both sides of paired findings. Validation rejects fabricated quotes and
+  false similarity claims for matching phrases with changed digits; one bounded
+  repair pass attempts to recover rejected findings before reporting gaps.
+- Small inputs compare every pair of chunks. Larger inputs use the existing
+  local Ollama `qwen3-embedding:0.6b` at port 11434 for bidirectional passage
+  alignment, falling back to word overlap with an explicit warning. Every chunk
+  gets at least one comparison; this is not exhaustive all-pairs comparison.
+- The report includes pass failures, rejected findings, unreadable pages and
+  per-document reviewed-chunk counts. `complete` means all selected passes
+  succeeded with valid evidence and no known empty pages; it is **not** a
+  guarantee that every difference or every OCR error was detected.
+- Interpretations remain model-generated even when quotes are verified. A
+  one-sided finding means no counterpart in the compared excerpt, not proven
+  absence from the whole other document. Visual layout/signatures are excluded.
+- Only one comparison runs per application process. Disconnect/cancel stops
+  subsequent passes; an already-running OCR/LLM/embedding call may finish first.
+  Existing OCR and LLM locks serialize access with other tabs. No documents,
+  reports or temporary embeddings are persisted by this endpoint. The user can
+  explicitly download a JSON report from the tab.
+
+Run comparison regression tests with `python -m unittest test_comparison test_comparison_api`.
+The assets are served as `/comparison/ui.js` and
+`/comparison/ui.css`.
+
 ## QR Bot integration
 
 The main backend exposes `/qr/health`, `POST /qr/jobs`, `GET /qr/jobs/{job_id}`,
