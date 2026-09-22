@@ -10,6 +10,9 @@ python-multipart>=0.0.20,<1
 
 # PDF rendering (Apache/BSD licensed — no Poppler, no PyMuPDF)
 pypdfium2>=4.30
+# The formatted Word export also reads line widths by shaping Arabic in Pillow,
+# which needs libraqm (bundled on macOS/Linux; on Windows it needs fribidi.dll
+# on the DLL path). Without it sizes come from letter height alone.
 pillow>=10.0
 
 # Formatted Word export (docx_export.py and layout_docx.py).
@@ -20,8 +23,8 @@ python-docx>=1.1,<2
 # — install it from the official index first, e.g.:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 # then the rest. Surya's foundation OCR VLM runs on the vendored llama.cpp server
-# (see below); surya-ocr also brings the layout/detection models used by the
-# formatted Word export.
+# (see below); surya-ocr also brings the CPU layout model the formatted Word
+# export samples heading colours with when a caller sends no page layout.
 torch
 torchvision
 transformers>=5.12

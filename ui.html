@@ -461,7 +461,7 @@ const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 const arNum = n => String(n).replace(/[0-9]/g, d => AR_DIGITS[+d]);
 
 let picked=null, isPdf=false, previewUrl=null, lastName="document";
-let lastText="", groundText="", lastPages=[], lastPdfFile=null, pageCount=0;
+let lastText="", groundText="", lastPages=[], lastLayouts=[], lastPdfFile=null, pageCount=0;
 let engineReady=false, engineErr=null, busy=false, wantStart=false, runGen=0;
 let proofData=null, sugItems=[], sugState=[];
 let lastStruct=null, lastVerdict=null;
@@ -743,7 +743,7 @@ function resetResults(){
   window.RegulationsUI?.reset();
   runGen++;                                  // invalidates any stage still in flight for the old document
   if(chatAbort){ try{chatAbort.abort();}catch(_){}} chatAbort=null; chatBusy=false; chatGen++;
-  lastText=""; groundText=""; lastPages=[]; lastPdfFile=null; pageCount=0; docLines=[]; lineStarts=[]; linePage=[]; pageLine={};
+  lastText=""; groundText=""; lastPages=[]; lastLayouts=[]; lastPdfFile=null; pageCount=0; docLines=[]; lineStarts=[]; linePage=[]; pageLine={};
   proofData=null; sugItems=[]; sugState=[]; lastStruct=null; lastVerdict=null; docContext=null; chatHistory=[];
   $("#textview").textContent=""; $("#proofview").textContent="";
   $("#segtext").disabled=true; $("#segproof").disabled=true;
@@ -792,6 +792,7 @@ function render(j){
   lastText=j.full_text||"";
   window.RegulationsUI?.ready();
   lastPages=(j.pages||[]).map(p=>(p&&p.text)||"");   // per-page text for the formatted export
+  lastLayouts=(j.pages||[]).map(p=>(p&&p.layout)||null); // where each block sat: what the Word export rebuilds
   lastPdfFile=picked;                                 // the file these pages came from
   pageCount=j.page_count||lastPages.length||0;
   setNumText($("#docchip"), picked.name+" · "+arNum(pageCount)+(pageCount===1?" صفحة":" صفحات"));
@@ -994,6 +995,8 @@ $("#dlword").onclick=async()=>{
     let blob=null;
     if(lastPdfFile && res.pages.length){          // formatted: page image for layout + corrected text poured in
       const fd=new FormData(); fd.append("file",lastPdfFile); fd.append("pages",JSON.stringify(res.pages)); fd.append("filename",lastName);
+      if(lastLayouts.some(Boolean))          // a file part: a long document's layout outgrows a form field
+        fd.append("layout",new Blob([JSON.stringify(lastLayouts)],{type:"application/json"}),"layout.json");
       const r=await fetch("/export/layout-docx",{method:"POST",body:fd});
       blob = r.ok ? await r.blob() : await plain();
     } else blob=await plain();

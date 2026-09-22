@@ -43,7 +43,7 @@ from classify import classify as classify_document
 from registry import RegistryError, get_registry
 from chat import stream_events as chat_stream_events
 from docx_export import build_docx
-from layout_docx import build_layout_docx, shutdown_layout_server
+from layout_docx import build_layout_docx, clean_layouts, shutdown_layout_server
 
 app = FastAPI(title="Arabic PDF Pipeline", version="3.4.0")
 
@@ -191,6 +191,7 @@ async def export_docx(request: Request):
 
 
 LAYOUT_PAGES_MAX = 500                   # sanity cap on page count
+LAYOUT_MAX_BYTES = 32 * 1024 * 1024      # the per-page layout JSON (a file part)
 LAYOUT_PAGE_CHARS = 100_000             # per-page OCR text cap
 
 
@@ -200,11 +201,17 @@ async def export_layout_docx(
     file: UploadFile = File(...),
     pages: str = Form("[]"),
     filename: str = Form("document"),
+    layout: UploadFile | None = File(None),
 ):
-    """Return a FORMATTED .docx: Surya reads the page image for the colour
-    palette / heading structure, and the already-extracted per-page OCR text is
-    poured in with heading, colour and table styling. Needs the original PDF or
-    image (re-rendered locally) plus the per-page OCR text the client already has."""
+    """Return a FORMATTED .docx rebuilt from the original page.
+
+    Needs the original PDF or image (re-rendered locally) and the per-page text
+    to write (the OCR with the reader's proofreading decisions applied). With
+    `layout` — a JSON file part holding the per-page `layout` values /extract
+    returned — every block's kind, position, size, weight, colour, shading and
+    spacing is measured from the page. It is a file part, not a field, because
+    it carries every line's text and a long document's would pass Starlette's
+    1 MB field limit. A page without one is formatted from its text alone."""
     cl = request.headers.get("content-length")
     if cl and cl.isdigit() and int(cl) > MAX_BYTES + (1 << 20):
         return JSONResponse({"error": "file exceeds 100 MB"}, status_code=413)
@@ -226,9 +233,19 @@ async def export_layout_docx(
         return JSONResponse({"error": "invalid pages"}, status_code=400)
     if not any(t.strip() for t in pages_text):
         return JSONResponse({"error": "no text to export"}, status_code=400)
+    layouts = None
+    if layout is not None:
+        raw = await layout.read(LAYOUT_MAX_BYTES + 1)
+        if len(raw) > LAYOUT_MAX_BYTES:
+            return JSONResponse({"error": "layout too large"}, status_code=413)
+        if raw.strip():
+            try:
+                layouts = clean_layouts(json.loads(raw), len(pages_text))
+            except Exception:
+                return JSONResponse({"error": "invalid layout"}, status_code=400)
     name = _ascii_filename(filename if isinstance(filename, str) else "document")
     try:
-        docx = await run_in_threadpool(build_layout_docx, data, pages_text, name)
+        docx = await run_in_threadpool(build_layout_docx, data, pages_text, name, layouts)
     except Exception as exc:
         print("layout docx export error:", repr(exc))
         return JSONResponse({"error": "export failed"}, status_code=500)

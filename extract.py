@@ -8,6 +8,9 @@ block carries a layout label + reading order) in one VLM call per page.
 
 Produces an `ExtractResult` (per-page `text` + a joined `full_text` with
 `--- Page N ---` markers) that the proofread / structure / chat stages consume.
+Each page also carries its `layout`: the blocks Surya found — label, position
+and the text lines each one contributed — which is what lets the formatted Word
+export (layout_docx.py) rebuild the page instead of guessing it from the text.
 The VLM weights are the `surya-ocr-2` GGUF, loaded inside the spawned llama-server
 (not into this process), and the server is reaped on shutdown via
 `shutdown_server()` because Surya's own atexit cleanup fails on Windows.
@@ -42,6 +45,9 @@ MODEL = "datalab-to/surya-ocr-2 (GGUF · llama.cpp)"
 
 # Layout labels whose content we drop from the plain-text transcription.
 _SKIP_LABELS = {"Picture", "Figure"}
+# Visual-only blocks the layout keeps (with no text) so the formatted export can
+# copy them as images: logos, stamps, seals, signatures, QR codes.
+_PICTURE_LABELS = {"Picture", "Figure", "Diagram"}
 
 # Accepted inputs: a PDF (rendered page-by-page) or a single raster image
 # (OCR'd directly as one page). Pillow decodes all of these.
@@ -81,6 +87,10 @@ class PageResult:
     page: int
     text: str          # OCR text
     chars: int
+    # {"blocks": [{"label", "bbox": [x0, y0, x1, y1] as page fractions,
+    #  "lines": [the block's lines of `text`]}]} in reading order. Joining every
+    # block's lines gives `text` back exactly; picture blocks have no lines.
+    layout: dict | None = None
 
 
 @dataclass
@@ -113,8 +123,8 @@ def _block_text(html: str) -> str:
     h = html_mod.unescape(h)
     out = []
     for ln in h.split("\n"):
-        ln = re.sub(r"\s*\|\s*", " | ", ln.strip())   # normalise cell separators
-        ln = re.sub(r"^\|\s*|\s*\|$", "", ln).strip()  # trim leading/trailing pipes
+        ln = re.sub(r"\s*\|\s*", " | ", ln.strip()).strip()   # normalise cell separators
+        ln = re.sub(r"^\|\s*|\s*\|$", "", ln).strip()          # trim leading/trailing pipes
         if ln:
             out.append(ln)
     return "\n".join(out)
@@ -145,17 +155,47 @@ def status() -> dict:
             "engine": "surya"}
 
 
-def _page_text(rec, img) -> str:
-    """OCR one page image with Surya and flatten its blocks to plain text."""
+def _page_text(rec, img) -> tuple[str, dict]:
+    """OCR one page image with Surya and flatten its blocks to plain text.
+
+    Returns the text and the page's layout: every block's label, its box as a
+    fraction of the page, and the lines it contributed to the text. The text is
+    built from exactly those lines, so the two can never disagree."""
     result = rec([img], full_page=True)[0]
-    parts = []
+    w, h = img.size
+    parts, blocks, whole = [], [], True
     for b in sorted(result.blocks, key=lambda b: b.reading_order):
-        if b.skipped or b.error or b.label in _SKIP_LABELS:
+        if b.error:
+            continue
+        box = _norm_box(getattr(b, "bbox", None), w, h)
+        if b.label in _PICTURE_LABELS:
+            if box:
+                blocks.append({"label": b.label, "bbox": box, "lines": []})
+            continue
+        if b.skipped or b.label in _SKIP_LABELS:
             continue
         t = _block_text(b.html)
         if t:
             parts.append(t)
-    return "\n".join(parts)
+            if box:
+                blocks.append({"label": b.label, "bbox": box, "lines": t.split("\n")})
+            else:
+                whole = False
+    # A text block with no usable box leaves lines the layout cannot place, and
+    # a layout that does not account for every line is not trusted at all.
+    return "\n".join(parts), ({"blocks": blocks} if whole else None)
+
+
+def _norm_box(bbox, w: int, h: int):
+    """Surya's pixel bbox as [x0, y0, x1, y1] fractions of the page, or None."""
+    try:
+        x0, y0, x1, y1 = (float(v) for v in bbox)
+    except Exception:
+        return None
+    if not (w > 0 and h > 0) or x1 <= x0 or y1 <= y0:
+        return None
+    clamp = lambda v: round(min(1.0, max(0.0, v)), 4)
+    return [clamp(x0 / w), clamp(y0 / h), clamp(x1 / w), clamp(y1 / h)]
 
 
 def extract_document(data: bytes, filename: str = "document") -> ExtractResult:
@@ -179,8 +219,8 @@ def extract_document(data: bytes, filename: str = "document") -> ExtractResult:
             _progress.update(active=True, page=0, total=total, filename=filename)
             for index in range(total):
                 _progress.update(page=index + 1)
-                text = _page_text(rec, get_image(index))
-                pages.append(PageResult(index + 1, text, len(text)))
+                text, layout = _page_text(rec, get_image(index))
+                pages.append(PageResult(index + 1, text, len(text), layout))
     finally:
         _progress["active"] = False
         if doc is not None:

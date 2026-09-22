@@ -1,0 +1,92 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" version="24.7.7">
+  <diagram name="Document Processes" id="document-processes">
+    <mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="&lt;b&gt;Processes applied to the document&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="400" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="in" value="&lt;b&gt;Document&lt;/b&gt;&lt;br&gt;PDF or image" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="300" y="80" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1" value="&lt;b&gt;1. QR Scanning&lt;/b&gt;&lt;br&gt;detect QR codes, safety-check the links, capture linked pages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="180" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2" value="&lt;b&gt;2. Text Extraction (OCR)&lt;/b&gt;&lt;br&gt;read Arabic/English text, layout and reading order from every page" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="280" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3" value="&lt;b&gt;3. Proofreading&lt;/b&gt;&lt;br&gt;fix Arabic spelling and grammar while protecting numbers, dates and IDs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="380" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4" value="&lt;b&gt;4. Classification&lt;/b&gt;&lt;br&gt;identify the document type (وكالة، حصر ورثة، ملكية عقار …)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="480" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5" value="&lt;b&gt;5. Structuring&lt;/b&gt;&lt;br&gt;extract the document's fields, each cited back to its page and line" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="590" width="280" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p6" value="&lt;b&gt;6. Expiration Check&lt;/b&gt;&lt;br&gt;find the expiry date, convert Hijri → Gregorian, decide valid / expiring / expired / cancelled" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="420" y="590" width="280" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p7" value="&lt;b&gt;7. Related Regulations&lt;/b&gt;&lt;br&gt;retrieve the regulation clauses relevant to the document" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="710" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p8" value="&lt;b&gt;8. Q&amp;amp;A&lt;/b&gt;&lt;br&gt;answer questions using only the document, with citations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="810" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p9" value="&lt;b&gt;9. Export&lt;/b&gt;&lt;br&gt;formatted Word document / text / structured data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="250" y="910" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="out" value="&lt;b&gt;Processed document&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1010" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e0" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="in" target="p1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p1" target="p2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p2" target="p3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p3" target="p4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p4" target="p5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p4" target="p6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p5" target="p7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p6" target="p7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p7" target="p8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p8" target="p9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="p9" target="out">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

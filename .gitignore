@@ -11,3 +11,6 @@ __pycache__/
 models/
 
 .venv/
+
+# macOS
+.DS_Store

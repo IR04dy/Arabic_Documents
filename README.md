@@ -15,8 +15,10 @@ Everything runs **locally on the GPU** — documents never leave the machine.
    **single raster image** (PNG/JPEG/WEBP/TIFF/BMP, OCR'd directly as one page)
    with **Surya 2** (full-page OCR **+ layout** in one pass) on the **GPU**. Its
    foundation VLM runs via the bundled llama.cpp `llama-server` (no vLLM/Docker
-   needed). Handles Arabic **and** English/Latin text and numbers, and returns
-   block labels + reading order (used by the formatted Word export).
+   needed). Handles Arabic **and** English/Latin text and numbers. Every page
+   also keeps its **layout** — each block's label (heading, table, picture …),
+   its position, and the lines it produced — which the formatted Word export
+   rebuilds the page from.
 2. **Proofread** (`proofread.py` + `guard.py`) — the OCR text is passed to
    **ALLaM-7B-Instruct** (GGUF, GPU) to fix Arabic spelling/grammar. It is
    deliberately narrow: a **deterministic freeze-guard** verifies that every
@@ -140,7 +142,7 @@ that choice is remembered in the browser. Below ~1100 px the panels reflow to a
 | Panel | Arabic | What it does |
 |---|---|---|
 | 1 (rightmost) | **تحويل مستند** | Drop zone, upload, and the document itself. Three views: the original (PDF or image), **النص المستخرج** (the OCR text, one addressable line per row), and **بعد التدقيق** (the proofread text with each change marked). Zoom applies to whichever view is showing. |
-| 2 | **التدقيق اللغوي** | One card per proofreading suggestion: the change, a guess at its kind (همزة, تاء مربوطة, صرفي …), and **قبول** / **رفض**. Anything the guard could not classify as a plain spelling fix is flagged **✻ يتطلب مراجعة**. **قبول الكل** accepts the lot. **تحميل Word** exports the result — rejected suggestions revert to the deed's original wording, and the export still matches the original page layout. |
+| 2 | **التدقيق اللغوي** | One card per proofreading suggestion: the change, a guess at its kind (همزة, تاء مربوطة, صرفي …), and **قبول** / **رفض**. Anything the guard could not classify as a plain spelling fix is flagged **✻ يتطلب مراجعة**. **قبول الكل** accepts the lot. **تحميل Word** exports the result — rejected suggestions revert to the deed's original wording, and the page is rebuilt from the original: see *Formatted Word export* below. |
 | 3 | **تحليل المستند** | The classifier's verdict, the required fields the document does **not** carry, then every extracted value as a card with its **مصدر** citation. Repeatable groups appear as one card per heir/witness. **مقارنة** reveals the quoted source line under every value. |
 | 4 (leftmost) | **شات و Q&A** | A summary of what was extracted, three suggested questions generated from the document's own fields, and the chat. Citations in an answer render as clickable `ص١ س١٢` chips. |
 
@@ -167,13 +169,13 @@ map:
 |---|---|---|
 | `GET`  | `/health` | Model/engine readiness |
 | `GET`  | `/progress` | Live OCR progress (page N of M) |
-| `POST` | `/extract` | PDF or image → per-page OCR text + `full_text` |
+| `POST` | `/extract` | PDF or image → per-page OCR text + layout, and `full_text` |
 | `POST` | `/proofread` | OCR text → ALLaM proofread + freeze-guard report |
 | `POST` | `/classify` | OCR text → which registry template this deed is |
 | `POST` | `/structure` | OCR text → section-grouped fields, each with its source citation |
 | `POST` | `/chat` | Document-grounded Q&A (NDJSON stream) |
 | `POST` | `/export/docx` | OCR text → plain RTL Word `.docx` |
-| `POST` | `/export/layout-docx` | PDF/image + OCR text → formatted (colour/heading/table) `.docx` |
+| `POST` | `/export/layout-docx` | PDF/image + page texts + page layouts → a `.docx` that rebuilds the original page |
 
 ```bash
 curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
@@ -185,7 +187,7 @@ curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
 |---|---|
 | `app.py` | FastAPI server + the JSON/stream API. Serves `ui.html` at `/`. Warms the OCR + structurer at startup. |
 | `ui.html` | The whole front end: four RTL panels (تحويل مستند → التدقيق اللغوي → تحليل المستند → شات و Q&A), one inline stylesheet and one inline script, no build step and no external assets. |
-| `extract.py` | Surya OCR engine: render pages (pypdfium2) → full-page OCR + layout each page (via llama.cpp). |
+| `extract.py` | Surya OCR engine: render pages (pypdfium2) → full-page OCR each page (via llama.cpp) → the text, and the layout (blocks with label, box and lines). |
 | `llm.py` | Owns the two llama.cpp `llama-server` instances (Qwen3 STRUCT + ALLaM PROOF; GPU, api-key) + `chat_json` / `chat_text` / `chat_stream` helpers. |
 | `classify.py` | Classification stage: rules tier + Qwen3 vote → one template, with a corroboration floor and a review flag. |
 | `registry.py` | Loads and validates `templates/*.yaml`; owns the Arabic `Normalizer` (and `with_index`, which provenance is built on). |
@@ -196,11 +198,43 @@ curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
 | `guard.py` | Deterministic value freeze-guard (protects digits/dates/emails/IBANs). |
 | `chat.py` | Chat stage: DATA-fenced grounding prompt + `[صN سM]` citation tags + history windowing + streaming. |
 | `docx_export.py` | Plain RTL Word export (`build_docx`, python-docx). |
-| `layout_docx.py` | Formatted Word export (`build_layout_docx`): Surya palette + heading/table styling. |
+| `layout_docx.py` | Formatted Word export (`build_layout_docx`): the page image measured against its layout — sizes, weight, colour, shading, rules, tables, pictures, spacing — with the text written in. |
+| `test_layout_docx.py` | Tests for the formatted export on the three sample documents (`python -m unittest test_layout_docx`). |
 | `fetch_llama_server.ps1` | Downloads the official llama.cpp CUDA build into `vendor/`. |
 | `vendor/llama-cuda/` | Vendored `llama-server.exe` + CUDA runtime (git-ignored). |
 | `requirements.txt` | Python dependencies. |
 | `run.ps1` | Launcher (system Python + uvicorn). |
+
+## Formatted Word export
+
+**تحميل Word** produces an editable `.docx` that looks like the original page.
+It is **rebuilt**, not converted: the text written into it is the reader's
+(the OCR with every accepted correction), and the format is measured from the
+original page image, block by block, using the layout the OCR already found.
+
+| Carried over | How it is read |
+|---|---|
+| Paper size, margins | the PDF's page size; the page's ink box |
+| Headings, title | Surya's `SectionHeader` label; the title is the line naming the deed type (both appear in Word's navigation pane) |
+| Alignment | where each line sits between the margins — right, left, centred, justified |
+| Font size | the height of the tall letters above the baseline, and the line's width against the same text in Arial — the smaller of the two, so no line wraps that didn't |
+| Bold, colour | stroke thickness against the size; the core colour of the letters |
+| Shaded bands and cells | the colour behind the text — including white text on a filled band |
+| Accent bars, rules | a thin bar beside a heading; horizontal lines between blocks |
+| Tables and forms | Surya's tables with their own column widths, rules and shaded header rows; label/value rows split where the page shows a column gap; blocks side by side as one row |
+| Pictures | logos, stamps, signatures and QR codes cropped from the page and placed where they were |
+| Spacing | each line placed at the height it had on the page |
+
+**Not carried over:** the original typeface (everything is set in Arial), text
+inside images (a stamp stays a picture), and free-floating positions — Word
+flows the content, so an element that overlapped another is placed after it.
+
+For the best size estimates the server needs **Pillow with libraqm** (it shapes
+Arabic to measure line widths) and an **Arial** font file; without them sizes
+come from letter height alone (±10%). On Windows, Pillow's libraqm needs
+`fribidi` on the DLL path; `LAYOUT_ARIAL` / `LAYOUT_ARIAL_BOLD` point at the font
+files if they are not in the usual place. An API caller that sends no layout
+gets the older text-only formatting (see `API.md`).
 
 ## Arabic numbers and bidi
 

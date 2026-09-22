@@ -120,14 +120,29 @@ OCR a document: every page of a **PDF**, or a **single image** (one page).
   "filename": "contract.pdf",
   "page_count": 2,
   "pages": [
-    { "page": 1, "text": "عقد عمل …", "chars": 1777 },
-    { "page": 2, "text": "…",          "chars": 640 }
+    { "page": 1, "text": "عقد عمل …", "chars": 1777,
+      "layout": { "blocks": [
+        { "label": "SectionHeader", "bbox": [0.43, 0.13, 0.57, 0.15], "lines": ["عقد عمل"] },
+        { "label": "Picture",       "bbox": [0.05, 0.03, 0.18, 0.11], "lines": [] },
+        { "label": "Table",         "bbox": [0.08, 0.24, 0.92, 0.39],
+          "lines": ["الاسم | محمد", "رقم الهوية | ١٠٢٣٤٥٦٧٨٩"] }
+      ] } },
+    { "page": 2, "text": "…", "chars": 640, "layout": { "blocks": [ … ] } }
   ],
   "full_text": "--- Page 1 ---\nعقد عمل …\n\n--- Page 2 ---\n…"
 }
 ```
 - `full_text` joins pages with `--- Page N ---` markers — feed this to
   `/structure` and `/chat`, or `pages[].text` to `/export/layout-docx`.
+- `pages[].layout` is what Surya found on the page, in reading order: each
+  block's layout `label` (`Text`, `SectionHeader`, `PageHeader`, `PageFooter`,
+  `Table`, `Form`, `Picture`, `Caption`, …), its `bbox` as fractions of the page
+  (`[x0, y0, x1, y1]`, origin top-left) and the `lines` of `text` it produced.
+  Joining every block's `lines` with `\n` gives `text` back exactly; `Picture`,
+  `Figure` and `Diagram` blocks (logos, stamps, QR codes) have no lines. It is
+  `null` when a text block came back without a usable box. Pass the array of
+  them to `/export/layout-docx` to have the Word export rebuild the page.
+- A table row is one line with its cells separated by ` | `.
 - **Errors:** `413` (>100 MB), `400` (empty file), `415` (not a PDF), `500`.
 - **Timing:** warm ~7–9 s/page. The **first** call after startup cold-spawns the
   Surya OCR server (~60–90 s) — allow a generous timeout on the first request.
@@ -383,26 +398,41 @@ curl -s -H "Content-Type: application/json" \
 ---
 
 ### `POST /export/layout-docx`
-**Formatted** Word document — Surya reads the page image for the real colour
-palette + heading structure, and the OCR text is poured in with heading/colour/
-table styling (Arabic right-aligned, title centred).
+**Formatted** Word document that rebuilds the original page: paper size and
+margins, headings, alignment, font sizes, bold, colours, shaded bands and
+cells, accent bars, horizontal rules, ruled tables with their column widths,
+label/value forms, blocks side by side, pictures (logos, stamps, QR codes) and
+the vertical spacing — all measured from the page image, with the text you
+send written into it. The text itself is never read from the image.
 
 **Request:** `multipart/form-data`
 
 | Field | Type | Notes |
 |---|---|---|
-| `file` | file | The **original PDF or image** (re-rendered locally for colours). Max 100 MB. |
-| `pages` | string | JSON **array of per-page OCR text strings** (e.g. `[p.text for p in pages]`; one element for an image). ≤500 pages, ≤100 000 chars/page. |
+| `file` | file | The **original PDF or image**, re-rendered locally for measuring. Max 100 MB. |
+| `pages` | string | JSON **array of per-page text strings** (e.g. `[p.text for p in pages]`; one element for an image). ≤500 pages, ≤100 000 chars/page. The text may differ from the OCR — proofreading — and is matched back to the OCR lines. |
+| `layout` | file | *Optional.* A **JSON file part** holding the array of `pages[].layout` values from `/extract` (one per page, `null` allowed). ≤32 MB. A file part rather than a field because it carries every line's text, and a long document's would exceed the 1 MB form-field limit. |
 | `filename` | string | Base name. Optional; default `document`. |
 
+- **With `layout`**, each page is rebuilt from its blocks. A page whose layout is
+  `null` or malformed (a block without a valid `bbox`, `lines` not strings) is
+  formatted from its text alone instead — the export never fails over it.
+- **Without `layout`**, every page is formatted from its text alone: lines are
+  classified by shape (headings, `label: value` rows, pipe tables), forms are
+  rebuilt from the template registry's labels, and the heading colours are
+  sampled once with Surya's layout model on the CPU. Alignment, sizes and
+  pictures need the layout.
+
 **200 response:** binary `.docx` (as above).
-**Errors:** `413`, `400` (invalid `pages` / no text / empty file), `415` (not a
-PDF), `500`.
+**Errors:** `413` (file >100 MB, `layout` >32 MB), `400` (invalid `pages` / no
+text / empty file / `layout` not a JSON array), `415` (not a PDF or image), `500`.
 
 ```python
 import json, requests
-pages = [p["text"] for p in ocr["pages"]]
-files = {"file": ("contract.pdf", open("contract.pdf", "rb"), "application/pdf")}
+pages   = [p["text"] for p in ocr["pages"]]
+layouts = [p.get("layout") for p in ocr["pages"]]
+files = {"file":   ("contract.pdf", open("contract.pdf", "rb"), "application/pdf"),
+         "layout": ("layout.json", json.dumps(layouts), "application/json")}
 data  = {"pages": json.dumps(pages), "filename": "contract"}
 r = requests.post("http://127.0.0.1:8100/export/layout-docx", files=files, data=data, timeout=300)
 open("contract_formatted.docx", "wb").write(r.content)
@@ -430,11 +460,11 @@ Returns the browser UI (HTML). Not an integration endpoint.
          └─(optional, display only) /proofread
 ```
 
-1. `POST /extract` → keep `full_text` and `pages`.
+1. `POST /extract` → keep `full_text` and `pages` (each page's `text` and `layout`).
 2. `POST /structure` with `{"text": full_text}` → `sections`.
 3. `POST /chat` with `messages` + `context={document_type, sections, full_text}`.
 4. Optional: `POST /proofread` for a cleaned reading copy;
-   `POST /export/docx` or `/export/layout-docx` for Word output.
+   `POST /export/docx` or `/export/layout-docx` (with the pages' `layout`) for Word output.
 
 Poll `GET /health` first; only send work once `engine` and `structurer` are
 `ready`.
@@ -486,7 +516,7 @@ with requests.post(f"{BASE}/chat", json=body, stream=True, timeout=300) as r:
 | `/structure` | 12 000 chars (rest ignored, `truncated=true`) | ~10 s | 120 s |
 | `/chat` | 40 turns · 4 000 chars/msg · 24 000 chars context | streams in 1–3 s | 300 s |
 | `/export/docx` | 16 MB body | <1 s | 60 s |
-| `/export/layout-docx` | 100 MB PDF · 500 pages · 100 000 chars/page | ~seconds + a Surya layout pass/page | 300 s |
+| `/export/layout-docx` | 100 MB PDF · 500 pages · 100 000 chars/page · 32 MB layout | ~1 s/page with `layout` (CPU); without it, one Surya layout pass for the document | 300 s |
 
 - **One at a time:** the models serialize requests; a second caller waits.
 - **Determinism:** OCR, proofread and structuring run greedy/`temp=0`, so the
