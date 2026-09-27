@@ -14,14 +14,17 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import threading
 from pathlib import Path
 
+import anyio
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 # OCR is Surya 2 (full-page OCR + layout, run via the bundled llama.cpp server).
 OCR_ENGINE = "surya"
@@ -35,8 +38,9 @@ from llm import ensure_loaded as ensure_llm
 from llm import status as llm_status
 from llm import stop_server as stop_llm
 from llm import ensure_proof
-from llm import stop_proof
+from llm import PROOF
 from llm import proof_status
+from complaints_llm import server_lease
 from proofread import run as proofread_run
 from structure import parse_structure, parse_structure_for_template
 from classify import classify as classify_document
@@ -56,6 +60,12 @@ app.include_router(create_regulations_router())
 from comparison_api import create_router as create_comparison_router
 app.include_router(create_comparison_router())
 
+from complaints_api import create_router as create_complaints_router
+# Its worker starts with the app. If the complaints database cannot be opened,
+# /complaints/* answers 503 and every other tab still works (service is None).
+complaints_router = create_complaints_router()
+app.include_router(complaints_router)
+
 MAX_BYTES = 100 * 1024 * 1024        # 100 MB upload ceiling
 PROOFREAD_MAX_CHARS = 40000          # cap on /proofread input
 CHAT_FULLTEXT_MAX = 24000            # cap on chat grounding text
@@ -63,9 +73,18 @@ CHAT_MSG_MAX = 4000                  # cap per chat message
 CHAT_HISTORY_MAX = 40                # cap on turns sent
 CLASSIFY_MAX_CHARS = 40000           # cap on /classify input
 
-CSP = ("default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; "
+# frame-ancestors: no other site may frame the app and steer clicks on its
+# one-click actions (review, status, reprocess). 'self', not 'none': the app
+# frames its own blob: previews.
+CSP = ("default-src 'self'; connect-src 'self' blob:; script-src 'self' 'unsafe-inline'; "
        "style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; "
-       "frame-src blob:; base-uri 'none'; form-action 'self'")
+       "frame-src blob:; base-uri 'none'; form-action 'self'; frame-ancestors 'self'")
+
+# The app has no login: binding to 127.0.0.1 is its only protection, and DNS
+# rebinding gets around that unless a request naming any other host is
+# refused. APP_ALLOWED_HOSTS (comma-separated) adds names, e.g. for a LAN setup.
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", *(
+    h.strip() for h in os.environ.get("APP_ALLOWED_HOSTS", "").split(",") if h.strip())]
 
 
 @app.middleware("http")
@@ -73,7 +92,11 @@ async def _security_headers(request, call_next):
     resp = await call_next(request)
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Content-Security-Policy"] = CSP
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"     # frame-ancestors for older browsers
     return resp
+
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)   # outermost
 
 
 @app.on_event("startup")
@@ -96,6 +119,8 @@ def _safe(fn) -> None:
 
 @app.on_event("shutdown")
 def _shutdown() -> None:
+    if complaints_router.service is not None:
+        complaints_router.service.stop()   # first: its worker must not see the models vanish
     stop_llm()
     shutdown_layout_server()      # reap the persistent Surya fast_layout server
     _shutdown_ocr()               # reap the Surya OCR llama.cpp server
@@ -275,18 +300,28 @@ async def proofread_endpoint(body: TextIn):
     text = (body.text or "")[:PROOFREAD_MAX_CHARS]
     if not text.strip():
         return JSONResponse({"error": "no text to proofread"}, status_code=400)
+    # ALLaM is shared with the complaints tab (its "allam" provider): hold its
+    # lease while using it, and let it be stopped — to free its VRAM again —
+    # only once no complaint request is using it either.
+    # Shielded: a request cancelled mid-way must still pair its acquire with a
+    # release, or the lease would keep ALLaM loaded for good.
+    lease = server_lease(PROOF)
+    with anyio.CancelScope(shield=True):
+        await run_in_threadpool(lease.acquire)    # waits out a stop in progress
     try:
-        await run_in_threadpool(ensure_proof)     # lazy-load ALLaM
-    except Exception:
-        return JSONResponse({"error": "proofreading model is not ready"},
-                            status_code=503)
-    try:
-        result = await run_in_threadpool(proofread_run, text)
-    except Exception as exc:
-        print("proofread error:", repr(exc))
-        return JSONResponse({"error": "proofreading failed"}, status_code=500)
+        try:
+            await run_in_threadpool(ensure_proof)     # lazy-load ALLaM
+        except Exception:
+            return JSONResponse({"error": "proofreading model is not ready"},
+                                status_code=503)
+        try:
+            result = await run_in_threadpool(proofread_run, text)
+        except Exception as exc:
+            print("proofread error:", repr(exc))
+            return JSONResponse({"error": "proofreading failed"}, status_code=500)
     finally:
-        await run_in_threadpool(stop_proof)       # free ALLaM's VRAM again
+        with anyio.CancelScope(shield=True):
+            await run_in_threadpool(lease.release, stop=True)   # free ALLaM's VRAM again
     return JSONResponse(result)
 
 

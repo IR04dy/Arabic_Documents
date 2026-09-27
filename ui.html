@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="/comparison/ui.css">
+<link rel="stylesheet" href="/complaints/ui.css">
 <title>منصة تحليل الصكوك والأحكام</title>
 <style>
 /* Design tokens — taken from deeds_ui_wireframe.drawio (Tahoma, blue #1F6FEB,
@@ -276,6 +277,7 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
 <nav class="workspace-tabs" role="tablist" aria-label="مساحات العمل">
   <button type="button" id="analysis-tab" role="tab" aria-selected="true" aria-controls="analysis-workspace">تحليل المستند</button>
   <button type="button" id="comparison-tab" role="tab" aria-selected="false" aria-controls="comparison-workspace" tabindex="-1">مقارنة المستندات</button>
+  <button type="button" id="complaints-tab" role="tab" aria-selected="false" aria-controls="complaints-workspace" tabindex="-1">إدارة الشكاوى</button>
 </nav>
 <div id="error" class="err hidden" role="alert"><span id="errortxt"></span><button type="button" id="errorclose" title="إغفال">✕</button></div>
 
@@ -441,6 +443,140 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
       </div>
       <div id="cmp-findings"></div>
     </div>
+  </div>
+</section>
+<section id="complaints-workspace" role="tabpanel" aria-labelledby="complaints-tab" hidden>
+  <div class="cms-content">
+    <div class="cms-heading">
+      <div class="cms-heading-text">
+        <div class="cms-title-row"><h2>إدارة الشكاوى</h2>
+          <span id="cms-entity" class="cms-entity" hidden><span>الجهة المستقبلة:</span> <strong id="cms-entity-name"></strong></span></div>
+        <p id="cms-intro">استقبال الشكاوى الموجّهة إلى الجهة من ملفات PDF والصور والنصوص، واستخراج نصها وبياناتها، ثم تصنيفها وتحديد الوزارة المختصة التي تُحال إليها وأولويتها بنموذج لغوي قابل للتبديل، ومتابعتها وتحليلها.</p>
+      </div>
+      <div class="cms-toolbar">
+        <span id="cms-locality" class="cms-chip">معالجة محلية</span>
+        <label class="cms-provider" for="cms-provider"><span id="cms-provider-dot" class="cms-dot" aria-hidden="true"></span><span>النموذج</span>
+          <select id="cms-provider" disabled><option>جارٍ التحميل…</option></select></label>
+        <span id="cms-queue" class="cms-queue" role="status" aria-live="polite" aria-atomic="true"></span>
+      </div>
+    </div>
+    <div id="cms-alert" class="cms-error" role="alert" hidden></div>
+    <div class="cms-views" role="tablist" aria-label="أقسام إدارة الشكاوى">
+      <button type="button" role="tab" id="cms-tab-intake" aria-controls="cms-intake" aria-selected="true">استقبال ومعالجة</button>
+      <button type="button" role="tab" id="cms-tab-register" aria-controls="cms-register" aria-selected="false" tabindex="-1">سجل الشكاوى</button>
+      <button type="button" role="tab" id="cms-tab-analytics" aria-controls="cms-analytics" aria-selected="false" tabindex="-1">التحليلات</button>
+    </div>
+
+    <section id="cms-intake" class="cms-view" role="tabpanel" aria-labelledby="cms-tab-intake">
+      <div class="cms-intake-grid">
+        <div id="cms-drop" class="cms-drop">
+          <strong>اسحب ملفات الشكاوى الواردة إلى هنا</strong>
+          <span id="cms-drop-hint">PDF أو صور أو TXT بترميز UTF-8</span>
+          <button type="button" id="cms-pick" class="cms-btn cms-btn-primary" aria-describedby="cms-drop-hint">اختيار ملفات</button>
+          <input id="cms-files" class="cms-sr-only" type="file" multiple tabindex="-1" aria-hidden="true"
+            accept="application/pdf,.pdf,image/png,image/jpeg,image/webp,image/tiff,image/bmp,.png,.jpg,.jpeg,.webp,.tif,.tiff,.bmp,text/plain,.txt">
+        </div>
+        <details id="cms-paste" class="cms-paste">
+          <summary>لصق نص شكوى</summary>
+          <label for="cms-text-title">عنوان مختصر (اختياري)</label>
+          <input id="cms-text-title" type="text" maxlength="200" dir="auto">
+          <label for="cms-text">نص الشكوى</label>
+          <textarea id="cms-text" rows="7" dir="auto" aria-describedby="cms-text-count"></textarea>
+          <div class="cms-row"><span id="cms-text-count" class="cms-muted"></span><button type="button" id="cms-text-submit" class="cms-btn cms-btn-primary">إرسال للمعالجة</button></div>
+        </details>
+      </div>
+      <div class="cms-row"><span id="cms-upload-status" class="cms-muted" role="status" aria-live="polite"></span></div>
+      <progress id="cms-upload-progress" max="100" aria-label="تقدم رفع الملفات" hidden></progress>
+      <div id="cms-intake-error" class="cms-error" role="alert" hidden></div>
+      <div class="cms-section-head">
+        <h3>قائمة المعالجة</h3><span id="cms-intake-summary" class="cms-muted"></span>
+        <button type="button" id="cms-intake-clear" class="cms-btn cms-btn-ghost" hidden>إخفاء المكتملة من القائمة</button>
+      </div>
+      <ol id="cms-intake-list" class="cms-intake-list" aria-label="الشكاوى المرفوعة وقيد المعالجة"></ol>
+      <div id="cms-intake-empty" class="cms-empty"><strong>لا توجد شكاوى قيد المعالجة</strong>ارفع ملفات الشكاوى الواردة أو الصق نصاً لتظهر هنا مع مراحل معالجتها: استخراج النص ثم الهيكلة ثم التصنيف وتحديد الوزارة التي تُحال إليها وأولويتها.</div>
+    </section>
+
+    <section id="cms-register" class="cms-view" role="tabpanel" aria-labelledby="cms-tab-register" hidden>
+      <form id="cms-filters" class="cms-filters" role="search" aria-label="تصفية سجل الشكاوى">
+        <label class="cms-field cms-field-q"><span>بحث</span><input id="cms-f-q" type="search" dir="auto" placeholder="المرجع، الموضوع، الاسم، رقم الهوية…"></label>
+        <label class="cms-field"><span>التصنيف</span><select id="cms-f-category"></select></label>
+        <label class="cms-field"><span>الجهة المختصة</span><select id="cms-f-ministry"></select></label>
+        <label class="cms-field"><span>الأولوية</span><select id="cms-f-priority"></select></label>
+        <label class="cms-field"><span>الحالة</span><select id="cms-f-status"></select></label>
+        <label class="cms-field"><span>المحافظة</span><select id="cms-f-governorate"></select></label>
+        <label class="cms-field"><span>المنطقة</span><select id="cms-f-region"></select></label>
+        <label class="cms-field"><span>الترتيب</span><select id="cms-f-sort">
+          <option value="created:desc">الأحدث أولاً</option><option value="created:asc">الأقدم أولاً</option>
+          <option value="priority:desc">الأعلى أولوية</option><option value="due:asc">الأقرب موعداً</option>
+          <option value="updated:desc">آخر تحديث</option></select></label>
+        <label class="cms-toggle"><input id="cms-f-review" type="checkbox"><span>تحتاج مراجعة</span></label>
+        <button type="button" id="cms-f-reset" class="cms-btn cms-btn-ghost">مسح التصفية</button>
+        <a id="cms-export" class="cms-btn" href="/complaints/export.csv">تصدير CSV</a>
+      </form>
+      <div class="cms-row"><span id="cms-register-count" class="cms-muted" role="status" aria-live="polite"></span></div>
+      <div id="cms-register-error" class="cms-error" role="alert" hidden></div>
+      <div class="cms-table-wrap">
+        <table class="cms-table">
+          <caption class="cms-sr-only">سجل الشكاوى — زر المرجع في كل صف يعرض تفاصيل الشكوى أسفله ويطويها</caption>
+          <thead><tr><th scope="col">المرجع</th><th scope="col">الموضوع</th><th scope="col">التصنيف</th><th scope="col">الجهة المختصة</th><th scope="col">الأولوية</th><th scope="col">المحافظة</th><th scope="col">الحالة</th><th scope="col">المهلة</th><th scope="col">تاريخ الاستلام</th></tr></thead>
+          <tbody id="cms-rows"></tbody>
+        </table>
+      </div>
+      <div id="cms-register-empty" class="cms-empty" hidden></div>
+      <div class="cms-row cms-center"><button type="button" id="cms-more" class="cms-btn" hidden>عرض المزيد</button></div>
+      <!-- The complaint detail: moved by complaints_ui.js into a full-width row under the expanded register row, and back here (hidden) when folded. -->
+      <div id="cms-detail" class="cms-panel" role="region" aria-labelledby="cms-d-title" hidden>
+        <header class="cms-d-head">
+          <div class="cms-d-headline">
+            <div id="cms-d-meta" class="cms-d-meta"></div>
+            <h3 id="cms-d-title" tabindex="-1">تفاصيل الشكوى</h3>
+            <p id="cms-d-note" class="cms-d-note" hidden>خارج نتائج التصفية الحالية</p>
+          </div>
+          <div class="cms-d-actions">
+            <button type="button" id="cms-d-reprocess" class="cms-btn">إعادة المعالجة</button>
+            <button type="button" id="cms-d-reocr" class="cms-btn" hidden>إعادة الاستخراج والمعالجة</button>
+            <button type="button" id="cms-d-json" class="cms-btn">تنزيل JSON</button>
+            <button type="button" id="cms-d-delete" class="cms-btn cms-btn-danger">حذف</button>
+            <button type="button" id="cms-d-collapse" class="cms-btn" aria-controls="cms-detail" aria-label="طيّ تفاصيل الشكوى">طيّ<span class="cms-fold" aria-hidden="true"></span></button>
+          </div>
+        </header>
+        <div id="cms-d-status" class="cms-d-status cms-muted" role="status" aria-live="polite"></div>
+        <div id="cms-d-error" class="cms-error cms-d-error" role="alert" hidden></div>
+        <div class="cms-d-body">
+          <div id="cms-d-info" class="cms-d-info"></div>
+          <div class="cms-d-viewer">
+            <div class="cms-vtabs" role="tablist" aria-label="عرض المستند">
+              <button type="button" role="tab" id="cms-v-file-tab" aria-controls="cms-v-file" aria-selected="true">المستند الأصلي</button>
+              <button type="button" role="tab" id="cms-v-text-tab" aria-controls="cms-v-text" aria-selected="false" tabindex="-1">النص المستخرج</button>
+            </div>
+            <div id="cms-v-file" class="cms-vpanel" role="tabpanel" aria-labelledby="cms-v-file-tab"></div>
+            <div id="cms-v-text" class="cms-vpanel" role="tabpanel" aria-labelledby="cms-v-text-tab" hidden>
+              <div id="cms-ocr" class="cms-ocr" tabindex="0" aria-label="النص المستخرج مرقّماً بالصفحة والسطر"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cms-analytics" class="cms-view" role="tabpanel" aria-labelledby="cms-tab-analytics" hidden>
+      <div class="cms-section-head">
+        <h3>لوحة التحليلات</h3><span id="cms-an-updated" class="cms-muted"></span>
+        <button type="button" id="cms-an-refresh" class="cms-btn cms-btn-ghost">تحديث</button>
+      </div>
+      <div id="cms-an-error" class="cms-error" role="alert" hidden></div>
+      <div id="cms-kpis" class="cms-kpis"></div>
+      <div id="cms-charts" class="cms-charts"></div>
+      <section class="cms-card cms-insights" aria-labelledby="cms-insights-title">
+        <div class="cms-section-head">
+          <h3 id="cms-insights-title">رؤى وتوصيات</h3>
+          <button type="button" id="cms-insights-run" class="cms-btn cms-btn-primary">توليد رؤى وتوصيات</button>
+        </div>
+        <p class="cms-muted">يولّدها النموذج من الإحصاءات أعلاه وعينة من أحدث الشكاوى المعالجة؛ راجعها قبل الاعتماد عليها.</p>
+        <div id="cms-insights-status" class="cms-muted" role="status" aria-live="polite"></div>
+        <div id="cms-insights-error" class="cms-error" role="alert" hidden></div>
+        <div id="cms-insights-body"></div>
+      </section>
+    </section>
   </div>
 </section>
 <dialog id="cmp-source" class="cmp-source-dialog" aria-labelledby="cmp-source-title" dir="rtl">
@@ -1256,6 +1392,7 @@ $("#errorclose").onclick=hideError;
 </script>
 <script src="/regulations/ui.js" defer></script>
 <script src="/comparison/ui.js" defer></script>
+<script src="/complaints/ui.js" defer></script>
 <script src="/qr/flow.js" defer></script>
 <script src="/qr/ui.js" defer></script>
 </body>

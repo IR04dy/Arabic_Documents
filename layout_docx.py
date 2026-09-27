@@ -2352,29 +2352,53 @@ def _clean_page(p):
 
 # ---------------- assembly ----------------
 
+def _pdfium_lock():
+    """PDFium is not thread-safe: every PDFium call holds extract's one lock,
+    since the OCR pass and the complaints worker render next to this export.
+    Imported here, not at the top, so importing this module stays as it was."""
+    from extract import PDFIUM_LOCK
+    return PDFIUM_LOCK
+
+
 class _Source:
-    """The original document: a PDF rendered page by page, or one image."""
+    """The original document: a PDF rendered page by page, or one image.
+    Each PDFium call holds the lock for that call alone, and a page is closed
+    under it (not later, on whatever thread the garbage collector runs)."""
 
     def __init__(self, data: bytes, filename: str):
         self.pdf = self.image = None
         if data[:5] == b"%PDF-" or (filename or "").lower().endswith(".pdf"):
-            self.pdf = pdfium.PdfDocument(data)
-            self.count = len(self.pdf)
+            with _pdfium_lock():
+                self.pdf = pdfium.PdfDocument(data)
+                self.count = len(self.pdf)
         else:
             self.image = Image.open(io.BytesIO(data)).convert("RGB")
             self.count = 1
 
     def size(self, i: int) -> tuple:
-        return tuple(self.pdf[i].get_size()) if self.pdf is not None else _image_page_size(self.image)
+        if self.pdf is None:
+            return _image_page_size(self.image)
+        with _pdfium_lock():
+            page = self.pdf[i]
+            try:
+                return tuple(page.get_size())
+            finally:
+                page.close()
 
     def render(self, i: int):
         if self.pdf is not None:
-            return self.pdf[i].render(scale=LAYOUT_DPI / 72).to_pil().convert("RGB")
+            with _pdfium_lock():
+                page = self.pdf[i]
+                try:
+                    return page.render(scale=LAYOUT_DPI / 72).to_pil().convert("RGB")
+                finally:
+                    page.close()
         return self.image
 
     def close(self) -> None:
         if self.pdf is not None:
-            self.pdf.close()
+            with _pdfium_lock():
+                self.pdf.close()
 
 
 def build_layout_docx(doc_bytes: bytes, pages_text, filename: str = "document",

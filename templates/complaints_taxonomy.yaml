@@ -1,0 +1,625 @@
+# =============================================================================
+# COMPLAINT TAXONOMY  —  Complaint Management System (إدارة الشكاوى)
+# =============================================================================
+# Loaded and validated by complaints_taxonomy.py. Every id below is at once:
+#   * an enum value in the LLM's JSON schema (the model can only answer with
+#     these ids, so an id that is not here can never be produced),
+#   * a filter value in the API and a column value in SQLite,
+#   * a key the UI maps to `label_ar` via GET /complaints/config.
+# So ids are STABLE: rename a label freely, never an id (stored complaints and
+# reviewer corrections keep the old id).
+#
+# `description_ar` of a category is shown to the LLM to route a complaint, so it
+# says what belongs there AND what does not (sewage vs municipal cleanliness vs
+# environment are the classic confusions). Keep it short and discriminative.
+#
+# Arabic is written naturally (hamza, taa marbuta). Matching code (city names,
+# signal patterns) normalises with registry.Normalizer at load/match time —
+# do NOT hand-normalise strings here.
+# =============================================================================
+
+version: 1
+
+# -----------------------------------------------------------------------------
+# Receiving entity — the desk every complaint is addressed to and received by.
+# It refers each complaint to the RESPONSIBLE MINISTRY (the model's routing
+# decision). Prompts, the addressee check and the acknowledgment letter take
+# every name from here, so another emirate or agency is a change to this block
+# (and to `governorates`), not to code. `region` is the region it has
+# jurisdiction over: a complaint located in another region is flagged
+# `outside_jurisdiction`.
+# -----------------------------------------------------------------------------
+receiving_entity:
+  id: riyadh_emirate
+  label_ar: إمارة منطقة الرياض
+  label_en: Riyadh Region Principality
+  region: riyadh                 # must be a region id (not unknown)
+  desk_ar: إدارة الشكاوى         # signs the acknowledgment
+
+# -----------------------------------------------------------------------------
+# Priorities — ordered highest first; `rank` decides max(), `sla_hours` the due
+# date. The rules tier may only RAISE a priority, and never to the top one. One
+# exception: a top priority the model gave a text flagged `suspected_instructions`
+# is held one level below until a reviewer confirms it.
+# -----------------------------------------------------------------------------
+priorities:
+  - id: critical
+    label_ar: حرجة
+    label_en: Critical
+    rank: 4
+    sla_hours: 24
+    description_ar: خطر مباشر على الحياة أو الصحة أو السلامة العامة، أو ضرر جسيم لا يحتمل التأجيل
+  - id: high
+    label_ar: عالية
+    label_en: High
+    rank: 3
+    sla_hours: 72
+    description_ar: ضرر كبير أو فئة أولى بالرعاية أو انقطاع خدمة أساسية أو أثر على عدد كبير من الناس
+  - id: medium
+    label_ar: متوسطة
+    label_en: Medium
+    rank: 2
+    sla_hours: 168
+    description_ar: مشكلة خدمية تحتاج معالجة دون خطر مباشر
+  - id: low
+    label_ar: منخفضة
+    label_en: Low
+    rank: 1
+    sla_hours: 336
+    description_ar: إزعاج بسيط أو استفسار أو ملاحظة تحسينية
+
+# -----------------------------------------------------------------------------
+# Ministries — the entity a complaint is routed to. `other` is mandatory.
+# -----------------------------------------------------------------------------
+ministries:
+  - {id: interior,        label_ar: وزارة الداخلية,                          label_en: Ministry of Interior}
+  - {id: health,          label_ar: وزارة الصحة,                             label_en: Ministry of Health}
+  - {id: education,       label_ar: وزارة التعليم,                           label_en: Ministry of Education}
+  - {id: municipal,       label_ar: وزارة البلديات والإسكان,                  label_en: Ministry of Municipalities and Housing}
+  - {id: hrsd,            label_ar: وزارة الموارد البشرية والتنمية الاجتماعية, label_en: Ministry of Human Resources and Social Development}
+  - {id: commerce,        label_ar: وزارة التجارة,                           label_en: Ministry of Commerce}
+  - {id: justice,         label_ar: وزارة العدل,                             label_en: Ministry of Justice}
+  - {id: transport,       label_ar: وزارة النقل والخدمات اللوجستية,            label_en: Ministry of Transport and Logistic Services}
+  - {id: mewa,            label_ar: وزارة البيئة والمياه والزراعة,             label_en: "Ministry of Environment, Water and Agriculture"}
+  - {id: energy,          label_ar: وزارة الطاقة,                            label_en: Ministry of Energy}
+  - {id: mcit,            label_ar: وزارة الاتصالات وتقنية المعلومات,          label_en: Ministry of Communications and Information Technology}
+  - {id: finance,         label_ar: وزارة المالية,                           label_en: Ministry of Finance}
+  - {id: tourism,         label_ar: وزارة السياحة,                           label_en: Ministry of Tourism}
+  - {id: hajj,            label_ar: وزارة الحج والعمرة,                       label_en: Ministry of Hajj and Umrah}
+  - {id: islamic_affairs, label_ar: وزارة الشؤون الإسلامية والدعوة والإرشاد,   label_en: "Ministry of Islamic Affairs, Dawah and Guidance"}
+  - {id: culture,         label_ar: وزارة الثقافة,                           label_en: Ministry of Culture}
+  - {id: sport,           label_ar: وزارة الرياضة,                           label_en: Ministry of Sport}
+  - {id: industry,        label_ar: وزارة الصناعة والثروة المعدنية,            label_en: Ministry of Industry and Mineral Resources}
+  - {id: investment,      label_ar: وزارة الاستثمار,                         label_en: Ministry of Investment}
+  - {id: economy,         label_ar: وزارة الاقتصاد والتخطيط,                  label_en: Ministry of Economy and Planning}
+  - {id: media,           label_ar: وزارة الإعلام,                           label_en: Ministry of Media}
+  - {id: foreign,         label_ar: وزارة الخارجية,                          label_en: Ministry of Foreign Affairs}
+  - {id: other,           label_ar: جهة أخرى أو غير محددة,                    label_en: Other or unspecified entity}
+
+# -----------------------------------------------------------------------------
+# Categories — `ministry` is the DEFAULT responsible ministry; the model may
+# pick another one (flagged `ministry_mismatch` for review). Subcategory ids are
+# globally unique. `other` is mandatory. A category whose default is `other`
+# (digital_services: the platform's OWNER is responsible, listed in its
+# description) never raises `ministry_mismatch`.
+# -----------------------------------------------------------------------------
+categories:
+  - id: health_services
+    label_ar: الخدمات الصحية
+    label_en: Health services
+    ministry: health
+    description_ar: >-
+      المستشفيات والمراكز الصحية والصيدليات: الأخطاء الطبية والتشخيص الخاطئ، تأخر
+      المواعيد والتحويلات، نقص الأدوية، تعامل الأطباء والتمريض، الطوارئ والإسعاف،
+      نظافة المنشأة الصحية من الداخل. لا يشمل تلوث البيئة العامة ولا نظافة الأحياء.
+    subcategories:
+      - {id: medical_error,           label_ar: خطأ طبي}
+      - {id: appointments_delay,      label_ar: تأخر المواعيد}
+      - {id: medicine_shortage,       label_ar: نقص الأدوية}
+      - {id: health_staff_conduct,    label_ar: سلوك الكادر الصحي}
+      - {id: emergency_services,      label_ar: الطوارئ والإسعاف}
+      - {id: health_facility_hygiene, label_ar: نظافة المنشأة الصحية}
+
+  - id: education
+    label_ar: التعليم
+    label_en: Education
+    ministry: education
+    description_ar: >-
+      المدارس ورياض الأطفال والجامعات: مباني المدارس وصيانتها وتكييفها، سلامة الطلاب
+      والتنمر داخل المدرسة، المعلمون والإدارة المدرسية، القبول والنقل بين المدارس،
+      الحافلات المدرسية، التعليم الجامعي والابتعاث.
+    subcategories:
+      - {id: school_facilities,  label_ar: مرافق المدارس وصيانتها}
+      - {id: student_safety,     label_ar: سلامة الطلاب والتنمر}
+      - {id: teaching_staff,     label_ar: المعلمون والكادر التعليمي}
+      - {id: admission_transfer, label_ar: القبول والنقل}
+      - {id: school_transport,   label_ar: النقل المدرسي}
+      - {id: higher_education,   label_ar: التعليم الجامعي}
+
+  - id: municipal_services
+    label_ar: الخدمات البلدية
+    label_en: Municipal services
+    ministry: municipal
+    description_ar: >-
+      خدمات الأمانات والبلديات داخل المدن والأحياء: الحفر والطرق الداخلية والأرصفة،
+      إنارة الشوارع، جمع النفايات ونظافة الأحياء، مخالفات البناء والتعديات، رخص
+      المحلات والمقاهي وإزعاجها، الحدائق، الحيوانات الضالة. لا يشمل طفح الصرف الصحي
+      أو انقطاع المياه (المياه والصرف الصحي)، ولا الطرق السريعة والطرق بين المدن (النقل
+      والطرق)، ولا التفحيط والقيادة المتهورة والمخالفات المرورية ولو في الأحياء (الأمن
+      والسلامة).
+    subcategories:
+      - {id: roads_potholes,      label_ar: الطرق الداخلية والحفر}
+      - {id: street_lighting,     label_ar: إنارة الشوارع}
+      - {id: waste_cleanliness,   label_ar: النظافة والنفايات}
+      - {id: building_violations, label_ar: مخالفات البناء والتعديات}
+      - {id: shop_licensing,      label_ar: رخص المحلات والأنشطة}
+      - {id: public_parks,        label_ar: الحدائق والمرافق العامة}
+      - {id: stray_animals,       label_ar: الحيوانات الضالة}
+      - {id: noise_nuisance,      label_ar: الإزعاج والضوضاء}
+
+  - id: housing
+    label_ar: الإسكان
+    label_en: Housing
+    ministry: municipal
+    description_ar: >-
+      برامج الإسكان والدعم السكني وتأخر صرفه أو رفضه، النزاعات الإيجارية بين المؤجر
+      والمستأجر، تأخر المطورين العقاريين في تسليم الوحدات. مخالفات البناء في الأحياء
+      تتبع الخدمات البلدية.
+    subcategories:
+      - {id: housing_support,  label_ar: الدعم السكني}
+      - {id: rental_disputes,  label_ar: النزاعات الإيجارية}
+      - {id: developer_delays, label_ar: تأخر المطورين العقاريين}
+
+  - id: water_sewage
+    label_ar: المياه والصرف الصحي
+    label_en: Water and sewage
+    ministry: mewa
+    description_ar: >-
+      شبكات المياه والصرف الصحي: طفح الصرف الصحي والمجاري وتجمع مياهه في الشوارع أو
+      المنازل أو أمام المدارس ولو تكرر، انقطاع المياه وضعف الضخ، جودة مياه الشرب
+      وتلوثها، فواتير وعدادات المياه. طفح الصرف يُصنَّف هنا دائماً لا في الخدمات البلدية
+      ولا نظافة الأحياء ولا البيئة.
+    subcategories:
+      - {id: water_outage,    label_ar: انقطاع المياه}
+      - {id: water_quality,   label_ar: جودة المياه}
+      - {id: sewage_overflow, label_ar: طفح الصرف الصحي}
+      - {id: water_billing,   label_ar: فواتير المياه}
+
+  - id: electricity
+    label_ar: الكهرباء
+    label_en: Electricity
+    ministry: energy
+    description_ar: >-
+      خدمة الكهرباء: انقطاع التيار وتكراره، فواتير الكهرباء، الأسلاك المكشوفة وصناديق
+      وأعمدة الكهرباء الخطرة في الشارع، عدادات الكهرباء. إنارة الشوارع تتبع الخدمات
+      البلدية.
+    subcategories:
+      - {id: power_outage,        label_ar: انقطاع الكهرباء}
+      - {id: electricity_billing, label_ar: فواتير الكهرباء}
+      - {id: electrical_hazard,   label_ar: خطر كهربائي}
+      - {id: meter_issues,        label_ar: العدادات}
+
+  - id: labor
+    label_ar: العمل والعمال
+    label_en: Labor and workers
+    ministry: hrsd
+    description_ar: >-
+      علاقة العمل بين العامل وصاحب العمل: تأخر الرواتب أو عدم صرفها، الفصل التعسفي،
+      ساعات العمل وبيئته والسكن العمالي، العمالة المنزلية، الاستقدام ومكاتبه.
+    subcategories:
+      - {id: unpaid_wages,        label_ar: تأخر الأجور}
+      - {id: wrongful_termination, label_ar: الفصل التعسفي}
+      - {id: work_conditions,     label_ar: بيئة وظروف العمل}
+      - {id: domestic_workers,    label_ar: العمالة المنزلية}
+      - {id: recruitment,         label_ar: الاستقدام}
+
+  - id: social_support
+    label_ar: الضمان والدعم الاجتماعي
+    label_en: Social security and support
+    ministry: hrsd
+    description_ar: >-
+      الضمان الاجتماعي والإعانات الاجتماعية، خدمات ذوي الإعاقة وبطاقاتهم، رعاية كبار
+      السن، الحماية من العنف والإيذاء داخل الأسرة. الدعم السكني يتبع الإسكان.
+    subcategories:
+      - {id: social_security,     label_ar: الضمان الاجتماعي}
+      - {id: disability_services, label_ar: خدمات ذوي الإعاقة}
+      - {id: elderly_care,        label_ar: رعاية كبار السن}
+      - {id: family_protection,   label_ar: الحماية الأسرية}
+
+  - id: consumer_protection
+    label_ar: حماية المستهلك والتجارة
+    label_en: Consumer protection and commerce
+    ministry: commerce
+    description_ar: >-
+      شراء السلع والمنتجات من المتاجر والشركات الخاصة: الغش التجاري والسلع المقلدة،
+      رفع الأسعار، المتاجر الإلكترونية التي لم تسلّم الطلب أو لم ترد المبلغ، الضمان
+      والاسترجاع، الإعلانات المضللة. الفنادق والشقق المفروشة والشاليهات والمنتجعات
+      وحجوزات الإيواء والسياحة تتبع السياحة، وفواتير الكهرباء والمياه والاتصالات لها
+      تصنيفاتها.
+    subcategories:
+      - {id: commercial_fraud, label_ar: الغش التجاري}
+      - {id: price_gouging,    label_ar: رفع الأسعار}
+      - {id: ecommerce,        label_ar: التجارة الإلكترونية}
+      - {id: warranty_returns, label_ar: الضمان والاسترجاع}
+      - {id: misleading_ads,   label_ar: الإعلانات المضللة}
+
+  - id: transport
+    label_ar: النقل والطرق
+    label_en: Transport and roads
+    ministry: transport
+    description_ar: >-
+      الطرق السريعة والطرق بين المدن وحفرها وصيانتها، النقل العام من حافلات وقطارات،
+      تطبيقات نقل الركاب، سلامة تصميم الطرق والتقاطعات واللوحات الإرشادية. الحفر في
+      شوارع الأحياء تتبع الخدمات البلدية، والمخالفات المرورية والتفحيط تتبع الأمن
+      والسلامة.
+    subcategories:
+      - {id: highways,           label_ar: الطرق السريعة وبين المدن}
+      - {id: public_transport,   label_ar: النقل العام}
+      - {id: ride_hailing,       label_ar: تطبيقات النقل}
+      - {id: road_safety_design, label_ar: سلامة تصميم الطرق}
+
+  - id: telecom
+    label_ar: الاتصالات والإنترنت
+    label_en: Telecommunications and internet
+    ministry: mcit
+    description_ar: >-
+      شركات الاتصالات والإنترنت: ضعف تغطية الشبكة، بطء الإنترنت أو انقطاعه، فواتير
+      الجوال والإنترنت المنزلي، البريد وشركات الشحن والتوصيل.
+    subcategories:
+      - {id: network_coverage, label_ar: تغطية الشبكة}
+      - {id: internet_quality, label_ar: جودة الإنترنت}
+      - {id: telecom_billing,  label_ar: فواتير الاتصالات}
+      - {id: postal_services,  label_ar: البريد والشحن}
+
+  - id: security_safety
+    label_ar: الأمن والسلامة العامة
+    label_en: Security and public safety
+    ministry: interior
+    description_ar: >-
+      المرور والمخالفات المرورية والقيادة المتهورة والتفحيط والسرعة وقطع الإشارات ولو
+      في شوارع الأحياء، الدفاع المدني والحرائق واشتراطات السلامة، الأمن العام من سرقات
+      ومشاجرات وتجمعات مزعجة، الأحوال المدنية والجوازات والإقامات. التفحيط من اختصاص
+      الداخلية لا البلديات.
+    subcategories:
+      - {id: traffic_violations,     label_ar: المرور والمخالفات}
+      - {id: civil_defense,          label_ar: الدفاع المدني والحرائق}
+      - {id: public_order,           label_ar: الأمن العام}
+      - {id: civil_status_passports, label_ar: الأحوال المدنية والجوازات}
+
+  - id: justice
+    label_ar: الخدمات العدلية
+    label_en: Judicial services
+    ministry: justice
+    description_ar: >-
+      المحاكم وتأخر القضايا والجلسات والأحكام، كتابة العدل والوكالات والصكوك، التنفيذ
+      وتأخر تنفيذ الأحكام.
+    subcategories:
+      - {id: court_delays,    label_ar: تأخر القضايا}
+      - {id: notary_services, label_ar: كتابة العدل والوكالات}
+      - {id: enforcement,     label_ar: التنفيذ}
+
+  - id: environment
+    label_ar: البيئة والتلوث
+    label_en: Environment and pollution
+    ministry: mewa
+    description_ar: >-
+      التلوث البيئي خارج شبكات المياه: الدخان والغبار وانبعاثات المصانع، رمي المخلفات
+      الصناعية ومخلفات البناء في البر، الزراعة والثروة الحيوانية والمبيدات، الاحتطاب
+      والتعدي على الغطاء النباتي. نفايات الأحياء تتبع الخدمات البلدية.
+    subcategories:
+      - {id: air_pollution,           label_ar: تلوث الهواء}
+      - {id: industrial_waste,        label_ar: المخلفات الصناعية}
+      - {id: agriculture_livestock,   label_ar: الزراعة والثروة الحيوانية}
+      - {id: vegetation_encroachment, label_ar: التعدي على الغطاء النباتي}
+
+  - id: digital_services
+    label_ar: الخدمات الإلكترونية الحكومية
+    label_en: Government e-services
+    ministry: other
+    description_ar: >-
+      تعطل المنصات والتطبيقات الحكومية، مشكلات الدخول والحسابات والتحقق، تأخر معالجة
+      الطلبات المقدمة إلكترونياً. الجهة المختصة هي مالكة المنصة، مثل: أبشر (الداخلية)،
+      ناجز (العدل)، صحتي وموعد (الصحة)، مدرستي ونور (التعليم)، قوى ومساند (الموارد
+      البشرية والتنمية الاجتماعية)، بلدي وسكني (البلديات والإسكان)، اعتماد (المالية)؛
+      وإن لم تُعرف مالكة المنصة فالجهة أخرى.
+    subcategories:
+      - {id: platform_outage,       label_ar: تعطل المنصات}
+      - {id: account_access,        label_ar: الحسابات والدخول}
+      - {id: service_request_delay, label_ar: تأخر معالجة الطلبات الإلكترونية}
+
+  - id: hajj_umrah
+    label_ar: الحج والعمرة
+    label_en: Hajj and Umrah
+    ministry: hajj
+    description_ar: >-
+      خدمات الحجاج والمعتمرين وسكنهم ونقلهم، شركات ومؤسسات الحج والعمرة، تصاريح الحج
+      والعمرة.
+    subcategories:
+      - {id: hajj_services,  label_ar: خدمات الحجاج}
+      - {id: umrah_services, label_ar: خدمات المعتمرين}
+      - {id: hajj_permits,   label_ar: التصاريح}
+
+  - id: religious_affairs
+    label_ar: الشؤون الإسلامية والمساجد
+    label_en: Islamic affairs and mosques
+    ministry: islamic_affairs
+    description_ar: >-
+      صيانة المساجد ونظافتها وتكييفها ودورات مياهها، خدمات المساجد والأئمة والمؤذنين.
+    subcategories:
+      - {id: mosque_maintenance, label_ar: صيانة المساجد}
+      - {id: mosque_services,    label_ar: خدمات المساجد}
+
+  - id: tourism
+    label_ar: السياحة والضيافة
+    label_en: Tourism and hospitality
+    ministry: tourism
+    description_ar: >-
+      الفنادق والشقق المفروشة والشاليهات والمنتجعات وسائر مرافق الإيواء السياحي،
+      حجوزات الإيواء والرحلات السياحية عبر المكاتب والتطبيقات، المواقع والوجهات
+      والفعاليات السياحية وخدماتها ورسومها. شراء السلع من المتاجر يتبع حماية المستهلك.
+    subcategories:
+      - {id: hotels,        label_ar: الفنادق والإيواء}
+      - {id: tourist_sites, label_ar: المواقع السياحية}
+
+  - id: government_fees
+    label_ar: الرسوم والمدفوعات الحكومية
+    label_en: Government fees and payments
+    ministry: finance
+    description_ar: >-
+      الرسوم والغرامات الحكومية والاعتراض عليها، استرداد مبالغ دُفعت لجهة حكومية، تأخر
+      صرف مستحقات الموردين والمقاولين لدى الجهات الحكومية.
+    subcategories:
+      - {id: fees_disputes,  label_ar: الاعتراض على الرسوم}
+      - {id: refunds,        label_ar: الاسترداد}
+      - {id: payment_delays, label_ar: تأخر المستحقات}
+
+  - id: other
+    label_ar: أخرى
+    label_en: Other
+    ministry: other
+    description_ar: >-
+      ما لا ينطبق عليه أي تصنيف آخر، أو مستند ليس شكوى أصلاً مثل خطاب شكر أو استفسار
+      عام.
+    subcategories:
+      - {id: other_general, label_ar: أخرى}
+
+# -----------------------------------------------------------------------------
+# Regions — the 13 administrative regions + `unknown` (mandatory, no cities).
+# City names are matched whole-word against normalised text (see
+# Taxonomy.region_for_city for the ambiguity rules, e.g. bare «المدينة»).
+# All regions stay although one entity receives every complaint: a place in
+# another region is how a complaint outside its jurisdiction is detected.
+# `places_en` (optional): common English spellings of the region and its main
+# cities, for complaints written in English. They and `label_en` match
+# case-insensitively as whole words, with or without an article («Al Khobar»,
+# «Al-Khobar», «Khobar» are one name). A Latin name belongs to one region. The
+# Latin names of `governorates` count for the entity's region by themselves.
+# -----------------------------------------------------------------------------
+regions:
+  - id: riyadh
+    label_ar: منطقة الرياض
+    label_en: Riyadh Region
+    # Every place of `governorates` below is listed here too, so both lookups agree.
+    cities: [الرياض, مدينة الرياض, الخرج, الدرعية, المجمعة, الزلفي, وادي الدواسر, الدوادمي, شقراء, عفيف,
+             القويعية, العيينة, الجبيلة, السيح, الدلم, ساجر, حوطة سدير, تمير, الخماسين, الأفلاج, ليلى,
+             أشيقر, حوطة بني تميم, السليل, ضرما, المزاحمية, رماح, ثادق, حريملاء, الحريق, الغاط, مرات]
+    places_en: [Riyadh, Riyadh Province]
+  - id: makkah
+    label_ar: منطقة مكة المكرمة
+    label_en: Makkah Region
+    cities: [مكة, مكة المكرمة, جدة, الطائف, رابغ, القنفذة, الليث, الجموم]
+    places_en: [Makkah, Mecca, Jeddah, Jedda, Jiddah, Taif, Rabigh, Qunfudhah]
+  - id: madinah
+    label_ar: منطقة المدينة المنورة
+    label_en: Madinah Region
+    cities: [المدينة, المدينة المنورة, ينبع, العلا, بدر, خيبر]
+    places_en: [Madinah, Medina, AlUla, Al-Ula, Yanbu, Khaybar]
+  - id: qassim
+    label_ar: منطقة القصيم
+    label_en: Al-Qassim Region
+    cities: [بريدة, عنيزة, الرس, البكيرية, المذنب]
+    places_en: [Qassim, Buraydah, Buraidah, Unaizah, Unayzah, Ar Rass]
+  - id: eastern
+    label_ar: المنطقة الشرقية
+    label_en: Eastern Province
+    cities: [الدمام, الخبر, الظهران, الأحساء, الهفوف, المبرز, الجبيل, القطيف, حفر الباطن, الخفجي, رأس تنورة]
+    places_en: [Dammam, Khobar, Dhahran, Al Ahsa, Hofuf, Jubail, Qatif, Hafar Al Batin, Khafji]
+  - id: asir
+    label_ar: منطقة عسير
+    label_en: Asir Region
+    cities: [أبها, خميس مشيط, بيشة, النماص, محايل عسير, أحد رفيدة]
+    places_en: [Asir, Abha, Khamis Mushait, Bisha]
+  - id: tabuk
+    label_ar: منطقة تبوك
+    label_en: Tabuk Region
+    cities: [تبوك, تيماء, ضباء, الوجه, أملج, حقل]
+    places_en: [Tabuk, Tayma, Umluj]
+  - id: hail
+    label_ar: منطقة حائل
+    label_en: Hail Region
+    cities: [حائل, بقعاء, الغزالة]
+    places_en: [Ha'il]             # not bare «Hail»: an English word (a hail storm)
+  - id: northern_borders
+    label_ar: منطقة الحدود الشمالية
+    label_en: Northern Borders Region
+    cities: [عرعر, رفحاء, طريف]
+    places_en: [Arar, Rafha, Turaif]
+  - id: jazan
+    label_ar: منطقة جازان
+    label_en: Jazan Region
+    cities: [جازان, جيزان, صبيا, أبو عريش, صامطة]
+    places_en: [Jazan, Jizan, Sabya, Abu Arish]
+  - id: najran
+    label_ar: منطقة نجران
+    label_en: Najran Region
+    cities: [نجران, شرورة]
+    places_en: [Najran, Sharurah]
+  - id: bahah
+    label_ar: منطقة الباحة
+    label_en: Al-Baha Region
+    cities: [الباحة, بلجرشي, المخواة]
+    places_en: [Al Baha, Bahah]
+  - id: jouf
+    label_ar: منطقة الجوف
+    label_en: Al-Jouf Region
+    cities: [سكاكا, القريات, دومة الجندل]
+    places_en: [Al Jouf, Sakaka, Qurayyat, Dumat Al Jandal]
+  - id: unknown
+    label_ar: غير محدد
+    label_en: Unknown
+    cities: []
+
+# -----------------------------------------------------------------------------
+# Governorates — the governorates of the receiving entity's region + `unknown`
+# (mandatory, no places). This list (20 governorates + the city of Riyadh)
+# mirrors the commonly published administrative division and MUST be verified
+# with the Emirate before production; places are editable.
+# `places` are city/town names and well-known aliases matched whole-word
+# against normalised text (Taxonomy.governorate_for_place); the governorate's
+# own name is always a place, listed or not. A place may belong to one
+# governorate only and must not be a city of another region. The place map
+# runs on the place fields the model extracted (city, district/address); the
+# rest of the letter is searched only to back a governorate the model chose
+# itself, so names that are also everyday words («مرات», «الحريق») are safe
+# here.
+# `places_en` (optional): common English spellings, for complaints written in
+# English; the governorate's `label_en` is always one. They match like the
+# regions' Latin names (see Regions above), and follow the same rules as
+# `places`: one governorate each, never a Latin name of another region.
+# -----------------------------------------------------------------------------
+governorates:
+  - {id: riyadh_city,      label_ar: مدينة الرياض,     label_en: Riyadh City,        places: [الرياض, مدينة الرياض],
+     places_en: [Riyadh, Riyadh City]}
+  - {id: diriyah,          label_ar: الدرعية,          label_en: Diriyah,            places: [الدرعية, العيينة, الجبيلة],
+     places_en: [Diriyah, Dir'iyah, Uyaynah, Jubailah]}
+  - {id: kharj,            label_ar: الخرج,            label_en: Al-Kharj,           places: [الخرج, السيح, الدلم],
+     places_en: [Al Kharj, Kharj, Dilam]}
+  - {id: dawadmi,          label_ar: الدوادمي,         label_en: Dawadmi,            places: [الدوادمي, ساجر],
+     places_en: [Duwadimi, Sajir]}
+  - {id: majmaah,          label_ar: المجمعة,          label_en: Al-Majmaah,         places: [المجمعة, حوطة سدير, تمير],
+     places_en: [Majma'ah, Hawtat Sudair, Tumair]}
+  - {id: quwayiyah,        label_ar: القويعية,         label_en: Al-Quwayiyah,       places: [القويعية],
+     places_en: [Quwaiyah]}
+  - {id: wadi_dawasir,     label_ar: وادي الدواسر,     label_en: Wadi Al-Dawasir,    places: [وادي الدواسر, الخماسين],
+     places_en: [Khamasin]}
+  - {id: aflaj,            label_ar: الأفلاج,          label_en: Al-Aflaj,           places: [الأفلاج, ليلى]}
+  - {id: zulfi,            label_ar: الزلفي,           label_en: Az-Zulfi,           places: [الزلفي]}
+  - {id: shaqra,           label_ar: شقراء,            label_en: Shaqra,             places: [شقراء, أشيقر],
+     places_en: [Shaqra, Shaqraa, Ushaiqer]}
+  - {id: hotat_bani_tamim, label_ar: حوطة بني تميم,    label_en: Hotat Bani Tamim,   places: [حوطة بني تميم],
+     places_en: [Hawtat Bani Tamim]}
+  - {id: afif,             label_ar: عفيف,             label_en: Afif,               places: [عفيف]}
+  - {id: sulayyil,         label_ar: السليل,           label_en: As-Sulayyil,        places: [السليل]}
+  - {id: dhurma,           label_ar: ضرما,             label_en: Dhurma,             places: [ضرما]}
+  - {id: muzahmiyah,       label_ar: المزاحمية,        label_en: Al-Muzahmiyah,      places: [المزاحمية]}
+  - {id: rumah,            label_ar: رماح,             label_en: Rumah,              places: [رماح]}
+  - {id: thadiq,           label_ar: ثادق,             label_en: Thadiq,             places: [ثادق]}
+  - {id: huraymila,        label_ar: حريملاء,          label_en: Huraymila,          places: [حريملاء],
+     places_en: [Huraimla]}
+  - {id: hareeq,           label_ar: الحريق,           label_en: Al-Hareeq,          places: [الحريق],
+     places_en: [Hariq]}
+  - {id: ghat,             label_ar: الغاط,            label_en: Al-Ghat,            places: [الغاط]}
+  - {id: marat,            label_ar: مرات,             label_en: Marat,              places: [مرات]}
+  - {id: unknown,          label_ar: غير محدد,         label_en: Unknown,            places: []}
+
+# -----------------------------------------------------------------------------
+# Statuses — the complaint lifecycle. `open: false` = closed (SLA stops).
+# -----------------------------------------------------------------------------
+statuses:
+  - {id: new,       label_ar: جديدة,                label_en: New,                                  open: true}
+  - {id: in_review, label_ar: قيد المراجعة,          label_en: In review,                            open: true}
+  - {id: referred,  label_ar: محالة للجهة المختصة,    label_en: Referred to the competent authority,  open: true}
+  - {id: resolved,  label_ar: مغلقة,                label_en: Closed,                               open: false}
+  - {id: rejected,  label_ar: مستبعدة,              label_en: Dismissed,                            open: false}
+
+# -----------------------------------------------------------------------------
+# Priority factors the LLM may cite (≤ 4 per complaint).
+# -----------------------------------------------------------------------------
+factors:
+  - {id: life_safety,         label_ar: خطر على الحياة أو السلامة,                         label_en: Risk to life or safety}
+  - {id: health_risk,         label_ar: خطر صحي,                                          label_en: Health risk}
+  - {id: vulnerable_person,   label_ar: "فئة أولى بالرعاية (كبير سن، طفل، ذو إعاقة، مريض)", label_en: "Vulnerable person (elderly, child, disabled, patient)"}
+  - {id: public_impact,       label_ar: أثر على عدد كبير من الناس,                          label_en: Affects many people}
+  - {id: service_outage,      label_ar: انقطاع خدمة أساسية,                                label_en: Essential service outage}
+  - {id: financial_harm,      label_ar: ضرر مالي,                                          label_en: Financial harm}
+  - {id: repeated_unresolved, label_ar: شكوى متكررة دون حل,                                label_en: Repeated unresolved complaint}
+  - {id: time_sensitive,      label_ar: مهلة أو موعد وشيك,                                 label_en: Imminent deadline}
+  - {id: rights_violation,    label_ar: انتهاك حق نظامي,                                   label_en: Violation of a statutory right}
+  - {id: minor_inconvenience, label_ar: إزعاج بسيط,                                        label_en: Minor inconvenience}
+
+# -----------------------------------------------------------------------------
+# Affected scope and complainant tone.
+# -----------------------------------------------------------------------------
+scopes:
+  - {id: individual, label_ar: فرد,               label_en: Individual}
+  - {id: household,  label_ar: أسرة,              label_en: Household}
+  - {id: community,  label_ar: حي أو مجتمع محلي,   label_en: Neighbourhood or local community}
+  - {id: public,     label_ar: عموم الناس,         label_en: General public}
+
+tones:
+  - {id: angry,   label_ar: غاضب,  label_en: Angry}
+  - {id: upset,   label_ar: مستاء, label_en: Upset}
+  - {id: neutral, label_ar: محايد, label_en: Neutral}
+
+# -----------------------------------------------------------------------------
+# Signals — deterministic priority FLOORS. A phrase found in the OCR text can
+# only raise the model's priority up to `floor`; rules never set the top
+# priority (that stays a judgement the model or a reviewer makes).
+# A pattern matches word by word (complaints.detect_signals): every word may
+# carry an attached و/ف/ب/ل/ك and the article, which is optional whether or not
+# the pattern writes it («تسرب غاز» finds «تسرب الغاز»); a word may end in an
+# inflection or the accusative alef («خطراً»), and a final ة also matches its
+# suffixed form («حياة» finds «حياتهم»). Nothing else may follow a word, so
+# «مسن» never fires inside «مسند».
+# -----------------------------------------------------------------------------
+signals:
+  - id: life_safety
+    label_ar: خطر على الحياة أو السلامة
+    label_en: Risk to life or safety
+    floor: high
+    patterns: [خطر على حياة, خطر مباشر على حياة, خطر حقيقي على حياة, خطر على الأرواح, يهدد حياة,
+               يهدد سلامة, عرض حياة, يعرض حياة, تعرض حياة, تعريض حياة, حريق, تماس كهربائي,
+               أسلاك مكشوفة, أسلاك كهربائية مكشوفة, انهيار, تسرب غاز, تسمم, اختناق, غرق]
+  - id: health_risk
+    label_ar: خطر صحي
+    label_en: Health risk
+    floor: medium
+    patterns: [طفح الصرف, طفح المجاري, مياه ملوثة, تلوث المياه, نفايات طبية, قوارض, حشرات, عدوى, أوبئة]
+  - id: vulnerable_person
+    label_ar: فئة أولى بالرعاية
+    label_en: Vulnerable person
+    floor: medium
+    patterns: [كبير في السن, كبار السن, مسن, طفل, أطفال, رضيع, ذوي الإعاقة, ذوي الاحتياجات, حامل, غسيل كلوي, جهاز أكسجين, مريض قلب]
+  - id: service_outage
+    label_ar: انقطاع خدمة أساسية
+    label_en: Essential service outage
+    floor: medium
+    patterns: [انقطاع الكهرباء, انقطاع التيار, انقطاع المياه, انقطاع متكرر للكهرباء, انقطاع متكرر للمياه,
+               بدون كهرباء, بدون ماء, انقطاع الإنترنت]
+  - id: repeated_unresolved
+    label_ar: شكوى متكررة دون حل
+    label_en: Repeated unresolved complaint
+    floor: medium
+    patterns: [للمرة الثانية, للمرة الثالثة, سبق أن تقدمت, سبق تقديم, تقدمت سابقا, دون جدوى, دون استجابة, لم يتم الرد, منذ أشهر, منذ عدة أشهر]
+
+# -----------------------------------------------------------------------------
+# Review reasons — why a processed complaint is flagged for a human reviewer.
+# -----------------------------------------------------------------------------
+review_reasons:
+  not_a_complaint: المستند لا يبدو شكوى
+  low_confidence: ثقة النموذج منخفضة
+  priority_floor_applied: رفعت القواعد الأولوية عن تقدير النموذج
+  category_other: لم يُحدَّد تصنيف واضح
+  ministry_other: لم تُحدَّد جهة مختصة
+  empty_text: لا يوجد نص مقروء كافٍ
+  input_truncated: اقتُطع جزء من النص لطوله
+  evidence_unverified: لم يُتحقَّق من أي دليل في النص
+  fields_unverified: حقول لم تُطابق نص المستند حرفياً وتنتظر قبول المراجع أو تعديله
+  repeat_complainant: مقدم الشكوى له شكاوى أخرى بنفس رقم الهوية
+  ministry_mismatch: الجهة المختارة تختلف عن الجهة المعتادة لهذا التصنيف
+  outside_jurisdiction: موقع الشكوى خارج نطاق منطقة الرياض (يُقترح إحالتها لإمارة المنطقة المختصة)
+  # A letter to the governor or office of one of the region's governorates
+  # counts as addressed to the Emirate (policy decision, 2026-09-25).
+  addressed_elsewhere: الخطاب موجّه إلى جهة غير إمارة منطقة الرياض ومحافظاتها
+  suspected_instructions: النص يتضمن عبارات تخاطب النظام أو تحاول توجيه التصنيف أو الأولوية
+  critical_unsupported: أولوية حرجة من تقدير النموذج دون عبارة خطر في النص تؤيدها

@@ -5,9 +5,17 @@ work through it in four right-to-left panels — upload and preview, proofreadin
 you accept or reject, the document's fields with **a citation back to the line
 they came from**, and a chat that answers only from that document.
 
-Everything runs **locally on the GPU** — documents never leave the machine.
+Two more workspace tabs sit beside it: **مقارنة المستندات** compares two
+documents, and **إدارة الشكاوى** is a complaints desk for إمارة منطقة الرياض.
+It reads incoming complaints, cites their facts, proposes the category, the
+ministry to refer each one to and its priority, and keeps a register with
+reviewer feedback and analytics.
 
-> **Docs:** [`API.md`](API.md) — HTTP API guide for other teams · [`ARCHITECTURE.md`](ARCHITECTURE.md) — internal design, runtime topology, VRAM lifecycle.
+Everything runs **locally on the GPU** — documents never leave the machine
+(unless an operator deliberately points the complaints tab at a remote model;
+see [`COMPLAINTS.md`](COMPLAINTS.md)).
+
+> **Docs:** [`API.md`](API.md) — HTTP API guide for other teams · [`ARCHITECTURE.md`](ARCHITECTURE.md) — internal design, runtime topology, VRAM lifecycle · [`COMPLAINTS.md`](COMPLAINTS.md) — the complaint-management tab: pipeline, priorities, review, switching the model, evaluation.
 
 ## Three local models, five stages
 
@@ -82,7 +90,8 @@ strongest token (the number) and marked approximate with `≈`.
 - An NVIDIA GPU. Validated on an **RTX 5080 (16 GB, Blackwell/sm_120)**. Resident
   at idle: **~9 GB VRAM** (Surya OCR server ~3.4 GB + Qwen3-4B ~4.8 GB at the
   default 8192-token context; set `STRUCTURE_N_CTX` to change it). ALLaM (~5 GB)
-  loads on demand per `/proofread` into the free headroom and is freed after.
+  loads on demand per `/proofread` (or for a batch of complaints, when the
+  complaints tab is switched to ALLaM) into the free headroom and is freed after.
 - A CUDA build of PyTorch (torch cu130 validated) for Surya's layout/detection.
 - Surya weights download automatically on first run into the Hugging Face cache:
   the OCR VLM GGUF (`surya-2.gguf` ~1.3 GB + mmproj ~0.2 GB) and the layout model.
@@ -149,11 +158,28 @@ that choice is remembered in the browser. Below ~1100 px the panels reflow to a
 Values keep the deed's own digits, and a token like `١٨٦٥-٠٠٠٠٢١٣٤` is pinned to
 the order the deed prints it (see *Arabic numbers and bidi* below).
 
+### The other tabs
+
+The tabs above the panels switch workspace. **تحليل المستند** is the four
+panels above. **مقارنة المستندات** compares two documents (see `API.md`).
+**إدارة الشكاوى** is the complaint-management desk. It has three sections:
+
+- **استقبال ومعالجة**: drop PDFs, images or `.txt` files, or paste text, and
+  watch each complaint go through OCR, structuring and classification.
+- **سجل الشكاوى**: the register, with search, filters and CSV export. Each
+  complaint opens with its cited fields, the reviewer's form and a draft reply.
+- **التحليلات**: the dashboard, and insights written by the model.
+
+It keeps its register under `data/complaints/` (git-ignored). The model it uses
+can be switched between Qwen3, ALLaM and an OpenAI-compatible endpoint. See
+[`COMPLAINTS.md`](COMPLAINTS.md).
+
 ### Stopping
 
 Press **Ctrl+C** in the terminal running `run.ps1`. The app's shutdown handler
-reaps all three llama.cpp servers (Qwen 8123, ALLaM 8124, Surya OCR). If it was
-force-killed and GPU memory is stuck, reap orphans manually:
+stops the complaints worker, then reaps all three llama.cpp servers (Qwen 8123,
+ALLaM 8124, Surya OCR). If it was force-killed and GPU memory is stuck, reap
+orphans manually:
 
 ```powershell
 foreach($p in 8100,8123,8124){ $c=Get-NetTCPConnection -LocalPort $p -State Listen -EA SilentlyContinue|Select -First 1; if($c){ Stop-Process -Id $c.OwningProcess -Force } }; Get-Process llama-server -EA SilentlyContinue | Stop-Process -Force
@@ -176,6 +202,7 @@ map:
 | `POST` | `/chat` | Document-grounded Q&A (NDJSON stream) |
 | `POST` | `/export/docx` | OCR text → plain RTL Word `.docx` |
 | `POST` | `/export/layout-docx` | PDF/image + page texts + page layouts → a `.docx` that rebuilds the original page |
+| various | `/complaints/*` | The complaints tab: intake, register, review, analytics, insights (see *Complaints (CMS)* in `API.md`) |
 
 ```bash
 curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
@@ -187,7 +214,7 @@ curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
 |---|---|
 | `app.py` | FastAPI server + the JSON/stream API. Serves `ui.html` at `/`. Warms the OCR + structurer at startup. |
 | `ui.html` | The whole front end: four RTL panels (تحويل مستند → التدقيق اللغوي → تحليل المستند → شات و Q&A), one inline stylesheet and one inline script, no build step and no external assets. |
-| `extract.py` | Surya OCR engine: render pages (pypdfium2) → full-page OCR each page (via llama.cpp) → the text, and the layout (blocks with label, box and lines). |
+| `extract.py` | Surya OCR engine: render pages (pypdfium2) → full-page OCR each page (via llama.cpp) → the text, and the layout (blocks with label, box and lines). Owns `PDFIUM_LOCK`, which every PDFium call in the app holds. |
 | `llm.py` | Owns the two llama.cpp `llama-server` instances (Qwen3 STRUCT + ALLaM PROOF; GPU, api-key) + `chat_json` / `chat_text` / `chat_stream` helpers. |
 | `classify.py` | Classification stage: rules tier + Qwen3 vote → one template, with a corroboration floor and a review flag. |
 | `registry.py` | Loads and validates `templates/*.yaml`; owns the Arabic `Normalizer` (and `with_index`, which provenance is built on). |
@@ -200,6 +227,17 @@ curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
 | `docx_export.py` | Plain RTL Word export (`build_docx`, python-docx). |
 | `layout_docx.py` | Formatted Word export (`build_layout_docx`): the page image measured against its layout — sizes, weight, colour, shading, rules, tables, pictures, spacing — with the text written in. |
 | `test_layout_docx.py` | Tests for the formatted export on the three sample documents (`python -m unittest test_layout_docx`). |
+| `test_pdfium_lock.py` | Tests that the OCR pass and the formatted export hold `extract.PDFIUM_LOCK` around every PDFium call, and that `extract_document(..., progress=False)` leaves `/progress` alone (`python -m unittest test_pdfium_lock`). |
+| `complaints_api.py` | Complaints tab: the service with its one worker thread (OCR → pipeline → store) and the `/complaints` routes. |
+| `complaints.py` | Complaint pipeline: structuring and classification (two LLM calls, cited and verified), the rules tier (priority floors, places, addressee, review reasons), the reply draft and the insights. |
+| `complaints_llm.py` | Pluggable LLM providers for the complaints tab (Qwen3, ALLaM, OpenAI-compatible) and the lease that shares ALLaM with `/proofread`. |
+| `complaints_store.py` | SQLite register of complaints, their files, reviewer feedback, history and analytics. |
+| `complaints_taxonomy.py` | Loads and validates `templates/complaints_taxonomy.yaml`; place and city matching. |
+| `templates/complaints_taxonomy.yaml` | The receiving entity, priorities with response times, ministries, categories, regions, governorates, statuses, rule signals and review reasons. |
+| `complaints_ui.js`, `complaints.css` | The complaints tab's script and stylesheet, served at `/complaints/ui.js` and `/complaints/ui.css`. |
+| `test_complaints*.py`, `test_complaints_ui.js` | Tests for the complaints tab (see `COMPLAINTS.md`; the UI tests need node). |
+| `samples/complaints/` | Synthetic complaint PDFs with labels, and two held-out text sets for evaluation. |
+| `COMPLAINTS.md` | The complaints tab: pipeline, priority model, review, switching the model, data, evaluation. |
 | `fetch_llama_server.ps1` | Downloads the official llama.cpp CUDA build into `vendor/`. |
 | `vendor/llama-cuda/` | Vendored `llama-server.exe` + CUDA runtime (git-ignored). |
 | `requirements.txt` | Python dependencies. |
@@ -272,8 +310,10 @@ sets `.textContent` directly will print deed numbers backwards.
 - **Struggles on heavily degraded / handwritten scans** — out of distribution;
   can return garbled output.
 - Upload ceiling 100 MB. Binds to `127.0.0.1` (local only); to expose on a LAN
-  start uvicorn with `--host 0.0.0.0` on a trusted network **and add auth** (the
-  app has none of its own).
+  start uvicorn with `--host 0.0.0.0` on a trusted network, list the name or
+  address clients use in `APP_ALLOWED_HOSTS` (requests naming any other host
+  are refused), **and add auth** (the app has none of its own). The complaints
+  register holds personal data.
 - OCR model: [`datalab-to/surya-ocr-2`](https://huggingface.co/datalab-to/surya-ocr-2)
   (GGUF served via llama.cpp; check the model card for weight licensing terms).
 
@@ -329,7 +369,7 @@ cd "D:\Yousef\Arabic_Text_Extraction"
 cd "D:\Yousef\Arabic_Text_Extraction\QR_Code_Scanner"
 .\.venv\Scripts\python.exe -m qrbot_service
 
-
+foreach($p in 8100,8123,8124){ $c=Get-NetTCPConnection -LocalPort $p -State Listen -EA SilentlyContinue|Select -First 1; if($c){ Stop-Process -Id $c.OwningProcess -Force } }; Get-Process llama-server -EA SilentlyContinue | Stop-Process -Force
 
 
 The current Temprature settings are:

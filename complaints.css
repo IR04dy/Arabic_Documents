@@ -1,0 +1,416 @@
+/* Complaint management workspace (third tab). Everything is scoped under
+   #complaints-workspace and built on the ui.html tokens, so light and dark
+   follow the rest of the app. New tokens: --serious (the "high" priority,
+   between --crit and --warn), --cms-bar (chart marks: a data blue, distinct
+   from the interactive --accent), --cms-grid (hairline gridlines), --cms-hl
+   (the cited span in the OCR viewer), --cms-elev (the open detail panel's
+   shadow), and the *-ink text colours: the status
+   tones are fine for swatches and borders, but as 11–12px text on their soft
+   fills they miss WCAG AA in light mode (--warn on --warn-soft is 2.97:1), so
+   badge, tag and SLA text use a darker ink (every pair ≥ 4.5:1; dark mode
+   already passes and keeps the tones). test_complaints_ui checks the ratios. */
+#complaints-workspace{
+  --serious:#C2561B; --serious-soft:#FCEFE6;
+  --cms-bar:#3C72C9; --cms-grid:#E3E7EE; --cms-hl:#FFE9A8;
+  --warn-ink:#7A5A00; --ok-ink:#176B43; --crit-ink:#B03232; --serious-ink:#A3440F; --accent-text:#1A5DC8;
+  --cms-elev:0 10px 28px rgba(15,20,27,.13),0 1px 3px rgba(15,20,27,.08);
+  flex:1;min-height:0;overflow:auto;padding:22px 24px 40px;
+  position:relative   /* contains the visually hidden tables, or they stretch the page and scrollIntoView scrolls the whole app */
+}
+@media (prefers-color-scheme:dark){#complaints-workspace{
+  --serious:#F0925A; --serious-soft:#3B2618;
+  --cms-bar:#6C9EEA; --cms-grid:#2A3340; --cms-hl:#5A4712;
+  --warn-ink:var(--warn); --ok-ink:var(--ok); --crit-ink:var(--crit); --serious-ink:var(--serious); --accent-text:var(--accent);
+  --cms-elev:0 12px 32px rgba(0,0,0,.5),0 1px 3px rgba(0,0,0,.4);
+}}
+#complaints-workspace[hidden]{display:none!important}
+#complaints-workspace [hidden]{display:none!important}
+#complaints-workspace .cms-content{max-width:1400px;margin:0 auto}
+#complaints-workspace .cms-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
+#complaints-workspace .cms-muted{color:var(--ink-2);font-size:12px}
+#complaints-workspace .cms-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:22px}
+#complaints-workspace .cms-center{justify-content:center;margin-top:12px}
+#complaints-workspace bdo{unicode-bidi:isolate-override}
+
+/* ---- header strip ---- */
+#complaints-workspace .cms-heading{display:flex;justify-content:space-between;gap:16px 24px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+#complaints-workspace .cms-heading h2{font-size:21px;margin:0}
+#complaints-workspace .cms-title-row{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:4px}
+#complaints-workspace .cms-heading p{color:var(--ink-2);margin:0;max-width:780px}
+/* The receiving entity: the desk every complaint is addressed to (taxonomy receiving_entity). */
+#complaints-workspace .cms-entity{display:inline-flex;align-items:baseline;gap:5px;max-width:100%;padding:3px 11px;border:1px solid var(--accent-line);border-radius:var(--pill);background:var(--accent-soft);color:var(--ink-2);font-size:12px;line-height:1.6}
+#complaints-workspace .cms-entity strong{color:var(--accent);font-size:13px;overflow-wrap:anywhere}
+#complaints-workspace .cms-toolbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+#complaints-workspace .cms-chip{white-space:nowrap;color:var(--ok-ink);border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:var(--surface);font-size:11px}
+#complaints-workspace .cms-chip.is-remote{color:var(--warn-ink);border-color:var(--warn);background:var(--warn-soft);font-weight:700}
+#complaints-workspace .cms-provider{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);min-width:0;max-width:100%}
+#complaints-workspace .cms-provider select{min-width:0;flex:1 1 auto;max-width:300px}
+#complaints-workspace select,#complaints-workspace input[type="text"],#complaints-workspace input[type="search"],#complaints-workspace textarea{
+  font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 9px;max-width:100%}
+#complaints-workspace select:disabled{opacity:.6}
+#complaints-workspace textarea{width:100%;resize:vertical;line-height:1.8}
+#complaints-workspace .cms-dot{width:8px;height:8px;border-radius:50%;background:var(--muted-2);flex:none;display:inline-block}
+#complaints-workspace .cms-dot[data-state="ready"]{background:var(--ok)}
+#complaints-workspace .cms-dot[data-state="loading"]{background:var(--accent);animation:cms-pulse 1.2s ease-in-out infinite}
+#complaints-workspace .cms-dot[data-state="error"],#complaints-workspace .cms-dot[data-state="unconfigured"]{background:var(--crit)}
+#complaints-workspace .cms-queue{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);min-height:22px}
+@keyframes cms-pulse{50%{opacity:.35}}
+
+/* ---- buttons, alerts, empty states (the comparison tab's language) ---- */
+#complaints-workspace .cms-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;line-height:1.4}
+#complaints-workspace .cms-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+#complaints-workspace .cms-btn:disabled{opacity:.5;cursor:default}
+#complaints-workspace .cms-btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+#complaints-workspace .cms-btn-primary:hover:not(:disabled){color:var(--accent-ink);filter:brightness(1.07)}
+#complaints-workspace .cms-btn-ghost{border-color:transparent;background:transparent;color:var(--accent)}
+#complaints-workspace .cms-btn-danger{color:var(--crit-ink)}
+#complaints-workspace .cms-btn-danger:hover:not(:disabled){border-color:var(--crit);color:var(--crit-ink)}
+#complaints-workspace .cms-btn-sm{padding:3px 10px;font-size:12px}
+#complaints-workspace .cms-link{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+#complaints-workspace .cms-error{background:var(--crit-soft);color:var(--crit-ink);padding:10px 12px;border:1px solid var(--crit);border-radius:var(--r);margin:10px 0;overflow-wrap:anywhere;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#complaints-workspace .cms-empty{border:1px dashed var(--line-3);border-radius:10px;text-align:center;padding:28px 22px;color:var(--ink-2);margin-top:10px}
+#complaints-workspace .cms-empty strong{display:block;color:var(--ink);margin-bottom:6px;font-size:14px}
+#complaints-workspace .cms-spinner{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;display:inline-block;vertical-align:-2px;animation:cms-spin .7s linear infinite;flex:none}
+@keyframes cms-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#complaints-workspace .cms-spinner,#complaints-workspace .cms-dot,#complaints-workspace .cms-step.is-active::before{animation:none!important}}
+#complaints-workspace .cms-section-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px}
+#complaints-workspace .cms-section-head h3{font-size:15px;margin:0}
+#complaints-workspace .cms-section-head .cms-btn:last-child{margin-inline-start:auto}
+
+/* ---- segmented control between the three sub-views ---- */
+#complaints-workspace .cms-views{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--bar);margin:2px 0 14px;max-width:100%}
+#complaints-workspace .cms-views button{border:0;background:transparent;color:var(--ink-2);padding:7px 18px;border-radius:6px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+#complaints-workspace .cms-views button:hover{color:var(--ink)}
+#complaints-workspace .cms-views button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow),0 0 0 1px var(--line)}
+
+/* ---- intake ---- */
+#complaints-workspace .cms-intake-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+#complaints-workspace .cms-drop{border:1.5px dashed var(--muted-2);border-radius:10px;background:var(--surface);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;color:var(--ink-2);cursor:pointer;transition:border-color .15s,background .15s}
+#complaints-workspace .cms-drop strong{color:var(--ink);font-size:14px}
+#complaints-workspace .cms-drop .cms-btn{margin-top:6px}
+#complaints-workspace .cms-drop:hover,#complaints-workspace .cms-drop.is-over{border-color:var(--accent);background:var(--accent-soft)}
+#complaints-workspace .cms-drop.is-busy{opacity:.7;cursor:progress}
+#complaints-workspace .cms-paste{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+#complaints-workspace .cms-paste summary{cursor:pointer;font-weight:700;padding:2px 0}
+#complaints-workspace .cms-paste[open] summary{margin-bottom:10px}
+#complaints-workspace .cms-paste label{display:block;font-size:12px;color:var(--ink-2);margin:8px 0 4px}
+#complaints-workspace .cms-paste input{width:100%}
+#complaints-workspace .cms-paste .cms-row{justify-content:space-between;margin-top:8px}
+#complaints-workspace .cms-count-over{color:var(--crit-ink);font-weight:700}
+#complaints-workspace #cms-upload-progress{width:100%;height:5px;accent-color:var(--accent);margin:4px 0 8px}
+#complaints-workspace .cms-intake-list{list-style:none;margin:0;padding:0}
+#complaints-workspace .cms-job{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) auto;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:8px}
+#complaints-workspace .cms-job[data-stage="error"]{border-color:var(--crit)}
+#complaints-workspace .cms-job-name{font-weight:700;overflow-wrap:anywhere}
+#complaints-workspace .cms-job-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:12px;color:var(--ink-2);margin-top:2px}
+#complaints-workspace .cms-job-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#complaints-workspace .cms-job-note{grid-column:1/-1;margin:0;font-size:12.5px;overflow-wrap:anywhere}
+#complaints-workspace .cms-job-note.is-error{color:var(--crit-ink)}
+#complaints-workspace .cms-steps{display:flex;list-style:none;margin:0;padding:0;gap:4px}
+#complaints-workspace .cms-step{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#complaints-workspace .cms-step::before{content:"";height:4px;border-radius:2px;background:var(--line-2)}
+#complaints-workspace .cms-step.is-done{color:var(--ink-2)}
+#complaints-workspace .cms-step.is-done::before{background:var(--ok)}
+#complaints-workspace .cms-step.is-active{color:var(--accent);font-weight:700}
+#complaints-workspace .cms-step.is-active::before{background:var(--accent);animation:cms-pulse 1.2s ease-in-out infinite}
+#complaints-workspace .cms-step.is-failed{color:var(--crit-ink);font-weight:700}
+#complaints-workspace .cms-step.is-failed::before{background:var(--crit)}
+
+/* ---- badges and tags ---- */
+#complaints-workspace .cms-prio{display:inline-flex;align-items:center;gap:6px;padding:1px 9px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--bar);color:var(--ink-2);font-size:11.5px;font-weight:700;white-space:nowrap;line-height:1.7}
+#complaints-workspace .cms-prio::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--muted-2);flex:none}
+#complaints-workspace .cms-prio[data-priority="critical"]{color:var(--crit-ink);background:var(--crit-soft);border-color:var(--crit)}
+#complaints-workspace .cms-prio[data-priority="critical"]::before{background:var(--crit)}
+#complaints-workspace .cms-prio[data-priority="high"]{color:var(--serious-ink);background:var(--serious-soft);border-color:var(--serious)}
+#complaints-workspace .cms-prio[data-priority="high"]::before{background:var(--serious)}
+#complaints-workspace .cms-prio[data-priority="medium"]{color:var(--warn-ink);background:var(--warn-soft);border-color:var(--warn)}
+#complaints-workspace .cms-prio[data-priority="medium"]::before{background:var(--warn)}
+#complaints-workspace .cms-prio[data-priority="low"]{color:var(--ok-ink);background:var(--ok-soft);border-color:var(--ok)}
+#complaints-workspace .cms-prio[data-priority="low"]::before{background:var(--ok)}
+#complaints-workspace .cms-swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:6px;vertical-align:-1px;flex:none;background:var(--muted-2)}
+#complaints-workspace .cms-swatch[data-priority="critical"]{background:var(--crit)}
+#complaints-workspace .cms-swatch[data-priority="high"]{background:var(--serious)}
+#complaints-workspace .cms-swatch[data-priority="medium"]{background:var(--warn)}
+#complaints-workspace .cms-swatch[data-priority="low"]{background:var(--ok)}
+#complaints-workspace .cms-tag{display:inline-block;font-size:11px;padding:0 8px;border-radius:var(--pill);border:1px solid var(--line-2);background:var(--bar);color:var(--ink-2);white-space:nowrap;line-height:1.8}
+#complaints-workspace .cms-tag.is-warn{color:var(--warn-ink);border-color:var(--warn);background:var(--warn-soft)}
+#complaints-workspace .cms-tag.is-ok{color:var(--ok-ink);border-color:var(--ok);background:var(--ok-soft)}
+#complaints-workspace .cms-tag.is-crit{color:var(--crit-ink);border-color:var(--crit);background:var(--crit-soft)}
+#complaints-workspace .cms-tag.is-accent{color:var(--accent-text);border-color:var(--accent-line);background:var(--accent-soft)}
+#complaints-workspace .cms-tag.is-out{color:var(--crit-ink);border:1px dashed var(--crit);background:transparent;font-weight:700}   /* outside the jurisdiction: dashed, never read as a priority */
+#complaints-workspace .cms-sla{white-space:nowrap;color:var(--ink-2)}
+#complaints-workspace .cms-sla.is-soon{color:var(--warn-ink);font-weight:700}
+#complaints-workspace .cms-sla.is-over{color:var(--crit-ink);font-weight:700}
+
+/* ---- register ---- */
+#complaints-workspace .cms-filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+#complaints-workspace .cms-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink-2);min-width:0}
+#complaints-workspace .cms-filters .cms-field select{max-width:200px}
+#complaints-workspace .cms-field-q{flex:1 1 220px}
+#complaints-workspace .cms-field-q input{width:100%}
+#complaints-workspace .cms-toggle{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:var(--pill);cursor:pointer;background:var(--surface);white-space:nowrap}
+#complaints-workspace .cms-toggle input{accent-color:var(--accent);margin:0}
+#complaints-workspace .cms-toggle:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+/* The wrap is the query container of the detail panel: 100cqi is its visible
+   width. It never scrolls vertically (its height is the table's): a vertical
+   scrollbar would narrow the visible width under a panel sized in cqi. */
+#complaints-workspace .cms-table-wrap{overflow-x:auto;overflow-y:hidden;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:opacity .15s;container:cms-register/inline-size}
+#complaints-workspace .is-loading{opacity:.6}
+#complaints-workspace .cms-table-wrap.is-loading{opacity:1}            /* a reload dims the rows, never the open panel */
+#complaints-workspace .cms-table-wrap.is-loading .cms-rrow{opacity:.6}
+#complaints-workspace .cms-table{width:100%;border-collapse:collapse;min-width:1000px;font-size:12.5px}
+#complaints-workspace .cms-table th{background:var(--bar);color:var(--ink-2);font-weight:700;text-align:start;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:12px}
+#complaints-workspace .cms-table td{padding:9px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+#complaints-workspace .cms-table tbody tr:last-child td{border-bottom:0}
+#complaints-workspace .cms-table tbody tr.cms-rrow{cursor:pointer}
+#complaints-workspace .cms-table tbody tr.cms-rrow:hover,#complaints-workspace .cms-table tbody tr.cms-rrow.is-expanded{background:var(--accent-soft)}
+#complaints-workspace .cms-table td.cms-nowrap{white-space:nowrap}
+/* Accordion: the reference is the row's button; the open row carries an accent bar on its start edge. */
+#complaints-workspace .cms-rrow > td:first-child{position:relative}
+#complaints-workspace .cms-rrow.is-expanded > td{border-bottom-color:transparent}
+#complaints-workspace .cms-rrow.is-expanded > td:first-child::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--accent)}
+#complaints-workspace .cms-rtoggle{display:inline-flex;align-items:center;gap:6px;margin:-3px -6px;padding:3px 6px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+#complaints-workspace .cms-rtoggle:hover,#complaints-workspace .cms-rtoggle[aria-expanded="true"]{color:var(--accent-text)}
+#complaints-workspace .cms-rtoggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* The chevron points forward (left in RTL) while folded, and down once open. */
+#complaints-workspace .cms-chev{flex:none;color:var(--ink-2);transition:transform .15s ease}
+[dir="rtl"] #complaints-workspace .cms-chev{transform:rotate(180deg)}
+#complaints-workspace .cms-rtoggle[aria-expanded="true"] .cms-chev{transform:rotate(90deg);color:var(--accent)}
+/* The detail row spans every column; its frame sticks to the start edge at
+   the width of the visible scroll box, so a wide table scrolls under it and
+   the panel never scrolls sideways (--cms-panel-w: set by the script only
+   where container units are missing). */
+#complaints-workspace .cms-table tbody tr.cms-detail-row > td{padding:0;background:var(--accent-soft);border-bottom:1px solid var(--line)}
+#complaints-workspace .cms-table tbody tr.cms-detail-row.is-detached > td{background:var(--bar)}
+#complaints-workspace .cms-panel-frame{position:sticky;inset-inline-start:0;width:var(--cms-panel-w,100%);width:100cqi;padding:2px 10px 12px}
+#complaints-workspace .cms-detail-row.is-detached .cms-panel-frame{padding-top:10px}
+#complaints-workspace .cms-subject{font-weight:700;color:var(--ink);max-width:360px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+#complaints-workspace .cms-cell-sub{font-size:11.5px;color:var(--ink-2);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+
+/* ---- analytics: KPI tiles ---- */
+#complaints-workspace .cms-kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-bottom:14px}   /* 7 tiles: 7 / 4+3 / 2 per row with the last one spanning */
+#complaints-workspace .cms-kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 16px;min-width:0}
+#complaints-workspace .cms-kpi[data-flag="crit"]{border-inline-start:4px solid var(--crit)}
+#complaints-workspace .cms-kpi[data-flag="warn"]{border-inline-start:4px solid var(--warn)}
+#complaints-workspace .cms-kpi-label{font-size:12px;color:var(--ink-2)}
+#complaints-workspace .cms-kpi-value{font-size:28px;font-weight:700;line-height:1.35;color:var(--ink)}
+#complaints-workspace .cms-kpi-sub{font-size:11.5px;color:var(--ink-2);overflow-wrap:anywhere}
+
+/* ---- analytics: chart cards ---- */
+#complaints-workspace .cms-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;transition:opacity .15s}
+#complaints-workspace .cms-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;min-width:0;margin:0}
+#complaints-workspace .cms-chart.is-wide{grid-column:1/-1}
+#complaints-workspace .cms-chart-head{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+#complaints-workspace .cms-chart-head h3,#complaints-workspace .cms-chart h4{font-size:14px;margin:0}
+#complaints-workspace .cms-chart h4{font-size:13px;margin-top:14px}
+#complaints-workspace .cms-chart-sub{font-size:11.5px;color:var(--ink-2)}
+#complaints-workspace .cms-chart-empty{color:var(--ink-2);font-size:12px;padding:18px 0 6px}
+#complaints-workspace .cms-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 22px}
+#complaints-workspace .cms-bars{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+#complaints-workspace .cms-bar-row{display:grid;grid-template-columns:minmax(84px,34%) minmax(0,1fr);gap:10px;align-items:center;min-height:26px;border-radius:4px}
+#complaints-workspace .cms-bar-label{font-size:12px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center}
+#complaints-workspace .cms-bar-label span{overflow:hidden;text-overflow:ellipsis}
+/* The track is the plot: hairline gridlines at 0/25/50/75/100 %, the bar grows
+   from the start (right) edge, and 52px stay free for the value at the tip. */
+#complaints-workspace .cms-bar-track{position:relative;height:26px;margin-inline-end:52px;border-inline-start:1px solid var(--line);border-inline-end:1px solid var(--cms-grid);
+  background:repeating-linear-gradient(to left,transparent 0 calc(25% - 1px),var(--cms-grid) calc(25% - 1px) 25%)}
+#complaints-workspace .cms-bar{position:absolute;inset-inline-start:0;top:6px;height:14px;background:var(--cms-bar);border-start-end-radius:4px;border-end-end-radius:4px;transition:filter .12s}
+#complaints-workspace .cms-bar[data-priority="critical"]{background:var(--crit)}
+#complaints-workspace .cms-bar[data-priority="high"]{background:var(--serious)}
+#complaints-workspace .cms-bar[data-priority="medium"]{background:var(--warn)}
+#complaints-workspace .cms-bar[data-priority="low"]{background:var(--ok)}
+#complaints-workspace .cms-bar-value{position:absolute;top:50%;transform:translateY(-50%);padding-inline-start:6px;font-size:12px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+#complaints-workspace .cms-bar-row:hover .cms-bar{filter:brightness(1.15) saturate(1.1)}
+#complaints-workspace .cms-bar-row:hover .cms-bar-label{color:var(--ink)}
+#complaints-workspace .cms-trend{position:relative;margin-top:8px;border-radius:6px}
+#complaints-workspace .cms-trend svg{display:block;width:100%;height:210px;overflow:visible}
+#complaints-workspace .cms-col{fill:var(--cms-bar);transition:filter .12s}
+#complaints-workspace .cms-col.is-hot{filter:brightness(1.25) saturate(1.1)}
+#complaints-workspace .cms-gridline{stroke:var(--cms-grid);stroke-width:1;shape-rendering:crispEdges}
+#complaints-workspace .cms-baseline{stroke:var(--line);stroke-width:1;shape-rendering:crispEdges}
+#complaints-workspace .cms-hover-line{stroke:var(--line-3);stroke-width:1;shape-rendering:crispEdges}
+#complaints-workspace .cms-axis-text{fill:var(--ink-2);font-size:11px;font-family:var(--font)}
+#complaints-workspace .cms-value-text{fill:var(--ink);font-size:11px;font-family:var(--font);font-weight:700}
+#complaints-workspace .cms-heat-wrap{overflow-x:auto;margin-top:10px}
+#complaints-workspace .cms-heat{border-collapse:separate;border-spacing:2px;width:100%;min-width:560px;font-size:12px}
+#complaints-workspace .cms-heat th{font-weight:400;color:var(--ink-2);text-align:start;padding:5px 8px;white-space:nowrap}
+#complaints-workspace .cms-heat thead th{font-weight:700;text-align:center}
+#complaints-workspace .cms-heat thead th:first-child{text-align:start}
+#complaints-workspace .cms-heat td{text-align:center;padding:6px;border-radius:4px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:64px}
+#complaints-workspace .cms-heat td.is-zero{color:var(--ink-2)}
+#complaints-workspace .cms-heat td.is-total{font-weight:700;background:var(--bar)}
+#complaints-workspace .cms-grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:10px 26px;align-items:start}
+#complaints-workspace .cms-mini-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+#complaints-workspace .cms-mini-table th{color:var(--ink-2);font-weight:700;text-align:start;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+#complaints-workspace .cms-mini-table td{padding:6px 8px;border-bottom:1px solid var(--line-2);vertical-align:top}
+#complaints-workspace .cms-kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:5px 14px;font-size:12.5px;margin:10px 0 0}
+#complaints-workspace .cms-kv dt{color:var(--ink-2)}
+#complaints-workspace .cms-kv dd{margin:0;color:var(--ink);overflow-wrap:anywhere;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+#complaints-workspace .cms-tip{position:fixed;z-index:30;pointer-events:none;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 18px rgba(15,20,27,.18);padding:6px 10px;font-size:12px;max-width:260px;line-height:1.5}
+#complaints-workspace .cms-tip strong{display:block;color:var(--ink);font-size:14px}
+
+/* ---- insights ---- */
+#complaints-workspace .cms-insights{margin-top:14px}
+#complaints-workspace .cms-insights .cms-section-head{margin-top:0}
+#complaints-workspace .cms-headline{font-size:15px;font-weight:700;margin:12px 0;line-height:1.8;overflow-wrap:anywhere}
+#complaints-workspace .cms-insight-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+#complaints-workspace .cms-insight{border:1px solid var(--line-2);border-radius:8px;background:var(--card);padding:11px 13px;overflow-wrap:anywhere}
+#complaints-workspace .cms-insight strong{display:block;margin-bottom:4px}
+#complaints-workspace .cms-insight p{margin:0 0 8px;color:var(--ink-2);line-height:1.8}
+#complaints-workspace .cms-refchip{border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-text);border-radius:var(--pill);padding:0 8px;font:inherit;font-size:11px;cursor:pointer;margin-inline-end:4px}
+#complaints-workspace .cms-refchip:hover{filter:brightness(.95)}
+#complaints-workspace .cms-refchips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+#complaints-workspace .cms-refchips .cms-refchip{margin:0;white-space:nowrap}
+#complaints-workspace .cms-watch{margin:6px 0 0;padding-inline-start:20px}
+#complaints-workspace .cms-watch li{margin:3px 0;overflow-wrap:anywhere}
+
+/* ---- detail panel (the expanded register row) ----
+   A viewport-relative height: the two columns scroll inside it, the header
+   with the actions stays on top, and the register below stays in reach.
+   position:relative (here and on the details column): the container query
+   makes the wrap the containing block of absolutely placed descendants, and
+   the visually hidden spans of a scrolled column must not stick out of it. */
+#complaints-workspace .cms-panel{position:relative;display:flex;flex-direction:column;height:var(--cms-panel-h,min(85vh,960px));min-height:320px;border:1px solid var(--accent-line);border-radius:10px;background:var(--ground);color:var(--ink);font-size:13px;overflow:hidden;box-shadow:var(--cms-elev);cursor:auto}
+@supports (height:1dvh){#complaints-workspace .cms-panel{height:var(--cms-panel-h,min(85dvh,960px))}}   /* --cms-panel-h: fitHeight() in complaints_ui.js */
+#complaints-workspace .cms-d-head{position:sticky;top:0;z-index:1;display:flex;gap:10px 18px;align-items:flex-start;justify-content:space-between;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;flex-shrink:0}
+#complaints-workspace .cms-d-headline{min-width:0;flex:1 1 380px}
+#complaints-workspace .cms-d-head h3{font-size:16px;margin:4px 0 0;overflow-wrap:anywhere;line-height:1.6}
+#complaints-workspace .cms-d-head h3:focus{outline:none}   /* a focus target (tabindex=-1), not a control: no ring */
+#complaints-workspace .cms-d-note{display:inline-block;margin:6px 0 0;padding:0 9px;border:1px dashed var(--warn);border-radius:var(--pill);background:var(--warn-soft);color:var(--warn-ink);font-size:11.5px;font-weight:700;line-height:1.8}
+#complaints-workspace .cms-fold{width:7px;height:7px;border-left:2px solid currentColor;border-top:2px solid currentColor;transform:translateY(2px) rotate(45deg);flex:none}   /* an upward chevron (physical sides: up is up in RTL too) */
+#complaints-workspace .cms-d-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px;color:var(--ink-2)}
+#complaints-workspace .cms-d-ref{font-weight:700;color:var(--ink);font-size:12.5px}
+#complaints-workspace .cms-d-actions{display:flex;gap:6px;flex-wrap:wrap}
+#complaints-workspace .cms-d-status{padding:6px 16px 0}
+/* The panel's announcer stays in the accessibility tree when empty (display:none
+   would drop it, and a live region that reappears is often not read). */
+#complaints-workspace .cms-d-status:empty{padding:0}
+#complaints-workspace .cms-d-error{margin:8px 16px 0}
+#complaints-workspace .cms-d-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#complaints-workspace .cms-d-info{position:relative;overflow:auto;padding:14px 16px 30px;min-height:0}
+#complaints-workspace .cms-d-viewer{display:flex;flex-direction:column;min-height:0;border-inline-start:1px solid var(--line);background:var(--surface)}
+#complaints-workspace .cms-vtabs{display:flex;align-items:center;gap:4px;padding:6px 12px 0;border-bottom:1px solid var(--line);flex-shrink:0;background:var(--bar)}
+#complaints-workspace .cms-vtabs button{border:0;border-bottom:3px solid transparent;background:transparent;color:var(--ink-2);padding:8px 14px;cursor:pointer;font:inherit;font-weight:700;font-size:12.5px}
+#complaints-workspace .cms-vtabs button[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+#complaints-workspace .cms-vtabs a{margin-inline-start:auto;font-size:12px;color:var(--accent)}
+#complaints-workspace .cms-vpanel{flex:1;min-height:0;overflow:auto;position:relative;background:var(--card)}
+#complaints-workspace .cms-vpanel iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--card)}
+#complaints-workspace .cms-vpanel img{display:block;max-width:100%;height:auto;margin:0 auto}
+#complaints-workspace .cms-vpanel .cms-empty{margin:18px}
+#complaints-workspace .cms-plain{margin:0;padding:14px 16px;font:inherit;font-size:14px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext}
+#complaints-workspace .cms-ocr{padding:8px 0 40px;font-size:14px;line-height:1.9;outline-offset:-2px}
+#complaints-workspace .cms-line{display:grid;grid-template-columns:2.6em minmax(0,1fr);gap:10px;padding:0 10px 0 14px;border-radius:4px}
+#complaints-workspace .cms-lno{color:var(--muted);font-size:11px;text-align:end;user-select:none;font-variant-numeric:tabular-nums;padding-top:4px;line-height:1.9}
+#complaints-workspace .cms-ltext{white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:start;min-height:1.9em}
+#complaints-workspace .cms-line.is-hit{background:var(--accent-soft)}
+#complaints-workspace .cms-line:focus{outline:none}
+#complaints-workspace .cms-line:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#complaints-workspace .cms-line mark{background:var(--cms-hl);color:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--warn)}
+#complaints-workspace .cms-pagemark{margin:12px 14px 6px;padding:1px 10px;font-size:11px;color:var(--ink-2);background:var(--bar);border:1px solid var(--line-2);border-radius:var(--pill);width:max-content}
+#complaints-workspace .cms-pagemark:first-child{margin-top:4px}
+#complaints-workspace .cms-block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:12px;min-width:0}
+#complaints-workspace .cms-block > h4{font-size:13.5px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#complaints-workspace .cms-block.is-warn{border-color:var(--warn);background:var(--warn-soft)}
+#complaints-workspace .cms-block.is-crit{border-color:var(--crit)}
+#complaints-workspace .cms-summary{font-size:14px;line-height:1.9;margin:0;overflow-wrap:anywhere}
+#complaints-workspace .cms-facts{margin:10px 0 0;padding-inline-start:20px;line-height:1.8}
+#complaints-workspace .cms-facts li{overflow-wrap:anywhere}
+#complaints-workspace .cms-warnings{margin:10px 0 0;padding-inline-start:20px;color:var(--warn-ink);font-size:12px}
+#complaints-workspace .cms-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#complaints-workspace .cms-fcard{border:1px solid var(--line-2);border-radius:var(--r);background:var(--card);padding:7px 10px;min-width:0}
+#complaints-workspace .cms-fcard.is-wide{grid-column:1/-1}
+#complaints-workspace .cms-flabel{font-size:11.5px;color:var(--ink-2)}
+#complaints-workspace .cms-fvalue{font-size:13px;overflow-wrap:anywhere;min-height:20px;color:var(--ink)}
+#complaints-workspace .cms-fvalue.is-empty{color:var(--ink-2)}
+#complaints-workspace .cms-fmeta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:2px}
+#complaints-workspace .cms-fmeta .cms-tag{white-space:normal;overflow-wrap:anywhere}   /* «قبِلها المراجع · <name>» wraps inside a narrow card */
+/* «تحتاج مراجعة»: values the model worded itself, each accepted or changed by the reviewer. */
+#complaints-workspace .cms-block.cms-pending{border-color:var(--warn);border-inline-start-width:4px}
+#complaints-workspace .cms-block.cms-pending.is-settled{border-color:var(--ok)}
+#complaints-workspace .cms-pending > p.cms-muted{margin:0 0 8px;line-height:1.7}
+#complaints-workspace .cms-pending-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+#complaints-workspace .cms-prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;border:1px solid var(--line-2);border-radius:var(--r);background:var(--card);padding:7px 10px}
+#complaints-workspace .cms-prow.is-editing{border-color:var(--accent-line)}
+#complaints-workspace .cms-prow .cms-field input{width:100%;max-width:none}
+#complaints-workspace .cms-prow-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#complaints-workspace .cms-prow-msg{display:block;font-size:12px;color:var(--ink-2);margin-top:2px;overflow-wrap:anywhere}
+#complaints-workspace .cms-pending-done{margin:0;font-size:13px;font-weight:700;color:var(--ok-ink)}
+#complaints-workspace .cms-pending-done:focus{outline:none}
+#complaints-workspace .cms-pending-done:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+#complaints-workspace .cms-cite{display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:11px;color:var(--accent-text);background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}
+#complaints-workspace .cms-cite:hover{text-decoration:underline}
+#complaints-workspace .cms-unverified{font-size:11px;color:var(--warn-ink);font-weight:700}
+#complaints-workspace .cms-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+#complaints-workspace .cms-chips .cms-tag{white-space:normal;max-width:100%;overflow-wrap:anywhere}   /* long review-reason labels wrap on phones */
+#complaints-workspace .cms-quote{margin:6px 0 0;padding:6px 10px;border-inline-start:3px solid var(--accent-line);background:var(--bar);border-radius:4px;font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;color:var(--ink)}
+#complaints-workspace .cms-quote.is-model{color:var(--ink-2);background:transparent;border:1px dashed var(--line-3);border-inline-start:3px dashed var(--line-3)}   /* the model's wording, not the document's */
+#complaints-workspace .cms-rationale{margin:10px 0 0;line-height:1.9;overflow-wrap:anywhere}
+#complaints-workspace .cms-subhead{font-size:12px;font-weight:700;color:var(--ink-2);margin:12px 0 4px}
+#complaints-workspace .cms-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+#complaints-workspace .cms-form .cms-field select,#complaints-workspace .cms-form .cms-field input{width:100%;max-width:none}
+#complaints-workspace .cms-form .cms-wide{grid-column:1/-1}
+#complaints-workspace .cms-form-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+#complaints-workspace .cms-hint{font-size:11px;color:var(--ink-2);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#complaints-workspace .cms-ack{white-space:pre-wrap;line-height:1.95;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r);padding:12px 14px;font-size:13px;overflow-wrap:anywhere;margin:0 0 8px}
+#complaints-workspace .cms-timeline{list-style:none;margin:0;padding:0 0 0 0;border-inline-start:2px solid var(--line-2);margin-inline-start:5px}
+#complaints-workspace .cms-timeline li{position:relative;padding:0 16px 12px;font-size:12.5px;overflow-wrap:anywhere}
+#complaints-workspace .cms-timeline li::before{content:"";position:absolute;inset-inline-start:-7px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:2px solid var(--line-3)}
+#complaints-workspace .cms-timeline li[data-kind="error"]::before{border-color:var(--crit)}
+#complaints-workspace .cms-timeline li[data-kind="feedback"]::before,#complaints-workspace .cms-timeline li[data-kind="processed"]::before{border-color:var(--ok)}
+#complaints-workspace .cms-time{font-size:11px;color:var(--ink-2);display:block}
+#complaints-workspace .cms-change{display:block;color:var(--ink-2);font-size:12px}
+
+/* ---- responsive: ~1100px keeps two columns; phones stack everything ---- */
+@media (max-width:1280px){
+  #complaints-workspace .cms-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:1000px){
+  #complaints-workspace .cms-job{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+  #complaints-workspace .cms-job-actions{grid-column:1/-1;justify-content:flex-start}
+}
+@media (max-width:760px){
+  #complaints-workspace{padding:16px 12px 30px}
+  #complaints-workspace .cms-heading h2{font-size:18px}
+  #complaints-workspace .cms-toolbar{width:100%}
+  #complaints-workspace .cms-provider{flex:1 1 100%}
+  #complaints-workspace .cms-provider select{max-width:none}
+  #complaints-workspace .cms-views{display:flex;width:100%}
+  #complaints-workspace .cms-views button{flex:1 1 0;padding:7px 6px;font-size:12px}
+  #complaints-workspace .cms-intake-grid,#complaints-workspace .cms-charts,#complaints-workspace .cms-grid-2,
+  #complaints-workspace .cms-split,#complaints-workspace .cms-fields,#complaints-workspace .cms-form{grid-template-columns:minmax(0,1fr)}
+  #complaints-workspace .cms-job{grid-template-columns:minmax(0,1fr)}
+  #complaints-workspace .cms-prow{grid-template-columns:minmax(0,1fr)}
+  #complaints-workspace .cms-prow-actions{justify-content:flex-start}
+  #complaints-workspace .cms-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #complaints-workspace .cms-kpi:last-child:nth-child(odd){grid-column:1/-1}
+  #complaints-workspace .cms-kpi{padding:10px 12px}
+  #complaints-workspace .cms-kpi-value{font-size:22px}
+  #complaints-workspace .cms-filters .cms-field{flex:1 1 calc(50% - 6px)}
+  #complaints-workspace .cms-filters .cms-field select{max-width:none;width:100%}
+  #complaints-workspace .cms-field-q{flex-basis:100%!important}
+  #complaints-workspace .cms-bar-track{margin-inline-end:44px}
+  #complaints-workspace .cms-panel-frame{padding-inline:6px}
+}
+/* A panel narrower than 720 px stacks its columns: the body scrolls as one
+   under the header, the document viewer below the details. Sized by the
+   register's visible width, not the window's; a browser without container
+   queries falls back to the window width. */
+@container cms-register (max-width:720px){
+  #complaints-workspace .cms-d-body{display:block;overflow:auto}
+  #complaints-workspace .cms-d-info{overflow:visible;padding:12px}
+  #complaints-workspace .cms-d-viewer{height:100%;min-height:340px;border-inline-start:0;border-top:1px solid var(--line)}   /* the body's visible height: tabs and text on screen together */
+  #complaints-workspace .cms-d-head{padding:10px 12px;gap:8px}
+  #complaints-workspace .cms-d-headline{flex-basis:100%}
+  #complaints-workspace .cms-d-head h3{font-size:15px;line-height:1.55}
+  #complaints-workspace .cms-d-actions .cms-btn{padding:4px 10px;font-size:12px}
+  #complaints-workspace .cms-d-status{padding:6px 12px 0}
+  #complaints-workspace .cms-d-error{margin:8px 12px 0}
+}
+@supports not (width:1cqi){@media (max-width:760px){
+  #complaints-workspace .cms-d-body{display:block;overflow:auto}
+  #complaints-workspace .cms-d-info{overflow:visible;padding:12px}
+  #complaints-workspace .cms-d-viewer{height:100%;min-height:340px;border-inline-start:0;border-top:1px solid var(--line)}   /* the body's visible height: tabs and text on screen together */
+  #complaints-workspace .cms-d-head{padding:10px 12px}
+  #complaints-workspace .cms-d-headline{flex-basis:100%}
+}}
+@media (prefers-reduced-motion:reduce){#complaints-workspace .cms-chev{transition:none}}

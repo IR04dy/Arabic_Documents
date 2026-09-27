@@ -8,7 +8,9 @@ Internal design of the Arabic PDF Pipeline. For the HTTP contract see
 A single FastAPI process (`app.py`, port **8100**) serves a four-panel RTL web UI
 (`ui.html`: تحويل مستند → التدقيق اللغوي → تحليل المستند → شات و Q&A, after
 `deeds_ui_wireframe.drawio`) and a JSON/stream API. It orchestrates three GPU models through a four-stage pipeline.
-All processing is local; documents never leave the host.
+All processing is local; documents never leave the host. Two more workspace
+tabs share the page and the models: document comparison (`comparison*.py`) and
+complaint management (§5; [`COMPLAINTS.md`](COMPLAINTS.md)).
 
 ```
                          FastAPI app  (app.py, :8100)
@@ -33,8 +35,8 @@ inference runtime for **all three** models — spawned as separate processes:
 | Process | Port | Model | Lifetime | Purpose |
 |---|---|---|---|---|
 | FastAPI (uvicorn) | 8100 | — | foreground | API + UI + orchestration |
-| **STRUCT** llama-server | 8123 | Qwen3-4B-Instruct-2507 (Q8) | resident | `/structure` + `/chat` |
-| **PROOF** llama-server | 8124 | ALLaM-7B-Instruct (Q4_K_M) | **lazy** (per `/proofread`, freed after) | `/proofread` |
+| **STRUCT** llama-server | 8123 | Qwen3-4B-Instruct-2507 (Q8) | resident | `/structure` + `/chat` (+ `/classify`, comparison, the CMS `qwen` provider) |
+| **PROOF** llama-server | 8124 | ALLaM-7B-Instruct (Q4_K_M) | **lazy** (per `/proofread` or CMS batch, freed after) | `/proofread` + the CMS `allam` provider |
 | **Surya OCR** llama-server | ephemeral | `surya-2.gguf` + mmproj | resident after first `/extract` | OCR foundation VLM |
 
 - STRUCT & PROOF are owned by `llm.py` (a `Server` class; shared `--api-key`,
@@ -53,10 +55,14 @@ is lazy:
 |---|---|---|
 | Idle / OCR / structure / chat | Surya OCR (~3.4 GB) + Qwen3 (~4.8 GB) | **~9 GB** (≈7 GB free) |
 | During `/proofread` | + ALLaM (~5 GB) | ~14 GB (fits the headroom) |
+| During a CMS batch on the `allam` provider | + ALLaM (~5 GB), the same instance | ~14 GB |
 
-`/proofread` calls `ensure_proof()` (ALLaM loads in ~3 s, GGUF stays in OS cache)
-and `stop_proof()` in a `finally` to free it again. See
-[[blackwell-llamacpp-gpu]] for the GPU/driver specifics.
+`/proofread` holds ALLaM's lease (`complaints_llm.server_lease(llm.PROOF)`),
+calls `ensure_proof()` (ALLaM loads in ~3 s, GGUF stays in OS cache) and, in a
+shielded `finally`, releases the lease asking for a stop. The server stops only
+once no holder is left, so a proofread and a complaints batch never stop ALLaM
+under each other (§5). See [[blackwell-llamacpp-gpu]] for the GPU/driver
+specifics.
 
 ## 4. Stage internals
 
@@ -82,6 +88,14 @@ and `stop_proof()` in a `finally` to free it again. See
   so it co-exists with Qwen/ALLaM. Surya's default vLLM/Docker backend is not used.
 - `shutdown_server()` matches the spawned process by `*surya-2.gguf*` and kills it
   precisely (never the Qwen/ALLaM servers).
+- **PDFium is not thread-safe.** `PDFIUM_LOCK` (an `RLock`) is held around every
+  PDFium call, and only for that call: opening a PDF with its page count, each
+  page's access, render and close, and the document's close. `layout_docx._Source`
+  (importing it lazily) and the complaints worker's page count take the same lock.
+  It may be taken while holding `_infer_lock`, never the other way round.
+- `extract_document(data, filename, progress=True)`: `progress=False` leaves the
+  live `/progress` record alone. The complaints worker passes it, so its pages
+  never show as the analysis tab's document.
 
 ### Proofread — `proofread.py` + `guard.py`
 - ALLaM corrects Arabic spelling/grammar page-by-page. The **freeze-guard**
@@ -139,18 +153,184 @@ and `stop_proof()` in a `finally` to free it again. See
 - **Tests:** `test_layout_docx.py` runs both paths on the three sample documents
   (a digital Najiz deed, a ruled vector form, a scanned deed with filled bands).
 
-## 5. Security posture
+## 5. Complaint management (CMS)
+
+The **إدارة الشكاوى** tab is a complaints desk for إمارة منطقة الرياض. It
+reads incoming complaints, cites their facts, classifies them, picks the
+ministry to refer each to and a priority, and keeps a register. What it does
+for its users (the pipeline, the priority model, review, evaluation) is in
+[`COMPLAINTS.md`](COMPLAINTS.md); the HTTP contract is in `API.md`. This
+section is how it is built.
+
+### Module map
+
+| Module | Role |
+|---|---|
+| `complaints_taxonomy.py` + `templates/complaints_taxonomy.yaml` | The closed vocabularies (entity, priorities, ministries, categories, regions, governorates, statuses, signals, review reasons). A strict loader, and the place and city matching (Arabic and Latin-script names). Every id becomes a schema enum, a filter value and a column value. |
+| `complaints_llm.py` | `Provider` (`qwen`, `allam`, `openai`), `ProviderRegistry` (the active provider) and `ServerLease` (shared use of a lazily loaded llama-server). |
+| `complaints.py` | The pure pipeline over `(text, provider, taxonomy)`: `structure_complaint` and `classify_complaint` (one constrained LLM call each), the rules tier, `analyze`, `acknowledgment` and `insights`. No database, no HTTP. |
+| `complaints_store.py` | The SQLite register: rows, files, queue claims, feedback, events, analytics. |
+| `complaints_api.py` | `ComplaintService` (the worker) and the `/complaints` router. |
+| `complaints_ui.js`, `complaints.css` | The tab. It builds the DOM with `createElement`/`textContent` only. |
+
+`app.py` only includes the router, stops the service first on shutdown, and
+shares ALLaM through the lease in `/proofread`.
+
+```
+ browser ─/complaints/upload|text─► router ─► Store.create (row queued, file saved) ─► notify()
+                                                                                         │
+            complaints-worker thread (one complaint at a time) ◄────────────────────────┘
+              Store.claim_next
+              ├─ OCR: extract.extract_document (Surya), only when there is no text yet
+              ├─ complaints.analyze(text, registry.active(), taxonomy, precedents, repeat lookup)
+              │     step 1 structure (LLM) ─► step 2 classify (LLM) ─► rules tier
+              └─ Store.save_analysis (stage done, due_at) or Store.fail (stage error)
+ browser ◄─/complaints/queue (polled every 2 s)─ Store.queue_state
+```
+
+### The worker thread
+
+- **One daemon thread, `complaints-worker`.** A second worker would only wait
+  behind the first on the single model slots and crowd `/structure` and
+  `/chat`.
+- **It starts with the app, not at import.** The router's startup handler
+  boots it, so `import app` never begins processing. It boots only if this
+  process takes the store's owner lock (`complaints.db.lock` beside the
+  database). A second app started on the same data directory serves the
+  register but leaves the queue alone.
+- **Boot requeues what a previous process left half-done.** A complaint
+  interrupted three times in a row is failed instead, so one that keeps
+  bringing the app down is not retried forever.
+- **Waking.** An intake calls `notify()`; otherwise the worker polls every
+  30 s. Each pass claims the oldest queued complaint and records every stage
+  change as an event: `queued → ocr → structuring → classifying → done |
+  error`.
+- **OCR runs only when there is no text yet** (a PDF or image never
+  extracted) or a re-extraction was asked for. The PDF page count is checked
+  against `CMS_MAX_PAGES` first.
+- **A busy model** raises `ProviderBusy` after llm's own 150 s wait for the
+  slot. The worker retries 3 times, 5 s apart, then fails the complaint. An
+  unavailable ALLaM (stopped under the request) gets one reload.
+- **A failure the database refuses** (locked, full): the worker lets go of the
+  claim, so delete and reprocess still work, and retries the failure on every
+  pass.
+- **When the queue drains**, the worker releases providers marked
+  `release_after_batch` (ALLaM) and sweeps orphaned files.
+- **Delete and reprocess answer `409`** while this process's worker holds the
+  complaint, or while another process owns the queue and the complaint is in
+  a processing stage.
+- **Shutdown.** `app.py` stops the service before the model servers, joining
+  for 5 s. An item in flight is requeued as interrupted rather than failed. A
+  model call in flight cannot be interrupted, but the thread is a daemon.
+
+### Provider abstraction
+
+`complaints.py` only calls `provider.chat_json(messages, schema, max_tokens,
+temperature)` and reads `provider.n_ctx`.
+
+- **Prompt budgets come from `n_ctx`.** The document gets roughly
+  `(n_ctx − answer − fixed prompt)` tokens at 1.5 characters each, capped at
+  12 000 characters. When the full catalogue would leave step 2 too little room
+  for the complaint (always so at 4096 tokens), it switches to a compact one.
+- **Retries.** An answer cut off by the token cap, or breaking the schema, or
+  a rejected request, is retried once with 60 % of the document.
+- **Every decision is a taxonomy id**, because the JSON schema's enums are
+  built from the taxonomy.
+- **Switching.** `ProviderRegistry.active()` is read per complaint, so a
+  switch (`PUT /complaints/provider`) applies from the next one.
+  `set_active()` releases the old provider when it is `release_after_batch`.
+- **Adapters.**
+  - `LlamaServerProvider` wraps an `llm.Server` (`qwen` → `llm.STRUCT`,
+    `allam` → `llm.PROOF`) and maps its errors to `ProviderBusy`,
+    `ProviderUnavailable` and `ProviderError`.
+  - `OpenAICompatibleProvider` posts to `/v1/chat/completions` with a strict
+    `json_schema` response format. It refuses a non-loopback host unless
+    `CMS_LLM_ALLOW_REMOTE=1`, bypasses environment proxies, does not follow
+    redirects, and never logs the key or the body.
+- **Error messages are safe Arabic.** They reach API responses and a
+  complaint's stored error.
+
+### Data store
+
+- **SQLite in WAL mode**, one connection behind an `RLock`, shared by the
+  worker and the API threadpool. Writes are `BEGIN IMMEDIATE` transactions, so
+  read-then-write steps (dedup in `create`, `claim_next`) are atomic.
+  `secure_delete` is on, and a delete is followed by a WAL checkpoint.
+- **Schema version 3**, kept in `PRAGMA user_version`. Migrations are
+  idempotent `ALTER TABLE … ADD COLUMN`s: 1→2 added `governorate`,
+  `model_governorate` and `review_reasons`; 2→3 added `reocr`. A database from
+  newer code is refused, and the routes answer `503`.
+- **Tables:** `complaints` (effective and `model_*` values, the text, the
+  analysis JSON, stage, status, due date, timings), `feedback` (verdict,
+  `{field: {from, to}}` changes, note, reviewer) and `events` (ids, stages and
+  short notes, never document text). The last two cascade on delete.
+- **Files** live at `files/<id>.<ext>`. They are written to a temp file and
+  moved into place with `os.replace` just before the row commits. The file
+  sweep removes stale temps and files whose row is gone.
+- **Location:** `CMS_DATA_DIR`, default `<repo>/data/complaints` (git-ignored).
+  All timestamps are ISO UTC; day buckets use Riyadh time (UTC+3).
+
+### Sharing the models with the analysis tab
+
+- **Qwen.** The `qwen` provider is `llm.STRUCT`, whose single slot
+  (`--parallel 1` and `llm`'s inference lock) also serves `/structure`,
+  `/chat`, `/classify` and comparison. Each complaint makes two calls (about
+  6–7 s in all) and takes the slot per call, so interactive requests
+  interleave with the queue rather than waiting for it to drain.
+- **Surya.** A complaint's OCR calls `extract.extract_document(...,
+  progress=False)`, which holds extract's inference lock for the whole
+  document. So the analysis tab's `/extract` waits behind a complaint's whole
+  PDF (up to `CMS_MAX_PAGES` pages). `progress=False` keeps the complaint's
+  pages out of the analysis tab's `/progress`.
+  - The worker's PDF page count holds `extract.PDFIUM_LOCK`, as every PDFium
+    call in the OCR pass and in `layout_docx.py` does (§4).
+- **ALLaM.** `/proofread` and the `allam` provider share one llama-server
+  through `ServerLease`. Every user holds the lease while using the server,
+  and the provider holds it from its first call until the batch ends. A stop
+  asked for by either side happens when the last holder lets go, and runs
+  under the lease's lock, so a new caller waits and then loads a fresh server
+  instead of posting to a dying one. `llm.stop_proof()` bypasses the lease;
+  nothing calls it any more, and new code must not.
+
+**VRAM.** Qwen (~4.8 GB) and Surya (~3.4 GB) stay resident whichever provider
+is chosen. ALLaM adds ~5 GB while a batch runs on it, about 14 GB in all: the
+same headroom `/proofread` uses, and still one instance when both overlap. It
+is stopped when the queue drains, when another provider is chosen, and after
+an insights run. An OpenAI-compatible server on the same GPU (a local vLLM,
+say) needs its own VRAM on top of the resident models.
+
+## 6. Security posture
 
 - **The FastAPI app (8100) has no auth** and binds to `127.0.0.1`. Do not expose
   it beyond localhost without a reverse proxy + authentication.
+- **Host allowlist** (`TrustedHostMiddleware`, outermost): a request whose
+  `Host` is not `127.0.0.1`, `localhost` or a name in `APP_ALLOWED_HOSTS` gets
+  `400`. Binding to loopback is the app's only protection, and DNS rebinding
+  would get around it otherwise. `[::1]` is refused.
 - Internal llama.cpp servers bind to localhost with a generated `--api-key`.
 - **CSP** + `X-Content-Type-Options: nosniff` on every response (`app.py`
-  middleware). Chat is protected by a DATA fence + injection guard; the server
+  middleware). The CSP's `frame-ancestors 'self'` (with `X-Frame-Options:
+  SAMEORIGIN`) stops other sites framing the app to steer its one-click
+  actions; `connect-src 'self' blob:` lets the PDF previews load their own
+  `blob:` URLs. Chat is protected by a DATA fence + injection guard; the server
   builds the sole system message, so a client `system` role can't shadow it.
 - Uploads capped (100 MB); export bodies capped (16 MB); text inputs capped per
   stage. Filenames sanitised to ASCII (strips NUL/CRLF/path).
+- **The complaints routes** (§5):
+  - A state change sent from another site is refused (`Sec-Fetch-Site` /
+    `Origin`).
+  - Bodies are capped before parsing, uploads are typed by magic bytes, and ids
+    are checked against the taxonomy before the store sees them.
+  - Errors are Arabic messages with no document text or exception detail.
+  - `/complaints` query strings (names, national IDs) are cut from the access
+    log, and CSV cells that would run as spreadsheet formulas are defused.
+  - Complaint text reaches the model only inside a DATA fence, with fence-like
+    markers stripped; wording aimed at the model is flagged and cannot win the
+    top priority on the model's word alone.
+  - The register is personal data at rest under `CMS_DATA_DIR`, and it is not
+    encrypted.
 
-## 6. Configuration (environment variables)
+## 7. Configuration (environment variables)
 
 | Var | Default | Effect |
 |---|---|---|
@@ -178,8 +358,19 @@ and `stop_proof()` in a `finally` to free it again. See
 | `FAST_DETECTOR_DEVICE` | `cpu` (set by `layout_docx`) | Keeps the text-only path's layout model off the GPU |
 | `HF_HOME` | `D:\Yousef\hf-cache` (host profile) | Hugging Face cache root |
 | `HF_HUB_OFFLINE` | unset | Set `1` to skip HF network calls (cached models only) |
+| `APP_ALLOWED_HOSTS` | unset | Extra `Host` names the app accepts, comma-separated (e.g. a LAN name). `127.0.0.1` and `localhost` are always allowed. |
+| `CMS_DATA_DIR` | `<repo>/data/complaints` | Complaints register (`complaints.db`) and uploaded files |
+| `CMS_LLM_PROVIDER` | `qwen` | Complaints provider at startup: `qwen`, `allam` or `openai` (unknown → `qwen`) |
+| `CMS_FEWSHOT` | `3` | Reviewer precedents in each classification prompt (`0` = none; at most 3 are used) |
+| `CMS_MAX_PAGES` | `30` | A complaint PDF with more pages is refused before OCR (1–2000) |
+| `CMS_OPENAI_BASE_URL` | unset | OpenAI-compatible endpoint for the `openai` provider (with `CMS_OPENAI_MODEL`); loopback only unless `CMS_LLM_ALLOW_REMOTE=1` |
+| `CMS_OPENAI_MODEL` | unset | Model name sent to that endpoint |
+| `CMS_OPENAI_API_KEY` | unset | Bearer key for that endpoint (never logged) |
+| `CMS_OPENAI_N_CTX` | `8192` | That endpoint's context window (≥ 4096); prompts are sized from it |
+| `CMS_OPENAI_LABEL` | `<model> (OpenAI-compatible)` | Its name in the model selector |
+| `CMS_LLM_ALLOW_REMOTE` | unset | `1` allows a non-loopback endpoint. Complaint text then leaves the host. |
 
-## 7. Licensing
+## 8. Licensing
 
 Qwen3 = Apache 2.0 · pypdfium2 = Apache/BSD · llama.cpp = MIT · python-docx = MIT.
 The `surya-ocr` **package** reports Apache-2.0, but Surya's **model weights** may
@@ -187,7 +378,7 @@ carry additional (revenue-gated) commercial terms — verify the
 [surya-ocr-2 model card](https://huggingface.co/datalab-to/surya-ocr-2) before
 commercial deployment. No Tesseract, Poppler, or PyMuPDF (AGPL).
 
-## 8. History
+## 9. History
 
 The OCR engine was **Qari-OCR** (LoRA on Qwen2-VL-2B, via transformers/PEFT) until
 2026-09-14, when it was replaced by Surya 2 and the Qari code path was removed

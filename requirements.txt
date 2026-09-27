@@ -3,6 +3,11 @@ fastapi>=0.115,<1
 pydantic>=2.9,<3
 uvicorn[standard]>=0.30,<1
 python-multipart>=0.0.20,<1
+# Imported by name by the complaints tab (complaints_api.py's multipart parser,
+# app.py's Host allowlist and the shielded ALLaM lease in /proofread). Both
+# already come with fastapi; listed because the code uses them directly.
+starlette
+anyio>=3.4
 
 # QR Bot runs in its own environment. Install QR_Code_Scanner/requirements.txt
 # using QR_Code_Scanner/.venv/Scripts/python.exe. The parent adapter uses stdlib

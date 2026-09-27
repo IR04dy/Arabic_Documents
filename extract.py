@@ -73,6 +73,12 @@ def detect_kind(data: bytes, filename: str = "") -> str | None:
 
 _load_lock = threading.Lock()
 _infer_lock = threading.Lock()
+# PDFium is not thread-safe, and the app calls it from several threads: this
+# OCR pass, the formatted Word export (layout_docx) and the complaints worker's
+# page count and background OCR. Every PDFium call holds this one lock, and only
+# for that call. It may be taken while holding _infer_lock, never the other way
+# round: nothing waits for _infer_lock while holding it.
+PDFIUM_LOCK = threading.RLock()
 _state: dict = {"rec": None, "status": "not_loaded", "error": None, "device": None}
 # Live progress, polled by the UI.
 _progress: dict = {"active": False, "page": 0, "total": 0, "filename": ""}
@@ -106,8 +112,16 @@ class ExtractResult:
         return d
 
 
-def _render(page) -> "Image.Image":
-    return page.render(scale=RENDER_DPI / 72).to_pil().convert("RGB")
+def _render(doc, index: int) -> "Image.Image":
+    """Page `index` of an open PdfDocument as an RGB image. The page is closed
+    here, under the lock: left to the garbage collector, PDFium would close it
+    on whatever thread happened to drop it, outside the lock."""
+    with PDFIUM_LOCK:
+        page = doc[index]
+        try:
+            return page.render(scale=RENDER_DPI / 72).to_pil().convert("RGB")
+        finally:
+            page.close()
 
 
 def _block_text(html: str) -> str:
@@ -198,33 +212,42 @@ def _norm_box(bbox, w: int, h: int):
     return [clamp(x0 / w), clamp(y0 / h), clamp(x1 / w), clamp(y1 / h)]
 
 
-def extract_document(data: bytes, filename: str = "document") -> ExtractResult:
+def extract_document(data: bytes, filename: str = "document",
+                     progress: bool = True) -> ExtractResult:
     """Full-page OCR of a PDF (each page) or a single raster image (one page) with
     Surya; assemble the same shape the pipeline expects (per-page text + a joined
-    full_text with page markers)."""
+    full_text with page markers).
+
+    `progress=False` leaves the live progress record alone: a background OCR
+    (the complaints worker) must not show up as the analysis tab's document."""
     rec = ensure_loaded()
     is_pdf = detect_kind(data, filename) == "pdf"
     pages: list[PageResult] = []
     doc = None
     try:
         if is_pdf:
-            doc = pdfium.PdfDocument(data)
-            total = len(doc)
-            get_image = lambda i: _render(doc[i])
+            with PDFIUM_LOCK:
+                doc = pdfium.PdfDocument(data)
+                total = len(doc)
+            get_image = lambda i: _render(doc, i)
         else:
             img = Image.open(io.BytesIO(data)).convert("RGB")  # a single-image page
             total = 1
             get_image = lambda i: img
         with _infer_lock:                       # one server, serialize pages
-            _progress.update(active=True, page=0, total=total, filename=filename)
+            if progress:
+                _progress.update(active=True, page=0, total=total, filename=filename)
             for index in range(total):
-                _progress.update(page=index + 1)
+                if progress:
+                    _progress.update(page=index + 1)
                 text, layout = _page_text(rec, get_image(index))
                 pages.append(PageResult(index + 1, text, len(text), layout))
     finally:
-        _progress["active"] = False
+        if progress:
+            _progress["active"] = False
         if doc is not None:
-            doc.close()
+            with PDFIUM_LOCK:
+                doc.close()
     full_text = "\n\n".join(
         f"--- Page {p.page} ---\n{p.text}" for p in pages if p.text)
     return ExtractResult(filename, len(pages), pages, full_text)

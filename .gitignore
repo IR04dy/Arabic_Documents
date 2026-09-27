@@ -14,3 +14,6 @@ models/
 
 # macOS
 .DS_Store
+
+# Complaint-management register (SQLite) and uploaded complaint files: personal data, never committed
+data/

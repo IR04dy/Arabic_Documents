@@ -5,22 +5,29 @@
   const MAX_CHARS = 40000;
   const docs = {a: null, b: null};
   let report = null, generation = 0, controller = null, busy = false;
-  const tabs = [$('analysis-tab'), $('comparison-tab')];
+  // Every workspace tab (analysis, comparison, complaints…) shares this controller;
+  // a workspace learns it became visible from the 'workspace:change' event.
+  const tabs = [...document.querySelectorAll('.workspace-tabs [role="tab"]')];
   function selectTab(tab) {
     tabs.forEach(item => {
       const active = item === tab;
       item.setAttribute('aria-selected', String(active));
       item.tabIndex = active ? 0 : -1;
-      $(item.getAttribute('aria-controls')).hidden = !active;
+      const panel = $(item.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !active;
     });
+    window.dispatchEvent(new CustomEvent('workspace:change', {detail: {panel: tab.getAttribute('aria-controls')}}));
   }
-  tabs.forEach(tab => {
+  tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => selectTab(tab));
     tab.addEventListener('keydown', event => {
+      // In a right-to-left tablist the next tab sits to the LEFT.
+      const rtl = getComputedStyle(tab.parentElement).direction === 'rtl';
+      const step = {ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1}[event.key];
       let next;
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') next = tabs[1 - tabs.indexOf(tab)];
+      if (step) next = tabs[(index + step + tabs.length) % tabs.length];
       if (event.key === 'Home') next = tabs[0];
-      if (event.key === 'End') next = tabs[1];
+      if (event.key === 'End') next = tabs[tabs.length - 1];
       if (next) { event.preventDefault(); selectTab(next); next.focus(); }
     });
   });
