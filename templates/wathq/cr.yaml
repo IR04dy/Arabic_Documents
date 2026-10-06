@@ -1,0 +1,3162 @@
+swagger: '2.0'
+x-stoplight:
+  id: bpqju3zndnukl
+info:
+  version: 6.14.0
+  title: Wathq Commercial Registration API
+host: api.wathq.sa
+basePath: /commercial-registration
+tags:
+  - name: Commercial Registration
+    description: ' '
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+  - application/xml
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  '/fullinfo/{id}':
+    get:
+      tags:
+        - Commercial Registration
+      summary: Retrieves all commercial registration data
+      description: 'Retrieves all commercial registration data such as dates, status, activities, parties and others (refer to model) - الاستعلام عن كافة بيانات السجل التجاري'
+      operationId: fullinfo
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+                 **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+          in: path
+          required: true
+        - type: string
+          in: query
+          name: language
+          description: Commercial registration information language - لغة بيانات السجل التجاري
+          enum:
+            - ar
+            - en
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/fullInfo'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          examples:
+            application/json:
+              crNationalNumber: '7001272475'
+              crNumber: '1010711252'
+              versionNo: 1
+              name: شركة اختبار للتجارة
+              nameLangId: 1
+              nameLangDesc: العربية
+              crCapital: 150000
+              companyDuration: 99
+              isMain: false
+              issueDateGregorian: '2002-10-05'
+              issueDateHijri: '1423-07-28'
+              mainCrNationalNumber: null
+              mainCrNumber: null
+              inLiquidationProcess: false
+              hasEcommerce: true
+              headquarterCityId: 1
+              headquarterCityName: الرياض
+              isLicenseBased: false
+              licenseIssuerNationalNumber: '123456789'
+              licenseIssuerName: xx
+              partnersNationalityId: 1
+              PartnersNationalityName: السعودية
+              entityType:
+                id: 1
+                name: شركة
+                formId: 1
+                formName: ذات مسؤولية محدودة
+                characters:
+                  - id: 3
+                    name: غير ربحية خاصة
+              status:
+                id: 1
+                name: فعال
+              confirmationDate:
+                gregorian: '2003-10-05'
+                hijri: '1424-07-28'
+              reactivationDate:
+                gregorian: '2023-03-10'
+                hijri: '1444-08-18'
+              suspensionDate:
+                gregorian: '2022-12-05'
+                hijri: '1444-04-11'
+              deletionDate:
+                gregorian: '2024-07-20'
+                hijri: '1445-01-13'
+              contactInfo:
+                phoneNo: '011256398'
+                mobileNo: '050111101'
+                email: TestEmail@mail.com
+                websiteUrl: www.google.com
+              eCommerce:
+                eStore:
+                  - authenticationPlatformUrl: www.google.com
+                    storeUrl: www.google.com
+                    storeActivities:
+                      - id: '103062'
+                        name: صناعة زبدة المكسرات
+              capital:
+                currencyId: 1
+                currencyName: ريال سعودي
+                contributionCapital:
+                  typeId: 1
+                  typeName: نقدي و عيني
+                  cashCapital: 75000
+                  inKindCapital: 75000
+                  contributionValue: 100
+                  totalCashContribution: 750
+                  totalInKindContribution: 750
+                stockCapital:
+                  typeId: 1
+                  typeName: xx
+                  capital: 12000
+                  announcedCapital: 1244
+                  paidCapital: 12333
+                  cashCapital: 1111
+                  inKindCapital: 111
+                  stocks:
+                    - count: 11
+                      value: 12
+                      typeId: 1
+                      typeName: xx
+                      classReferenceID: 1
+                      className: xx
+              fiscalYear:
+                isFirst: true
+                calendarTypeId: 1
+                calendarTypeName: ميلادي
+                endMonth: 12
+                endDay: 30
+                endYear: null
+              parties:
+                - name: السيد عبدالعزيز احمد خالد الثنيان
+                  typeId: 11
+                  typeName: جمعية خيرية/ مؤسسة أهلية
+                  identity:
+                    id: '1101552388'
+                    typeId: 1
+                    typeName: هوية وطنية
+                  partnership:
+                    - id: 8
+                      name: عضو
+                  partnerShare:
+                    cashContributionCount: 250
+                    inKindContributionCount: 250
+                    totalContributionCount: 500
+                  nationality: null
+                  licenseNo: null
+                  crNumber: null
+              management:
+                structureId: 3
+                structureName: مجلس مديرين
+                managers:
+                  - name: السيد عبدالعزيز احمد خالد الثنيان
+                    typeId: 1
+                    typeName: فرد سعودي
+                    isLicensed: true
+                    identity:
+                      id: '1101552388'
+                      typeId: 1
+                      typeName: هوية وطنية
+                    nationality:
+                      id: 113
+                      name: سعودي
+                    positions:
+                      - id: 8
+                        name: عضو
+              liquidators:
+                - name: عبدالله سالم هليل الشمري
+                  typeId: 1
+                  typeName: فرد سعودي
+                  identity:
+                    id: '1101552234'
+                    typeId: 1
+                    typeName: هوية وطنية
+                  nationality:
+                    id: 113
+                    name: سعودي
+                  positions:
+                    - id: 8
+                      name: عضو
+              activities:
+                - id: '161090'
+                  name: أنشطة أخرى خاصة بصناعة نشر الأخشاب
+                - id: '162231'
+                  name: صناعة السلالم والدرابزينات
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/info/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+          **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves basic commercial registration data
+      description: 'Retrieves basic commercial registration data such as dates, status, activities and others (refer to model) - الاستعلام عن البيانات الاساسية'
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/info'
+          examples:
+            application/json:
+              crNationalNumber: '7001272475'
+              crNumber: '1010711252'
+              versionNo: 1
+              name: شركة اختبار للتجارة
+              duration: 99
+              isMain: false
+              issueDateGregorian: '2002-10-05'
+              issueDateHijri: '1423-07-28'
+              mainCrNationalNumber: null
+              mainCrNumber: null
+              inLiquidationProcess: false
+              hasEcommerce: true
+              headquarterCityId: 1
+              headquarterCityName: الرياض
+              isLicenseBased: false
+              entityType:
+                id: 1
+                name: شركة
+                formId: 1
+                formName: ذات مسؤولية محدودة
+                characterList:
+                  - id: 3
+                    name: غير ربحية خاصة
+              status:
+                id: 1
+                name: فعال
+              activities:
+                - id: '161090'
+                  name: أنشطة أخرى خاصة بصناعة نشر الأخشاب
+                - id: '162231'
+                  name: صناعة السلالم والدرابزينات
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/branches/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+          **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves all commercial registration branches
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/branches'
+          examples:
+            application/json:
+              - crNationalNumber: '7001272475'
+                crNumber: '1010711252'
+                versionNo: 1
+                name: شركة اختبار للتجارة
+                isMain: false
+                mainCrNationalNumber: null
+                mainCrNumber: null
+                entityType:
+                  formId: 1
+                  formName: ذات مسؤولية محدودة
+                  characterList:
+                    - id: 3
+                      name: غير ربحية خاصة
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/status/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري 
+
+          **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+      - type: boolean
+        in: query
+        name: includeDates
+        description: Include commercial registration status dates – تضمين تواريخ حالة السجل التجاري
+        enum:
+          - true
+          - false
+    get:
+      summary: Retrieves status of a commercial registration
+      description: Retrieves status of a commercial registration - الاستعلام عن حالة السجل التجاري
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/status'
+          examples:
+            example1:
+              summary: Basic status only
+              value:
+                id: 1
+                name: نشط
+            example2:
+              summary: Status with date information
+              value:
+                id: 1
+                name: نشط
+                confirmationDate:
+                  gregorian: '2025-04-03'
+                  hijri: 1446/10/05
+                reactivationDate: {}
+                suspensionDate: {}
+                deletionDate: {}
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/capital/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+
+          **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves capital details for commercial registration
+      description: Retrieves capital details for commercial registration (refer to model) - الاستعلام عن رأس المال للسجل التجاري
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/capital'
+          examples:
+            application/json:
+              currencyId: 1
+              currencyName: ريال سعودي
+              capital: 1000000
+              contributionCapital:
+                typeId: 1
+                typeName: نقدي و عيني
+                cashCapital: 75000
+                inKindCapital: 75000
+                contributionValue: 100
+                totalCashContribution: 750
+                totalInKindContribution: 750
+              stockCapital:
+                typeId: 1
+                typeName: xx
+                capital: 12000
+                announcedCapital: 1244
+                paidCapital: 12333
+                cashCapital: 1111
+                inKindCapital: 111
+                stocks:
+                  - count: 11
+                    value: 12
+                    typeId: 1
+                    typeName: xx
+                    classReferenceID: 1
+                    className: xx
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/managers/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+
+          **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves a list of managers and board of directors if any
+      description: Retrieves a list of managers and board of directors if any - الاستعلام عن المدراء وأعضاء مجلس الإدارة إن وجد للسجل التجاري
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/managers'
+          examples:
+            application/json:
+              - name: السيد عبدالعزيز احمد خالد الثنيان
+                typeId: 1
+                typeName: سعودي
+                isLicensed: true
+                identity:
+                  id: '1101552388'
+                  typeId: 1
+                  typeName: هوية وطنية
+                nationality:
+                  id: 113
+                  name: سعودي
+                positions:
+                  - id: 8
+                    name: عضو
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/owners/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: |
+          Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+
+             **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves the owner of establishment and a list of partners with their shares for companies
+      description: Retrieves the owner of establishment and a list of partners with their shares for companies - الاستعلام عن الملاك والشركاء ونسبة حصصهم
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/owners'
+          examples:
+            application/json:
+              name: السيد عبدالعزيز احمد خالد الثنيان
+              typeId: 11
+              typeName: جمعية خيرية/ مؤسسة أهلية
+              identity:
+                id: '1101552388'
+                typeId: 1
+                typeName: هوية وطنية
+              partnership:
+                - id: 8
+                  name: عضو
+              partnerShare:
+                cashContributionCount: 250
+                inKindContributionCount: 250
+                totalContributionCount: 500
+              nationality: null
+              licenseNo: null
+              crNumber: null
+        '400':
+          $ref: '#/responses/ErrorResponseOwners400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /v2/related:
+    parameters:
+      - type: string
+        name: id
+        in: header
+        description: identification number - رقم هوية
+        required: true
+      - type: string
+        enum:
+          - National_ID
+          - Resident_ID
+          - Passport
+          - GCC_ID
+          - Endowment_Deed_No
+          - License_No
+          - CR_National_ID
+          - Foreign_CR_No
+          - National_Number
+          - Boarder_Number
+        name: idType
+        in: header
+        required: true
+        description: identification type - نوع الهوية
+      - type: integer
+        name: nationality
+        in: query
+        description: |
+          Nationality NIC code - رمز الجنسية 
+
+          Required for certain ID types **(Passport, Foreign_CR_No).** 
+          Must be a numeric NIC code.   For the complete list of valid nationality codes, see:   [https://api.wathq.sa/commercial-registration/lookup/nationalities](https://api.wathq.sa/commercial-registration/lookup/nationalities)
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: Retrieves a list of commercial registration with their relation for a given ID
+      description: Retrieves a list of commercial registration with their relation for a given ID - استرجاع كافة السجلات التجارية المرتبطة برقم هوية
+      tags:
+        - Commercial Registration V2
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/related'
+          examples:
+            application/json:
+              result:
+                count: 1
+                limit: 10
+                offset: 0
+              name: عبدالله محمد العتيبي
+              identity:
+                id: '1101552388'
+                typeId: 1
+                typeName: هوية وطنية
+              related:
+                - crNationalNumber: '7001272475'
+                  name: شركة اختبار للتجارة
+                  isMain: false
+                  status:
+                    id: 1
+                    name: فعال
+                  relation:
+                    id: 2
+                    name: شريك
+                  positions: []
+                  parties:
+                    - typeId: 11
+                      typeName: جمعية خيرية
+                      partnership:
+                        - id: 3
+                          name: مؤسس
+        '400':
+          $ref: '#/responses/ErrorResponsRelated400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /v2/owns:
+    parameters:
+      - type: string
+        name: id
+        in: header
+        description: identification number - رقم هوية
+        required: true
+      - type: string
+        enum:
+          - National_ID
+          - Resident_ID
+          - Passport
+          - GCC_ID
+          - Endowment_Deed_No
+          - License_No
+          - CR_National_ID
+          - Foreign_CR_No
+          - National_Number
+          - Boarder_Number
+        name: idType
+        in: header
+        required: true
+        description: identification type - نوع الهوية
+      - type: integer
+        name: nationality
+        in: query
+        description: |
+          Nationality NIC code - رمز الجنسية 
+          Required for certain ID types **(Passport, Foreign_CR_No).** 
+          Must be a numeric NIC code.   For the complete list of valid nationality codes, see:   [https://api.wathq.sa/commercial-registration/lookup/nationalities](https://api.wathq.sa/commercial-registration/lookup/nationalities)
+      - type: string
+        in: query
+        name: language
+        description: Commercial registration information language - لغة بيانات السجل التجاري
+        enum:
+          - ar
+          - en
+    get:
+      summary: 'Returns a True in case of a given id is an owner or partner, otherwise returns False'
+      description: 'Returns a True in case of a given id is an owner or partner, otherwise returns False - الاستعلام إن كانت الهوية تمتلك سجل تجاري ام لا بـ (نعم أو لا)'
+      tags:
+        - Commercial Registration V2
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/owns'
+          examples:
+            application/json:
+              ownsCr: true
+        '400':
+          $ref: '#/responses/ErrorResponsOwns400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/crNationalNumber/{id}':
+    parameters:
+      - type: string
+        name: id
+        description: Commercial registration number - رقم السجل التجاري
+        in: path
+        required: true
+    get:
+      summary: Retrieves commercial registration national number
+      description: Retrieves commercial registration national number - إسترجاع الرقم الوطني الموحد للسجل التجاري
+      tags:
+        - Commercial Registration
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/crNationalNumber'
+          examples:
+            application/json:
+              crNationalNumber: '7001272475'
+        '400':
+          $ref: '#/responses/ErrorResponseCrNationalNumber400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/beneficiary/{id}':
+    get:
+      tags:
+        - Commercial Registration
+      summary: Retrieves real beneficiary data of the commercial registration
+      description: 'Retrieves real beneficiary data of the commercial registration, including exemptions, adding reasons , and beneficiary details - تسترجع بيانات المستفيدين الفعليين من السجل التجاري، بما في ذلك الإعفاءات، أسباب الإضافة، وتفاصيل المستفيدين.'
+      operationId: beneficiary
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+                 **ملاحظة:** يتم البحث برقم السجل التجاري للسجلات التجارية المشطوبة فقط
+          in: path
+          required: true
+        - type: string
+          in: query
+          name: language
+          description: Commercial registration information language - لغة بيانات السجل التجاري
+          enum:
+            - ar
+            - en
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/beneficiary'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          examples:
+            application/json:
+              exemption:
+                reasons:
+                  - id: 1
+                    description: شركة مساهمة مدرجة في السوق المالية
+                    additionalText: null
+              beneficiaries:
+                - type:
+                    id: 1
+                    name: فرد سعودي
+                  name: السيد معاذ عبدالرحمن عمر العتيبي
+                  identity:
+                    id: '1105528085'
+                    typeId: 1
+                    typeName: هوية وطنية
+                  nationality:
+                    id: '113'
+                    name: السعودية
+                  gender:
+                    id: 1
+                    name: ذكر
+                  addingReasons:
+                    - id: 1
+                      description: تؤول إلى ملكه نسبة تمثل 25% فأكثر من رأس مال الشركة بشكل مباشر أو غير مباشر
+                      additionalText: null
+                  guardian:
+                    isFather: false
+                    type:
+                      id: 5
+                      name: مستثمر أجنبي (فرد)
+                    name: احمد عبدالله محمد
+                    identity:
+                      id: '2829382739'
+                      typeId: 3
+                      typeName: جواز سفر
+                    nationality:
+                      id: '102'
+                      name: الاردن
+                    gender:
+                      id: 1
+                      name: ذكر
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/status:
+    get:
+      summary: Retrieves all status lookups
+      description: 'Retrieves all status lookups - الاستعلام عن كافه حالات السجل التجاري '
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: فعال
+              nameEn: Active
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/entityType:
+    get:
+      summary: Retrieves all entity type lookups
+      description: 'Retrieves all commercial registration entity type - الاستعلام عن كافة أنواع الكيان التجاري '
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: شركة
+              nameEn: Company
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/companyForm:
+    get:
+      summary: Retrieves all company form lookups
+      description: Retrieves all company form lookups - الاستعلام عن كافة اشكال الشركة
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: ذات مسؤولية محدودة
+              nameEn: Limited liability company
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/companyCharacter:
+    get:
+      summary: Retrieves all company character lookups
+      description: Retrieves all company character lookups - الاستعلام عن كافة صفات الشركة
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: شخص واحد
+              nameEn: Limited liability company
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/relation:
+    get:
+      summary: Retrieves all commercial registration relation lookups
+      description: Retrieves all commercial registration relation lookups - الاستعلام عن كافة العلاقات بالسجلات
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: مالك
+              nameEn: Owner
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/managerPositions:
+    get:
+      summary: Retrieves all manager positions lookups
+      description: Retrieves all manager positions lookups - الاستعلام عن كافة مناصب المدير
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: رئيس مجلس المديرين
+              nameEn: Chairman of the Board of Directors
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/identifierType:
+    get:
+      summary: Retrieves all identifier type lookups
+      description: Retrieves all identifier type lookups - الاستعلام عن كافة أنواع الاثبات
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: هوية وطنية
+              nameEn: National ID
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/managementStructure:
+    get:
+      summary: Retrieves all management structure lookups
+      description: Retrieves all management structure lookups - الاستعلام عن كافة اشكال هيكل الإدارة
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: مدير
+              nameEn: Manger
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/partnerType:
+    get:
+      summary: Retrieves all partner type lookups
+      description: Retrieves all partner type lookups - الاستعلام عن كافة أنواع الشريك
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: فرد سعودي
+              nameEn: Citizen
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/partnershipType:
+    get:
+      summary: Retrieves all partnership type lookups
+      description: 'Retrieves all partnership type lookups - الاستعلام عن كافة أنواع الشراكة '
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: شريك برأس المال
+              nameEn: Partner in Cash
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/nationalities:
+    get:
+      summary: Retrieves all nationalities lookups
+      description: ' Retrieves all nationalities lookups - الاستعلام عن كافة الجنسيات '
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup-nationalities'
+          examples:
+            application/json:
+              id: 1
+              nicCode: 113
+              nameAr: سعودي
+              nameEn: Saudi Arabia
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/activities:
+    get:
+      summary: Retrieves all activities lookups
+      description: Retrieves all activities lookups - الاستعلام عن كافة بيانات الأنشطة
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup-activity'
+          examples:
+            application/json:
+              - id: 19
+                name: أنشطة الخدمات الأخرى
+                nameEn: Other service activities
+                level: 1
+                category:
+                  - id: 9412
+                    name: أنشطة المنظمات المهنية ذات العضوية
+                    nameEn: activities of professional membership organizations
+                    level: 2
+                    isic:
+                      - id: 941212
+                        name: جمعيات اتحاد ملاك العقار ذو الملكية المشتركة
+                        nameEn: The associations of the real estate owners union with joint ownership
+                        level: 3
+                        authority:
+                          id: 60
+                          name: وزارة الإسكان
+                          nameEn: Ministry of Housing
+                          cancelRequired: false
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/cities:
+    get:
+      summary: Retrieves all cities lookups
+      description: Retrieves all cities lookups - الاستعلام عن كافة المدن
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup-cities'
+          examples:
+            application/json:
+              id: 1
+              nameAr: تبوك
+              nameEn: TABUK
+              crOfficeId: 129
+              regionId: 7
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/currencies:
+    get:
+      summary: Retrieves all currencies lookups
+      description: Retrieves all currencies lookups - الاستعلام عن كافة العملات
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: ريال سعودي
+              nameEn: Saudi Riyal
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/beneficiary:
+    get:
+      summary: Retrieves all beneficiary lookups
+      description: Retrieves all beneficiary lookups - الاستعلام عن كافة أنواع المستفيدين
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: فرد سعودي
+              nameEn: Citizen
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  /lookup/guardian:
+    get:
+      summary: Retrieves all guardian lookups
+      description: Retrieves all guardian lookups - الاستعلام عن كافة أنواع الأوصياء
+      tags:
+        - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: فرد سعودي
+              nameEn: Citizen
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+      - referenceid
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  fullInfo:
+    type: object
+    description: |-
+      البيانات الأساسية للسجل التجاري
+      Commercial Registry Information
+      -
+    properties:
+      crNationalNumber:
+        type: string
+        description: Commercial Registry National Number - الرقم الموحد للسجل التجاري
+      crNumber:
+        type: string
+        description: Commercial Registry Number - رقم السجل التجاري
+      versionNo:
+        type: integer
+        description: Commercial Registry Version Number  - رقم نسخة السجل التجاري
+      name:
+        type: string
+        description: Full Entity Name - الاسم التجاري للمنشأة
+      nameLangId:
+        type: integer
+        description: Entity Name Language ID - رمز لغة الاسم التجاري
+      nameLangDesc:
+        type: string
+        description: Entity Name Language Description - وصف لغة الاسم التجاري
+      crCapital:
+        type: number
+        description: Capital - راس المال
+      companyDuration:
+        type: integer
+        description: Company Duration - مدة الشركة
+      isMain:
+        type: boolean
+        description: Is Main Commercial Registry - هل السجل التجاري رئيسي
+      issueDateGregorian:
+        type: string
+        description: Commercial Registry Issue Date (Gregorian) - تاريخ اصدار السجل التجاري ميلادي
+      issueDateHijri:
+        type: string
+        description: Commercial Registry Issue Date (Hijri) - تاريخ اصدار السجل التجاري هجري
+      mainCrNationalNumber:
+        type: string
+        description: Main Commercial Registry National Number - الرقم الموحد للسجل الرئيسي
+      mainCrNumber:
+        type: string
+        description: Main Commercial Registry Number - رقم السجل التجاري الرئيسي
+      inLiquidationProcess:
+        type: boolean
+        description: In Liquidation Process - هل الشركة جاري تصفيتها
+      hasEcommerce:
+        type: boolean
+        description: Has Ecommerce - هل تمارس التجارة الإلكترونية
+      headquarterCityId:
+        type: integer
+        description: Headquarter City ID - رمز مدينة المقر الرئيسي للشركة
+      headquarterCityName:
+        type: string
+        description: Headquarter City Name - وصف مدينة المقر الرئيسي للشركة
+      isLicenseBased:
+        type: boolean
+        description: Is License-Based - هل السجل مصدر بناء على ترخيص
+      licenseIssuerNationalNumber:
+        type: string
+        description: License Issuer National Number - الرقم الموحد لجهة إصدار الترخيص
+      licenseIssuerName:
+        type: string
+        description: License Issuer Description - وصف جهة إصدار الترخيص
+      partnersNationalityId:
+        type: integer
+        description: Partners Nationality ID - رمز جنسية الشركاء
+      PartnersNationalityName:
+        type: string
+        description: Partners Nationality Description - وصف جنسية الشركاء
+      entityType:
+        type: object
+        required:
+          - id
+          - name
+        properties:
+          id:
+            type: integer
+            description: Entity Type ID - رمز نوع الكيان
+          name:
+            type: string
+            description: Entity Type Description - وصف نوع الكيان
+          formId:
+            type: integer
+            description: Company Form ID - رمز شكل الشركة
+          formName:
+            type: string
+            description: Company Form Description - وصف شكل الشركة
+          characters:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Company Character ID - رمز صفة الشركة
+                name:
+                  type: string
+                  description: Company Character Description - وصف صفة الشركة
+              required:
+                - id
+                - name
+      status:
+        type: object
+        description: 'حالة السجل التجاري - CR Status '
+        required:
+          - id
+          - name
+          - confirmationDate
+        properties:
+          id:
+            type: integer
+            description: CR Status ID - رمز حالة السجل التجاري
+          name:
+            type: string
+            description: CR Status Description - وصف حالة السجل التجاري
+          confirmationDate:
+            type: object
+            description: Commercial Registry Confirmation Date - تاريخ التأكيد السنوي للسجل التجاري
+            required:
+              - gregorian
+              - hijri
+            properties:
+              gregorian:
+                type: string
+                description: Commercial Registry Confirmation Date (Gregorian) - تاريخ التأكيد السنوي للسجل التجاري ميلادي
+              hijri:
+                type: string
+                description: Commercial Registry Confirmation Date (Hijri) - تاريخ التأكيد السنوي للسجل التجاري هجري
+          reactivationDate:
+            type: object
+            description: Commercial Registry Reactivation Date - تاريخ رفع تعليق السجل التجاري
+            properties:
+              gregorian:
+                type: string
+                description: Commercial Registry Reactivation Date (Gregorian) - تاريخ رفع تعليق السجل التجاري ميلادي
+              hijri:
+                type: string
+                description: Commercial Registry Reactivation Date (Hijri) - تاريخ رفع تعليق السجل التجاري هجري
+            required:
+              - gregorian
+              - hijri
+          suspensionDate:
+            type: object
+            description: Commercial Registry Suspension Date - تاريخ تعليق السجل التجاري
+            properties:
+              gregorian:
+                type: string
+                description: Commercial Registry Suspension Date (Gregorian) - تاريخ تعليق السجل التجاري ميلادي
+              hijri:
+                type: string
+                description: Commercial Registry Suspension Date (Hijri) - تاريخ تعليق السجل التجاري هجري
+            required:
+              - gregorian
+              - hijri
+          deletionDate:
+            type: object
+            description: |
+              Commercial Registry Delete Date - تاريخ شطب السجل التجاري
+            properties:
+              gregorian:
+                type: string
+                description: Commercial Registry Delete Date (Gregorian) - تاريخ شطب السجل التجاري ميلادي
+              hijri:
+                type: string
+                description: Commercial Registry Delete Date (Hijri) - تاريخ شطب السجل التجاري هجري
+            required:
+              - gregorian
+              - hijri
+      contactInfo:
+        type: object
+        description: 'Contact Information  - بيانات الاتصال '
+        properties:
+          phoneNo:
+            type: string
+            description: Phone No - رقم الهاتف
+          mobileNo:
+            type: string
+            description: Mobile No - رقم الجوال
+          email:
+            type: string
+            description: Email - البريد الالكتروني
+          websiteUrl:
+            type: string
+            description: Website URL - الموقع الالكتروني
+      eCommerce:
+        type: object
+        description: |
+          E-Commerce - بيانات التجارة الالكترونية
+        properties:
+          eStore:
+            type: array
+            items:
+              type: object
+              properties:
+                authenticationPlatformUrl:
+                  type: string
+                  description: Authentication Platform URL - عنوان منصة التوثيق
+                storeUrl:
+                  type: string
+                  description: Primary URL - عنوان الموقع الإلكتروني
+                storeActivities:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Activity ID - رمز النشاط التجاري
+                      name:
+                        type: string
+                        description: Activity Description - وصف النشاط التجاري
+      capital:
+        type: object
+        description: 'Capital -  رأس المال '
+        required:
+          - currencyId
+          - currencyName
+        properties:
+          currencyId:
+            type: integer
+            description: Capital Currency ID - رمز عملة رأس المال
+          currencyName:
+            type: string
+            description: Capital Currency Description - وصف عملة رأس المال
+          contributionCapital:
+            type: object
+            description: Contribution Capital Details - بيانات رأس المال لمجموعة الحصص
+            properties:
+              typeId:
+                type: integer
+                description: Capital Type ID - رمز نوع رأس المال
+              typeName:
+                type: string
+                description: Capital Type Description - وصف نوع رأس المال
+              cashCapital:
+                type: number
+                description: Cash Capital - رأس المال النقدي
+              inKindCapital:
+                type: number
+                description: In-kind Capital - رأس المال العيني
+              contributionValue:
+                type: number
+                description: Contribution Value - قيمة الحصة
+              totalCashContribution:
+                type: number
+                description: Total Cash Contribution - إجمالي عدد الحصص النقدية
+              totalInKindContribution:
+                type: number
+                description: Total In-kind Contribution - إجمالي عدد الحصص العينية
+            required:
+              - typeId
+              - typeName
+              - contributionValue
+              - totalCashContribution
+              - totalInKindContribution
+          stockCapital:
+            type: object
+            description: Stock Capital Details -  بيانات رأس المال لمجموعة الأسهم
+            properties:
+              typeId:
+                type: integer
+                description: Capital Type ID - رمز نوع رأس المال
+              typeName:
+                type: string
+                description: Capital Type Description - وصف نوع رأس المال
+              cashCapital:
+                type: number
+                description: Cash Capital - رأس المال النقدي
+              inKindCapital:
+                type: number
+                description: In-kind Capital - رأس المال العيني
+              capital:
+                type: number
+                description: Capital - رأس المال المصدر
+              announcedCapital:
+                type: number
+                description: Announced Capital - رأس المال المصرح به
+              paidCapital:
+                type: number
+                description: Paid Capital - رأس المال المدفوع
+              stocks:
+                type: array
+                description: Stock List - قائمة الأسهم
+                items:
+                  type: object
+                  properties:
+                    typeId:
+                      type: integer
+                      description: Stock Type ID - رمز نوع السهم
+                    typeName:
+                      type: string
+                      description: Stock Type Description - وصف نوع السهم
+                    count:
+                      type: integer
+                      description: Stock Count - عدد الأسهم
+                    value:
+                      type: number
+                      description: Stock Value - قيمة السهم
+                    classReferenceID:
+                      type: integer
+                      description: Stock Class Reference ID - رمز فئة السهم
+                    className:
+                      type: string
+                      description: Stock Class Description - وصف فئة السهم
+                  required:
+                    - typeId
+                    - typeName
+                    - count
+                    - value
+                    - classReferenceID
+                    - className
+            required:
+              - typeId
+              - typeName
+              - capital
+              - paidCapital
+      fiscalYear:
+        type: object
+        description: Fiscal Year - السنة المالية للمنشأة
+        properties:
+          isFirst:
+            type: boolean
+            description: Is First Fiscal Year - هل السنة المالية الأولى
+          calendarTypeId:
+            type: integer
+            description: Calendar Type ID - رمز نوع التقويم
+          calendarTypeName:
+            type: string
+            description: Calendar Type Description - وصف نوع التقويم
+          endMonth:
+            type: integer
+            description: Fiscal Year End Month - شهر نهاية السنة المالية
+          endDay:
+            type: integer
+            description: Fiscal Year End Day - يوم نهاية السنة المالية
+          endYear:
+            type: integer
+            description: Fiscal Year End Year - سنة نهاية السنة المالية
+        required:
+          - isFirst
+          - calendarTypeId
+          - calendarTypeName
+      parties:
+        type: array
+        description: 'parity List - قائمة الشركاء / مالك المؤسسة '
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name - الاسم
+            typeId:
+              type: integer
+              description: Parity Type ID - رمز نوع الشريك
+            typeName:
+              type: string
+              description: Parity Type Description - وصف نوع الشريك
+            identity:
+              type: object
+              required:
+                - id
+                - typeId
+                - typeName
+              properties:
+                id:
+                  type: string
+                  description: Identifier No - رقم الإثبات
+                typeId:
+                  type: integer
+                  description: Identifier Type ID - رمز نوع الاثبات
+                typeName:
+                  type: string
+                  description: Identifier Type Description - وصف نوع الاثبات
+            partnership:
+              type: array
+              description: partnership -   طبيعة الشراكة
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Partnership Type ID - رمز طبيعة الشراكة
+                  name:
+                    type: string
+                    description: Partnership Type Description - وصف طبيعة الشراكة
+                required:
+                  - id
+                  - name
+            partnerShare:
+              type: object
+              description: 'partnerShare - قائمة حصص الشريك '
+              properties:
+                cashContributionCount:
+                  type: integer
+                  description: Cash Contribution Count - عدد الحصص النقدية
+                inKindContributionCount:
+                  type: integer
+                  description: In-kind Contribution Count - عدد الحصص العينية
+                totalContributionCount:
+                  type: integer
+                  description: Total Contribution Count - إجمالي عدد حصص الشريك
+            nationality:
+              type: object
+              description: Nationality - الجنسية
+              properties:
+                id:
+                  type: integer
+                  description: Nationality ID - رمز الجنسية
+                name:
+                  type: string
+                  description: Nationality Description - وصف الجنسية
+              required:
+                - id
+                - name
+            crNumber:
+              type: string
+              description: Commercial Registry Number - رقم السجل التجاري
+            licenseNo:
+              type: string
+              description: License No - رقم الترخيص
+          required:
+            - name
+            - identity
+      management:
+        type: object
+        description: Management Structure - نوع الهيكل الإداري  للمنشأة
+        properties:
+          structureId:
+            type: integer
+            description: Management Structure ID - رمز الهيكل الإداري
+          structureName:
+            type: string
+            description: Management Structure Description - وصف الهيكل الإداري
+          managers:
+            type: array
+            description: 'Manager List - قائمة المديرين '
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name - الاسم
+                typeId:
+                  type: integer
+                  description: Manager Type ID - رمز نوع المدير
+                typeName:
+                  type: string
+                  description: Manager Type Name - وصف نوع المدير
+                isLicensed:
+                  type: boolean
+                  description: Is Licensed - هل مدير مرخص
+                identity:
+                  type: object
+                  required:
+                    - id
+                    - typeId
+                    - typeName
+                  properties:
+                    id:
+                      type: string
+                      description: Identifier No - رقم الإثبات
+                    typeId:
+                      type: integer
+                      description: Identifier Type ID - رمز نوع الاثبات
+                    typeName:
+                      type: string
+                      description: Identifier Type Description - وصف نوع الاثبات
+                nationality:
+                  type: object
+                  description: Nationality - الجنسية
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: integer
+                      description: Nationality ID - رمز الجنسية
+                    name:
+                      type: string
+                      description: Nationality Description - وصف الجنسية
+                positions:
+                  type: array
+                  description: Manager Position List - قائمة مناصب المدير بالمجلس
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: Manager Position ID - رمز منصب المدير بالمجلس
+                      name:
+                        type: string
+                        description: Manager Position Description - وصف منصب المدير بالمجلس
+                    required:
+                      - id
+                      - name
+              required:
+                - name
+                - typeId
+                - typeName
+                - isLicensed
+                - identity
+                - nationality
+        required:
+          - structureId
+          - structureName
+          - managers
+      liquidators:
+        type: array
+        description: |
+          Liquidator List - قائمة المصفين
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: 'الاسم - name '
+            typeId:
+              type: integer
+              description: Liquidator Type ID - رمز نوع المصفي
+            typeName:
+              type: string
+              description: 'Liquidator Type Description - وصف نوع المصفي '
+            identity:
+              type: object
+              required:
+                - id
+                - typeId
+                - typeName
+              properties:
+                id:
+                  type: string
+                  description: Identifier No - رقم الإثبات
+                typeId:
+                  type: integer
+                  description: Identifier Type ID - رمز نوع الاثبات
+                typeName:
+                  type: string
+                  description: Identifier Type Description - وصف نوع الاثبات
+            nationality:
+              type: object
+              description: Nationality - الجنسية
+              required:
+                - id
+                - name
+              properties:
+                id:
+                  type: integer
+                  description: Nationality ID - رمز الجنسية
+                name:
+                  type: string
+                  description: Nationality Description - وصف الجنسية
+            positions:
+              type: array
+              description: Liquidator Position List - قائمة مناصب المصفين
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: |
+                      liquidator Position ID - رمز منصب المصفي
+                  name:
+                    type: string
+                    description: |
+                      liquidator Position Description - وصف منصب المصفي
+                required:
+                  - id
+                  - name
+          required:
+            - name
+            - typeId
+            - typeName
+            - identity
+            - nationality
+      activities:
+        type: array
+        description: Activity List - قائمة أنشطة السجل التجاري
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Activity ID - رمز النشاط التجاري
+            name:
+              type: string
+              description: Activity Description - وصف النشاط التجاري
+          required:
+            - id
+            - name
+    required:
+      - nameLangId
+      - nameLangDesc
+      - crCapital
+      - isMain
+      - issueDateGregorian
+      - issueDateHijri
+      - hasEcommerce
+      - isLicenseBased
+      - entityType
+      - status
+      - capital
+      - parties
+  info:
+    type: object
+    description: |-
+      البيانات الأساسية للسجل التجاري
+      Commercial Registry basic Information
+      -
+    properties:
+      crNationalNumber:
+        type: string
+        description: Commercial Registry National Number - الرقم الموحد للسجل التجاري
+      crNumber:
+        type: string
+        description: Commercial Registry Number - رقم السجل التجاري
+      versionNo:
+        type: integer
+        description: Commercial Registry Version No - رقم نسخة السجل التجاري
+      name:
+        type: string
+        description: Full Entity Name - الاسم التجاري للمنشأة
+      companyDuration:
+        type: integer
+        description: Company Duration - مدة الشركة
+      isMain:
+        type: boolean
+        description: Is Main Commercial Registry - هل السجل التجاري رئيس
+      issueDateGregorian:
+        type: string
+        description: Commercial Registry Issue Date (Gregorian) - تاريخ اصدار السجل التجاري ميلادي
+      issueDateHijri:
+        type: string
+        description: Commercial Registry Issue Date (Hijri) - تاريخ اصدار السجل التجاري هجري
+      mainCrNationalNumber:
+        type: string
+        description: Main Commercial Registry National Number - الرقم الموحد للسجل الرئيسي
+      mainCrNumber:
+        type: string
+        description: Main Commercial Registry Number - رقم السجل التجاري الرئيسي
+      inLiquidationProcess:
+        type: boolean
+        description: In Liquidation Process - هل الشركة جاري تصفيتها
+      hasEcommerce:
+        type: boolean
+        description: Has Ecommerce - هل تمارس التجارة الإلكترونية
+      headquarterCityId:
+        type: integer
+        description: Headquarter City ID - رمز مدينة المقر الرئيسي للشركة
+      headquarterCityName:
+        type: string
+        description: Headquarter City Name - وصف مدينة المقر الرئيسي للشركة
+      isLicenseBased:
+        type: boolean
+        description: Is License-Based - هل السجل مصدر بناء على ترخيص
+      entityType:
+        type: object
+        required:
+          - id
+          - name
+        properties:
+          id:
+            type: integer
+            description: Entity Type ID - رمز نوع الكيان
+          name:
+            type: string
+            description: Entity Type Description - وصف نوع الكيان
+          formId:
+            type: integer
+            description: Company Form ID - رمز شكل الشركة
+          formName:
+            type: string
+            description: Company Form Description - وصف شكل الشركة
+          characters:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Company Character ID - رمز صفة الشركة
+                name:
+                  type: string
+                  description: Company Character Description - وصف صفة الشركة
+              required:
+                - id
+                - name
+      status:
+        type: object
+        required:
+          - id
+          - name
+        description: 'حالة السجل التجاري - CR Status '
+        properties:
+          id:
+            type: integer
+            description: CR Status ID - رمز حالة السجل التجاري
+          name:
+            type: string
+            description: CR Status Description - وصف حالة السجل التجاري
+      activities:
+        type: array
+        description: Activity List - قائمة أنشطة السجل التجاري
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Activity ID - رمز النشاط التجاري
+            name:
+              type: string
+              description: Activity Description - وصف النشاط التجاري
+          required:
+            - id
+            - name
+    required:
+      - isMain
+      - issueDateGregorian
+      - issueDateHijri
+      - hasEcommerce
+      - isLicenseBased
+      - entityType
+      - status
+  branches:
+    type: array
+    items:
+      type: object
+      properties:
+        crNationalNumber:
+          type: string
+          description: Commercial Registry National Number - الرقم الموحد للسجل التجاري
+        crNumber:
+          type: string
+          description: Commercial Registry Number - رقم السجل التجاري
+        versionNo:
+          type: integer
+          description: Commercial Registry Version No - رقم نسخة السجل التجاري
+        name:
+          type: string
+          description: Full Entity Name - الاسم التجاري للمنشأة
+        isMain:
+          type: boolean
+          description: Is Main Commercial Registry - هل السجل التجاري رئيسي
+        mainCrNationalNumber:
+          type: string
+          description: Main Commercial Registry National Number - الرقم الموحد للسجل الرئيسي
+        mainCrNumber:
+          type: string
+          description: Main Commercial Registry Number - رقم السجل التجاري الرئيسي
+        entityType:
+          type: object
+          properties:
+            formId:
+              type: integer
+              description: Company Form ID - رمز شكل الشركة
+            formName:
+              type: string
+              description: Company Form Description - وصف شكل الشركة
+            characters:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Company Character ID - رمز صفة الشركة
+                  name:
+                    type: string
+                    description: Company Character Description - وصف صفة الشركة
+                required:
+                  - id
+                  - name
+      required:
+        - isMain
+        - entityType
+  related:
+    title: related
+    type: object
+    properties:
+      result:
+        type: object
+        description: 'Result set object containing pagination details — count, limit, and offset.'
+        required:
+          - count
+          - limit
+          - offset
+        properties:
+          count:
+            type: integer
+            description: Total number of records in the result  — إجمالي عدد السجلات المسترجعة
+          limit:
+            type: integer
+            description: Limit mentioned in the request or the default — عدد السجلات المسترجعة لكل استدعاء
+          offset:
+            type: integer
+            description: Offset mentioned in the request or the default — رقم مجموع السجلات المسترجعة"
+      name:
+        type: string
+        description: Name - الاسم
+      identity:
+        type: object
+        required:
+          - id
+          - typeId
+          - typeName
+        properties:
+          id:
+            type: string
+            description: Identifier No - رقم الإثبات
+          typeId:
+            type: integer
+            description: Identifier Type ID - رمز نوع الاثبات
+          typeName:
+            type: string
+            description: Identifier Type Description - وصف نوع الاثبات
+      related:
+        type: array
+        description: |
+          Related CR Info - بيانات السجل التجاري المرتبط بالفرد
+        items:
+          type: object
+          properties:
+            crNationalNumber:
+              description: Commercial Registry National Number - الرقم الموحد للسجل التجاري
+              type: string
+            name:
+              type: string
+              description: Full Entity Name - الاسم التجاري للمنشأة
+            isMain:
+              type: boolean
+              description: Is Main Commercial Registry - هل السجل التجاري رئيسي
+            status:
+              type: object
+              required:
+                - id
+                - name
+              description: 'حالة السجل التجاري - CR Status '
+              properties:
+                id:
+                  type: integer
+                  description: CR Status ID - رمز حالة السجل التجاري
+                name:
+                  type: string
+                  description: CR Status Description - وصف حالة السجل التجاري
+            relation:
+              type: object
+              description: Relation Type - نوع العلاقة بالسجل
+              properties:
+                id:
+                  type: integer
+                  description: Relation ID - رمز العلاقة
+                name:
+                  type: string
+                  description: Relation Description - وصف العلاقة
+              required:
+                - id
+                - name
+            positions:
+              type: array
+              description: Manager Position List - قائمة مناصب المدير
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Manager Position ID - رمز منصب المدير بالمجلس
+                  name:
+                    type: string
+                    description: Manager Position Description - وصف منصب المدير بالمجلس
+            parties:
+              type: array
+              description: |
+                Parity Type - نوع المالك / الشريك
+              items:
+                type: object
+                properties:
+                  typeId:
+                    type: integer
+                    description: Parity Type ID - رمز نوع الشريك
+                  typeName:
+                    type: string
+                    description: Parity Type Description - وصف نوع الشريك
+                  partnership:
+                    type: array
+                    description: partnership -   طبيعة الشراكة
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: Partnership Type ID - رمز طبيعة الشراكة
+                        name:
+                          type: string
+                          description: Partnership Type Description - وصف طبيعة الشراكة
+          required:
+            - isMain
+            - status
+    required:
+      - result
+      - name
+      - identity
+      - related
+  capital:
+    title: capital
+    type: object
+    description: 'Capital -  رأس المال '
+    required:
+      - currencyId
+      - currencyName
+      - capital
+    properties:
+      currencyId:
+        type: integer
+        description: Capital Currency ID - رمز عملة رأس المال
+      currencyName:
+        type: string
+        description: Capital Currency Description - وصف عملة رأس المال
+      capital:
+        type: number
+        description: Capital - رأس المال
+      contributionCapital:
+        type: object
+        description: Contribution Capital Details - بيانات رأس المال لمجموعة الحصص
+        properties:
+          typeId:
+            type: integer
+            description: Capital Type ID - رمز نوع رأس المال
+          typeName:
+            type: string
+            description: Capital Type Description - وصف نوع رأس المال
+          cashCapital:
+            type: number
+            description: Cash Capital - رأس المال النقدي
+          inKindCapital:
+            type: number
+            description: In-kind Capital - رأس المال العيني
+          contributionValue:
+            type: number
+            description: Contribution Value - قيمة الحصة
+          totalCashContribution:
+            type: number
+            description: Total Cash Contribution - إجمالي عدد الحصص النقدية
+          totalInKindContribution:
+            type: number
+            description: Total In-kind Contribution - إجمالي عدد الحصص العينية
+        required:
+          - typeId
+          - typeName
+          - contributionValue
+          - totalCashContribution
+          - totalInKindContribution
+      stockCapital:
+        type: object
+        description: Stock Capital Details -  بيانات رأس المال لمجموعة الأسهم
+        properties:
+          typeId:
+            type: integer
+            description: Capital Type ID - رمز نوع رأس المال
+          typeName:
+            type: string
+            description: Capital Type Description - وصف نوع رأس المال
+          cashCapital:
+            type: number
+            description: Cash Capital - رأس المال النقدي
+          inKindCapital:
+            type: number
+            description: In-kind Capital - رأس المال العيني
+          capital:
+            type: number
+            description: Capital - راس المال المصدر
+          announcedCapital:
+            type: number
+            description: Announced Capital - رأس المال المصرح به
+          paidCapital:
+            type: number
+            description: Paid Capital - رأس المال المدفوع
+          stocks:
+            type: array
+            description: Stock List - قائمة الأسهم
+            items:
+              type: object
+              properties:
+                typeId:
+                  type: integer
+                  description: Stock Type ID - رمز نوع السهم
+                typeName:
+                  type: string
+                  description: Stock Type Description - وصف نوع السهم
+                count:
+                  type: integer
+                  description: Stock Count - عدد الأسهم
+                value:
+                  type: number
+                  description: Stock Value - قيمة السهم
+                classReferenceID:
+                  type: integer
+                  description: Stock Class Reference ID - رمز فئة السهم
+                className:
+                  type: string
+                  description: Stock Class Description - وصف فئة السهم
+              required:
+                - typeId
+                - typeName
+                - count
+                - value
+                - classReferenceID
+                - className
+        required:
+          - typeId
+          - typeName
+          - capital
+          - paidCapital
+  status:
+    title: status
+    type: object
+    description: 'حالة السجل التجاري - CR Status '
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+        description: CR Status ID - رمز حالة السجل التجاري
+      name:
+        type: string
+        description: CR Status Description - وصف حالة السجل التجاري
+  managers:
+    title: managers
+    type: array
+    description: 'Manager List - قائمة المديرين '
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name - الاسم
+        typeId:
+          type: integer
+          description: Manager Type ID - رمز نوع المدير
+        typeName:
+          type: string
+          description: Manager Type Name - وصف نوع المدير
+        isLicensed:
+          type: boolean
+          description: Is Licensed - هل مدير مرخص
+        identity:
+          type: object
+          required:
+            - id
+            - typeId
+            - typeName
+          properties:
+            id:
+              type: string
+              description: Identifier No - رقم الإثبات
+            typeId:
+              type: integer
+              description: Identifier Type ID - رمز نوع الاثبات
+            typeName:
+              type: string
+              description: Identifier Type Description - وصف نوع الاثبات
+        nationality:
+          type: object
+          required:
+            - id
+            - name
+          description: Nationality - الجنسية
+          properties:
+            id:
+              type: integer
+              description: Nationality ID - رمز الجنسية
+            name:
+              type: string
+              description: Nationality Description - وصف الجنسية
+        positions:
+          type: array
+          description: Manager Position List - قائمة مناصب المدير بالمجلس
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Manager Position ID - رمز منصب المدير بالمجلس
+              name:
+                type: string
+                description: Manager Position Description - وصف منصب المدير بالمجلس
+            required:
+              - id
+              - name
+      required:
+        - name
+        - typeId
+        - typeName
+        - isLicensed
+        - identity
+        - nationality
+  owners:
+    title: owners
+    type: array
+    description: 'parity List - قائمة الشركاء / مالك المؤسسة '
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name - الاسم
+        typeId:
+          type: integer
+          description: Parity Type ID - رمز نوع الشريك
+        typeName:
+          type: string
+          description: Parity Type Description - وصف نوع الشريك
+        identity:
+          type: object
+          required:
+            - id
+            - typeId
+            - typeName
+          properties:
+            id:
+              type: string
+              description: Identifier No - رقم الإثبات
+            typeId:
+              type: integer
+              description: Identifier Type ID - رمز نوع الاثبات
+            typeName:
+              type: string
+              description: Identifier Type Description - وصف نوع الاثبات
+        partnership:
+          type: array
+          description: partnership -   طبيعة الشراكة
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Partnership Type ID - رمز طبيعة الشراكة
+              name:
+                type: string
+                description: Partnership Type Description - وصف طبيعة الشراكة
+            required:
+              - id
+              - name
+        partnerShare:
+          type: object
+          description: 'partnerShare - قائمة حصص الشريك '
+          properties:
+            cashContributionCount:
+              type: integer
+              description: Cash Contribution Count - عدد الحصص النقدية
+            inKindContributionCount:
+              type: integer
+              description: In-kind Contribution Count - عدد الحصص العينية
+            totalContributionCount:
+              type: integer
+              description: Total Contribution Count - إجمالي عدد حصص الشريك
+        nationality:
+          type: object
+          description: Nationality - الجنسية
+          properties:
+            id:
+              type: integer
+              description: Nationality ID - رمز الجنسية
+            name:
+              type: string
+              description: Nationality Description - وصف الجنسية
+          required:
+            - id
+            - name
+        crNumber:
+          type: string
+          description: Commercial Registry Number - رقم السجل التجاري
+        licenseNo:
+          type: string
+          description: License No - رقم الترخيص
+      required:
+        - name
+        - identity
+  owns:
+    title: owns
+    type: object
+    properties:
+      ownsCr:
+        type: boolean
+    required:
+      - ownsCr
+  lookup:
+    type: object
+    properties:
+      id:
+        type: integer
+      nameAr:
+        type: string
+      nameEr:
+        type: string
+  lookup-cities:
+    type: object
+    properties:
+      id:
+        type: integer
+      nameAr:
+        type: string
+      nameEr:
+        type: string
+      crOfficeId:
+        type: integer
+      regionId:
+        type: integer
+  lookup-nationalities:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        nicCode:
+          type: integer
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+  lookup-activity:
+    type: array
+    items:
+      type: object
+      description: activity description details level 1 - بيانات الأنشطة المستوى الاول
+      required:
+        - id
+        - name
+        - nameEn
+        - level
+        - category
+        - authority
+      properties:
+        id:
+          type: number
+          maxLength: 10
+          description: isic id - رمز النشاط
+          example: 9
+        name:
+          type: string
+          description: isic Arabic name  - اسم النشاط عربي
+          maxLength: 250
+          example: أنشطة خدمات الاقامة والطعام
+        nameEn:
+          type: string
+          description: isic English name  - اسم النشاط انجليزي
+          maxLength: 250
+          example: Accommodation and food service activities
+        level:
+          type: number
+          maxLength: 10
+          description: activity level  - مستوى النشاط
+          example: 1
+        category:
+          type: array
+          items:
+            type: object
+            description: category  details level 2  - بيانات فئة الانشطة المستوى الثاني
+            required:
+              - id
+              - name
+              - nameEn
+              - level
+              - isic
+            properties:
+              id:
+                type: number
+                maxLength: 10
+                description: activity id - رمز فئة النشاط
+                example: 351003
+              name:
+                type: string
+                description: activity Arabic name  - اسم فئة النشاط عربي
+                maxLength: 250
+                example: أنشطة تقديم المشروبات
+              nameEn:
+                type: string
+                description: activity English name  - اسم فئة النشاط نجليزي
+                maxLength: 250
+                example: Beverage serving activities
+              level:
+                type: number
+                maxLength: 10
+                description: activity level  - مستوى فئة النشاط
+                example: 2
+              isic:
+                type: array
+                items:
+                  type: object
+                  description: isic4 details actvtites level 3  - بيانات وصف الأنشطة المستوى الثالث
+                  required:
+                    - id
+                    - name
+                    - nameEn
+                    - level
+                    - isic
+                  properties:
+                    id:
+                      type: number
+                      maxLength: 10
+                      description: isic id - رمز وصف النشاط
+                      example: 551013
+                    name:
+                      type: string
+                      description: isic Arabic name  - اسم وصف النشاط عربي
+                      maxLength: 250
+                      example: الفنادق التراثية
+                    nameEn:
+                      type: string
+                      description: isic English name  - اسم وصف النشاط انجليزي
+                      maxLength: 250
+                      example: Heritage hotels
+                    level:
+                      type: number
+                      maxLength: 10
+                      description: activity isic level  - مستوى فئة النشاط
+                      example: 3
+                    authority:
+                      type: object
+                      description: authority details  - بيانات الجهة المصرحة
+                      required:
+                        - id
+                        - name
+                        - nameEn
+                        - cancelRequired
+                      properties:
+                        id:
+                          type: number
+                          maxLength: 10
+                          description: authority  id - رمز الجهة
+                          example: 17
+                        name:
+                          type: string
+                          description: category activity Arabic name  - اسم  الجهة عربي
+                          maxLength: 250
+                          example: الهيئة العامة للسياحة والتراث الوطني
+                        nameEn:
+                          type: string
+                          description: activity category English name  - اسم الجهة انجليزي
+                          maxLength: 250
+                          example: Saudi Commission for Tourism and National Heritage
+                        cancelRequired:
+                          type: boolean
+                          description: requireed authority to cancel
+                          example: false
+  crNationalNumber:
+    type: object
+    properties:
+      crNationalNumber:
+        type: string
+        description: Commercial Registry National Number - الرقم الموحد للسجل التجاري
+  beneficiary:
+    type: object
+    properties:
+      exemption:
+        type: object
+        description: Exemption from Real Beneficiary Disclosure - بيانات الإعفاء من الإفصاح عن المستفيد الحقيقي
+        properties:
+          reasons:
+            type: array
+            description: Exemption from Real Beneficiary Disclosure reason - أسباب الإعفاء من الإفصاح عن المستفيد الحقيقي
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: exemption Reason ID - كود نوع سبب الإعفاء من الإفصاح عن المستفيد الحقيقي
+                  example: 1
+                description:
+                  type: string
+                  description: exemption Reason Description - شرح سبب مبرر حول في السؤال السابق عن المستفيد الحقيقي
+                  example: Student exemption
+                additionalText:
+                  type: string
+                  description: Additional Text - نص إضافي
+                  example: Full-time student enrolled in university
+      beneficiaries:
+        type: array
+        description: beneficiaries - المستفيدين
+        items:
+          type: object
+          properties:
+            type:
+              type: object
+              description: Beneficiary Type - نوع المستفيد
+              properties:
+                id:
+                  type: integer
+                  description: beneficiary Type ID - كود نوع المستفيد
+                  example: 1
+                name:
+                  type: string
+                  description: beneficiary Type Description - وصف نوع المستفيد
+                  example: زوج سعودي
+            name:
+              type: string
+              description: beneficiary name - اسم المستفيد
+              example: السيد محمد احمد حسن عبد المنعم
+            identity:
+              type: object
+              description: Identity/Iqama/Border Number - بيانات هوية المستفيد
+              properties:
+                id:
+                  type: string
+                  description: beneficiary Identity Number - رقم هوية المستفيد
+                  example: '1105528085'
+                typeId:
+                  type: integer
+                  description: Identity Type ID - كود نوع هوية
+                  example: 1
+                typeName:
+                  type: string
+                  description: Identity Type Description - وصف نوع هوية
+                  example: هوية وطنية
+            nationality:
+              type: object
+              description: beneficiary Nationality Details - بيانات جنسية المستفيد
+              properties:
+                id:
+                  type: string
+                  description: beneficiary Nationality ID - كود جنسية المستفيد
+                  example: '113'
+                name:
+                  type: string
+                  description: beneficiary Nationality - وصف جنسية المستفيد
+                  example: السعودية
+            gender:
+              type: object
+              description: beneficiary Gender Details - بيانات جنس المستفيد
+              properties:
+                id:
+                  type: integer
+                  description: beneficiary Gender ID - كود جنس المستفيد
+                  example: 1
+                name:
+                  type: string
+                  description: beneficiary Gender Description - وصف جنس المستفيد
+                  example: ذكر
+            addingReasons:
+              type: array
+              description: beneficiary Adding Reason Details - بيانات أسباب إضافة المستفيد
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: beneficiary Adding Reasons ID - كود سبب إضافة المستفيد
+                    example: 1
+                  description:
+                    type: string
+                    description: beneficiary Adding Reasons Description - قرابة لم يمكن سبق إضافة للأبوين زوج او زوجة او ابن او ابنة او أب او أم او أخ او أخت
+                    example: Legal spouse
+                  additionalText:
+                    type: string
+                    description: Additional Text - نص إضافي
+                    example: Marriage certificate verified
+            guardian:
+              type: object
+              description: Guardian Details - بيانات الوصي
+              properties:
+                isFather:
+                  type: boolean
+                  description: Is the guardian the father? - هل الوصي هو الأب
+                  example: false
+                type:
+                  type: object
+                  description: Guardian Type Details - بيانات نوع الوصي
+                  properties:
+                    id:
+                      type: integer
+                      description: Guardian Type ID - كود نوع الوصي
+                      example: 5
+                    name:
+                      type: string
+                      description: Guardian Type - وصف نوع الوصي
+                      example: مستثمر أجنبي ثابتًا
+                name:
+                  type: string
+                  description: Guardian name - اسم الوصي
+                  example: السيد محمد احمد حسن عبد المنعم
+                identity:
+                  type: object
+                  description: Guardian Identity Details - بيانات هوية الوصي
+                  properties:
+                    id:
+                      type: string
+                      description: Guardian Identity Number - رقم هوية الوصي
+                      example: '2829382739'
+                    typeId:
+                      type: integer
+                      description: Guardian Identity Type ID - كود نوع هوية الوصي
+                      example: 3
+                    typeName:
+                      type: string
+                      description: Guardian Identity Type Description - وصف نوع هوية الوصي
+                      example: جواز سفر
+                nationality:
+                  type: object
+                  description: Guardian Nationality Details - بيانات جنسية الوصي
+                  properties:
+                    id:
+                      type: string
+                      description: Guardian Nationality ID - كود جنسية الوصي
+                      example: '102'
+                    name:
+                      type: string
+                      description: Guardian Nationality Description - وصف جنسية الوصي
+                      example: الكويت
+                gender:
+                  type: object
+                  description: Guardian Gender Details - بيانات جنس الوصي
+                  properties:
+                    id:
+                      type: integer
+                      description: Guardian Gender ID - كود جنس الوصي
+                      example: 1
+                    name:
+                      type: string
+                      description: Guardian Gender Description - وصف جنس الوصي
+                      example: ذكر
+responses:
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    description: |
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.1.1</code>  <message>Internal Server Error</message>   </error>
+  ErrorResponse400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.2 - message: Commercial registration number or national number must be digits only
+      code: 400.1.3 - message: Commercial registration number or national number must be 10 digits
+      code: 400.1.4 - message: Language should be 'ar' or 'en'
+      code: 400.1.5 - message: Active and pending records can be retrieved using the commercial registration national number (700)  only
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponseOwners400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.2 - message: Commercial registration number or national number must be digits only
+      code: 400.1.3 - message: Commercial registration number or national number must be 10 digits
+      code: 400.1.4 - message: Language should be 'ar' or 'en'
+      code: 400.1.5 - message: Active and pending records can be retrieved using the commercial registration national number (700)  only
+      code: 400.1.13 - message: Joint Stock Companies and Simplified Joint Stock Companies do not have partners
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponsRelated400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.4 - message: Language should be 'ar' or 'en'
+      code: 400.1.6 - message: Invalid ID type
+      code: 400.1.7 - message: The ID number must be 3 to 20 digits
+      code: 400.1.11 - message: Nationality code must be digits only
+      code: 400.1.12 - message: The provided ID type is not valid for the specified nationality
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponsOwns400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.6 - message: Invalid ID type
+      code: 400.1.7 - message: The ID number must be 3 to 20 digits
+      code: 400.1.11 - message: Nationality code must be digits only
+      code: 400.1.12 - message: The provided ID type is not valid for the specified nationality
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponseCrNationalNumber400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.8 - message: The ID must be commercial registration number
+      code: 400.1.9 - message: Commercial registration number must be digits only
+      code: 400.1.10 - message: Commercial registration number must be 10 digits
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponse401:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>401.1.1</code>  <message>Invalid ApiKey</message>   </error>
+  ErrorResponse403:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 403.1.1
+        message: you do not have permission for giving resource
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>403.1.1</code>  <message>you do not have permission for giving resource</message>   </error>
+  ErrorResponse404:
+    description: not found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>404.2.1</code>  <message>No Results Found</message>   </error>
+  ErrorResponse429:
+    description: Quota Violation
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit  exceeded
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>429.1.1</code>  <message>Rate limit quota violation. Quota limit  exceeded</message>   </error>
+  ErrorResponse500:
+    description: internal server error
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.1.1</code>  <message>Internal Server Error</message>   </error>

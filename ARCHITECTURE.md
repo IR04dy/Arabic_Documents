@@ -45,6 +45,10 @@ inference runtime for **all three** models — spawned as separate processes:
   `extract.py` reaps it on shutdown (its own atexit cleanup fails on Windows).
 - Startup (`app.py` `_warmup`) loads the OCR engine + Qwen3 in background threads
   so the port is reachable immediately; `GET /health` reports readiness.
+- **One outbound dependency.** The verify-data tab (`wathq_api.py`) calls
+  `https://api.wathq.sa` when, and only when, the user presses its lookup button.
+  It is the app's only internet traffic. Everything above stays on this machine.
+  See `WATHQ_INTEGRATION.md`.
 
 ## 3. VRAM budget & lifecycle (16 GB target)
 
@@ -330,6 +334,24 @@ say) needs its own VRAM on top of the resident models.
   - The register is personal data at rest under `CMS_DATA_DIR`, and it is not
     encrypted.
 
+- **The verify-data routes** (`/wathq`, see `WATHQ_INTEGRATION.md`). They
+  cover all 8 Wathq products through one catalog (`templates/wathq/catalog.yaml`,
+  checked at boot against Wathq's specs in the same folder) and one generic
+  view builder (`wathq_view.py`):
+  - They answer only to a loopback peer addressing a loopback host, unless
+    `WATHQ_ALLOW_REMOTE=1`. The `Host` header alone isn't trusted, because a
+    LAN client can forge it.
+  - A lookup must be same-origin and carry `X-Wathq-Request: 1`, so another
+    site cannot spend the paid quota.
+  - The Wathq key is read per call, sent only as Wathq's `apiKey` header (never
+    on a redirect), and never logged or returned.
+  - The outbound host is fixed, TLS is always verified, and environment proxies
+    are ignored.
+  - Personal data in Wathq's answers (identity, phone, e-mail, birth date) is
+    masked before it leaves the server, from each query's list of personal
+    fields plus a name-based backstop. A person's ID typed as an input is never
+    echoed back or logged. Answers are cached in memory only.
+
 ## 7. Configuration (environment variables)
 
 | Var | Default | Effect |
@@ -369,6 +391,14 @@ say) needs its own VRAM on top of the resident models.
 | `CMS_OPENAI_N_CTX` | `8192` | That endpoint's context window (≥ 4096); prompts are sized from it |
 | `CMS_OPENAI_LABEL` | `<model> (OpenAI-compatible)` | Its name in the model selector |
 | `CMS_LLM_ALLOW_REMOTE` | unset | `1` allows a non-loopback endpoint. Complaint text then leaves the host. |
+| `WATHQ_API_KEY` | unset | Wathq key for the verify-data tab (never logged or returned) |
+| `WATHQ_API_KEY_FILE` | unset | A file holding that key instead; re-read per lookup |
+| `WATHQ_ENV` | `production` | `production` or `sandbox` |
+| `WATHQ_TIMEOUT` | `20` | Seconds per network operation (3–120) |
+| `WATHQ_PROXY_URL` | unset | Proxy for Wathq only; `HTTPS_PROXY` is ignored |
+| `WATHQ_CA_BUNDLE` | unset | Extra root CA (PEM) for TLS-inspecting networks, added to the system store |
+| `WATHQ_CACHE_SECONDS` | `900` | In-memory answer cache (`0` = off, max 86400) |
+| `WATHQ_ALLOW_REMOTE` | unset | `1` lets non-local clients run paid lookups |
 
 ## 8. Licensing
 

@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="/comparison/ui.css">
 <link rel="stylesheet" href="/complaints/ui.css">
+<link rel="stylesheet" href="/wathq/ui.css">
 <title>منصة تحليل الصكوك والأحكام</title>
 <style>
 /* Design tokens — taken from deeds_ui_wireframe.drawio (Tahoma, blue #1F6FEB,
@@ -278,6 +279,7 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
   <button type="button" id="analysis-tab" role="tab" aria-selected="true" aria-controls="analysis-workspace">تحليل المستند</button>
   <button type="button" id="comparison-tab" role="tab" aria-selected="false" aria-controls="comparison-workspace" tabindex="-1">مقارنة المستندات</button>
   <button type="button" id="complaints-tab" role="tab" aria-selected="false" aria-controls="complaints-workspace" tabindex="-1">إدارة الشكاوى</button>
+  <button type="button" id="verify-tab" role="tab" aria-selected="false" aria-controls="verify-workspace" tabindex="-1">التحقق من البيانات</button>
 </nav>
 <div id="error" class="err hidden" role="alert"><span id="errortxt"></span><button type="button" id="errorclose" title="إغفال">✕</button></div>
 
@@ -359,6 +361,7 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
       <div id="doctype" class="doctype hidden"></div>
       <div id="reviewnote" class="review hidden">⚠ دون حدّ المراجعة — تحقّق من نوع المستند</div>
       <div id="expiry" class="expiry hidden"></div>
+      <div id="vf-hint" class="struct-note hidden"></div>
       <div id="cmpsum" class="cmpsum"></div>
       <div id="struct"><div class="empty">تظهر الحقول المستخرجة هنا مع مصدر كل قيمة في المستند</div></div>
       <div id="structnote" class="struct-note hidden"></div>
@@ -577,6 +580,45 @@ mark.src{background:var(--accent);color:var(--accent-ink);border-radius:3px;padd
         <div id="cms-insights-body"></div>
       </section>
     </section>
+  </div>
+</section>
+<section id="verify-workspace" role="tabpanel" aria-labelledby="verify-tab" hidden>
+  <div class="vf-content">
+    <div class="vf-heading">
+      <div><h2>التحقق من البيانات</h2><p>استعلامات منصة وثق الرسمية في مكان واحد: السجل التجاري، عقود الشركات، العنوان الوطني، الوكالات الشرعية، الصكوك العقارية، معلومات الموظفين، المستثمرون، ومعلومات الأدوية.</p></div>
+      <span class="vf-remote" title="تُرسَل مدخلات الاستعلام وحدها إلى وثق عبر اتصال مشفّر">خدمة خارجية · وثق</span>
+    </div>
+    <p id="vf-config" class="vf-config" role="status"></p>
+    <section class="vf-card vf-suggest" id="vf-suggest" aria-labelledby="vf-suggest-title" hidden>
+      <h3 id="vf-suggest-title">ما يمكن التحقق منه في هذا المستند</h3>
+      <p id="vf-suggest-note" class="vf-note"></p>
+      <div id="vf-suggest-list"></div>
+      <div class="vf-row">
+        <button type="button" id="vf-suggest-run" class="vf-primary" disabled>تحقق من الخدمات المحددة</button>
+        <span id="vf-suggest-cost" class="vf-note"></span>
+      </div>
+      <p id="vf-suggest-status" role="status" aria-live="polite"></p>
+    </section>
+    <div class="vf-products" id="vf-products" role="tablist" aria-label="خدمات وثق"></div>
+    <section class="vf-card vf-query" id="vf-panel" role="tabpanel" aria-labelledby="vf-product-title">
+      <h3 id="vf-product-title">خدمات وثق</h3>
+      <div id="vf-endpoints" class="vf-endpoints" role="radiogroup" aria-labelledby="vf-product-title"></div>
+      <form id="vf-form" novalidate>
+        <div id="vf-fields" class="vf-fields"></div>
+        <div class="vf-row">
+          <label id="vf-lang-wrap" class="vf-lang">لغة البيانات
+            <select id="vf-lang"><option value="ar">عربي</option><option value="en">English</option></select>
+          </label>
+          <button type="submit" id="vf-run" class="vf-primary" disabled>استعلام من وثق</button>
+          <button type="button" id="vf-cancel" class="vf-button" hidden>إلغاء الانتظار</button>
+        </div>
+        <p id="vf-cost" class="vf-note"></p>
+      </form>
+    </section>
+    <p id="vf-status" role="status" aria-live="polite"></p>
+    <div id="vf-error" class="vf-error" role="alert" hidden></div>
+    <div id="vf-placeholder" class="vf-placeholder"><strong>اختر الخدمة والاستعلام، أدخل البيانات، ثم اضغط «استعلام من وثق»</strong>تظهر النتيجة هنا كما هي مسجلة لدى الجهة المالكة للبيانات، مع إخفاء أرقام الهويات.</div>
+    <div id="vf-results" hidden></div>
   </div>
 </section>
 <dialog id="cmp-source" class="cmp-source-dialog" aria-labelledby="cmp-source-title" dir="rtl">
@@ -877,6 +919,7 @@ function setFile(f, options={}){
 }
 function resetResults(){
   window.RegulationsUI?.reset();
+  window.WathqUI?.reset();
   runGen++;                                  // invalidates any stage still in flight for the old document
   if(chatAbort){ try{chatAbort.abort();}catch(_){}} chatAbort=null; chatBusy=false; chatGen++;
   lastText=""; groundText=""; lastPages=[]; lastLayouts=[]; lastPdfFile=null; pageCount=0; docLines=[]; lineStarts=[]; linePage=[]; pageLine={};
@@ -1168,7 +1211,8 @@ async function startStructure(text){
     if(gen!==runGen) return;
     st.innerHTML="";
     if(!r.ok){ structErr(j.error||("HTTP "+r.status)); lastStruct={document_type:"",sections:[]}; }
-    else { lastStruct=j; renderStructure(j); $("#copyjson").disabled=false; $("#compare").disabled=false; }
+    else { lastStruct=j; renderStructure(j); $("#copyjson").disabled=false; $("#compare").disabled=false;
+      window.WathqUI?.suggest(j); }          // which Wathq services fit this document (no Wathq call)
   }catch(e){ if(gen!==runGen) return;
     st.innerHTML=""; structErr(String(e)); lastStruct={document_type:"",sections:[]}; }
   enableChat(groundText, lastStruct);
@@ -1393,6 +1437,7 @@ $("#errorclose").onclick=hideError;
 <script src="/regulations/ui.js" defer></script>
 <script src="/comparison/ui.js" defer></script>
 <script src="/complaints/ui.js" defer></script>
+<script src="/wathq/ui.js" defer></script>
 <script src="/qr/flow.js" defer></script>
 <script src="/qr/ui.js" defer></script>
 </body>

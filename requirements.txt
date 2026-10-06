@@ -9,6 +9,9 @@ python-multipart>=0.0.20,<1
 starlette
 anyio>=3.4
 
+# The Wathq client (wathq_client.py) uses only the standard library (urllib,
+# ssl), so the verify-data tab adds no dependency.
+
 # QR Bot runs in its own environment. Install QR_Code_Scanner/requirements.txt
 # using QR_Code_Scanner/.venv/Scripts/python.exe. The parent adapter uses stdlib
 # urllib; QR decoding and browser packages belong to the QR service/worker.

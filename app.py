@@ -66,6 +66,11 @@ from complaints_api import create_router as create_complaints_router
 complaints_router = create_complaints_router()
 app.include_router(complaints_router)
 
+# Verify data (التحقق من البيانات): official records from Wathq. The app's only
+# call to the internet; without WATHQ_API_KEY the tab loads and says so.
+from wathq_api import create_router as create_wathq_router
+app.include_router(create_wathq_router())
+
 MAX_BYTES = 100 * 1024 * 1024        # 100 MB upload ceiling
 PROOFREAD_MAX_CHARS = 40000          # cap on /proofread input
 CHAT_FULLTEXT_MAX = 24000            # cap on chat grounding text

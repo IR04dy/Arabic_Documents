@@ -1,0 +1,274 @@
+swagger: '2.0'
+x-stoplight:
+  id: 7ixotoyzsygzd
+info:
+  version: 1.0.0
+  title: Wathq SPL National Address API
+host: api.wathq.sa
+basePath: /spl/national/address
+tags:
+  - name: National Address
+    description: ' '
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json 
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  '/info/{crNumber}':
+    parameters:
+      - type: string
+        name: crNumber
+        in: path
+        required: true
+        description: cr number - رقم السجل التجاري او رقم الوطني الموحد
+    get:
+      summary: Inquire about the data of the national address of the establishment through the commercial registration number/unified national number
+      tags:
+        - National Address
+      responses:
+        '200':
+          description: success
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: مطعم ومعجنات السندباد 
+                address:
+                  type: string
+                  example: 8411 King Fahd Rd - Al Muruj Dist.
+                address2:
+                  type: string
+                  example: RIYADH 12263 - 2743
+                latitude:
+                  type: string
+                  example: 24.75014397
+                longitude:
+                  type: string
+                  example: 22.72224397
+                buildingNumber:
+                  type: string
+                  example: 2455
+                street:
+                  type: string
+                  example: King Fahd Rd
+                district:
+                  type: string
+                  example: Al Muruj Dist
+                districtId:
+                  type: string
+                  example: 2422
+                city:
+                  type: string
+                  example: RIYADH
+                cityId:
+                  type: string
+                  example: 3
+                postCode:
+                  type: string
+                  example: 12263
+                additionalNumber:
+                  type: string
+                  example: 14433
+                regionName:
+                  type: string
+                  example: Al Riyadh
+                regionId:
+                  type: string
+                  example: 1
+                isPrimaryAddress:
+                  type: string
+                  example: true
+                unitNumber:
+                  type: string
+                  example: 1
+                restriction:
+                  type: string
+                  example: 
+                pkAddressId:
+                  type: string
+                  example: 1226384672743
+                status:
+                  type: string
+                  example: Active
+            
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '429':
+          $ref: '#/responses/ErrorResponse429'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+      operationId: get-delegacy-crNumber-relation-phoneNumber
+      description: |
+        Inquire about the data of the national address of the establishment through the commercial registration number/unified national number - الاستعلام عن بيانات العنوان الوطني للمنشأة وذلك من خلال رقم السجل التجاري / الرقم الوطني الموحد.
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+      - referenceid
+    properties:
+      code:
+        type: string
+        example: 500.2.1
+        minLength: 4
+        maxLength: 10
+      message:
+        type: string
+        example: Internal Server Error
+responses:
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    description: |
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+  ErrorResponse401:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>401.1.1</code>  <message>Invalid ApiKey</message>   </error>
+  ErrorResponse403:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 403.1.1
+        message: you do not have permission for giving resource
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>403.1.1</code>  <message>you do not have permission for giving resource</message>   </error>
+  ErrorResponse404:
+    description: |
+      **business error , Here is listed of code** :
+        code: 404.2.1 - message: The required entity is not registered
+        code: 404.2.2 - message: The subscription of the national address for this entity is Expired
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>404.2.1</code>  <message>No Results Found</message>   </error>
+  ErrorResponse400:
+    description: |
+      **business error , Here is listed of code** :
+        code: 400.1.2 - message: Commercial registration or entity number must be digits
+        code: 400.1.3 - message: Commercial registration or entity number must be 10 digits
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.2.29
+        message: Wrong Inquiry Type
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.2.29</code>  <message>Wrong Inquiry Type</message>   </error>
+  ErrorResponse429:
+    description: |
+      **business error , Here is listed of code** :
+        code: 429.2.1 - message: The quota limit has been exceeded
+        
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit  exceeded
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>429.1.1</code>  <message>Rate limit quota violation. Quota limit  exceeded</message>   </error>
+  ErrorResponse500:
+    description: internal server error
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'

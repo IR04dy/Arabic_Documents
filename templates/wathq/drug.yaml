@@ -1,0 +1,540 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Wathq Drug Information APIs
+host: api.wathq.sa
+basePath: /drugs
+tags:
+  - name: Drug
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  '/price/{id}':
+    get:
+      tags:
+        - Drug
+      summary: Get product price information
+      description: Retrieves drug price list - الاستعلام عن قائمة الأسعار الخاصة بالدواء
+      operationId: getProductPrice
+      produces:
+        - application/json
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Product Registration Number - رقم تسجيل المستحضر
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/PriceResponse'
+          examples:
+            application/json:
+              registrationNumber: '2208240355'
+              priceUpdateMessage: null
+              certificates:
+                - certificateNumber: '0000002149'
+                  price: 27.6
+                  startDate: '2026-01-04T11:41:08.24'
+                - certificateNumber: '0000000583'
+                  price: 0.75
+                  startDate: '2024-08-22T11:20:30.197'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/alternatives/{id}':
+    get:
+      tags:
+        - Drug
+      summary: Get alternative products
+      description: Retrieves drug alternatives - الاستعلام عن البدائل الدوائية
+      operationId: getProductAlternatives
+      produces:
+        - application/json
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Product Registration Number - رقم تسجيل المستحضر الأساسي
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/AlternativesResponse'
+          examples:
+            application/json:
+              registrationNumber: '2208240355'
+              certificateNumber: '0000002149'
+              certificateStatus: Invalid
+              price: '27.60'
+              alternatives:
+                - registrationNumber: '1511240443'
+                  tradeName: ProposedTradeName_En441DE
+                  price: '27.60'
+                  certificateStatus: Registered
+                  activeSubstances:
+                    - name: TEST
+                      quantity: '3'
+                      unit: Curreny 2
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/status/{id}':
+    get:
+      tags:
+        - Drug
+      summary: Get product registration status
+      description: Retrieves drug registration status - الاستعلام عن حالة تسجيل الدواء
+      operationId: getProductStatus
+      produces:
+        - application/json
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Product Registration Number - رقم تسجيل المستحضر
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/StatusResponse'
+          examples:
+            application/json:
+              tradeName: ProposedTradeName_En23119
+              certificateStatus: Invalid
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+  '/dispensing/{id}':
+    get:
+      tags:
+        - Drug
+      summary: Get dispensing information
+      description: Retrieves approved medical prescription for drug dispensing - الاستعلام عن الوصفة الطبية المعتمدة لصرف الدواء
+      operationId: getProductDispensingInfo
+      produces:
+        - application/json
+      parameters:
+        - type: string
+          name: id
+          description: |
+            Product Registration Number - رقم تسجيل المستحضر
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/DispensingResponse'
+          examples:
+            application/json:
+              registrationNumber: '2208240355'
+              certificateStatus: Invalid
+              certificateUpdateMessage: There is an update on the certificate data.
+              certificates:
+                - certificateNumber: '0000002149'
+                  startDate: '2026-01-04T11:41:08.24'
+                  dispensingClassification: Not Subject To Medical Prescription
+                  behindTheCounter: By Licensed Pharmacist - Behind the Counter (BTC)
+                  medicalPrescriptionType: null
+                - certificateNumber: '0000000583'
+                  startDate: '2024-08-22T11:20:30.197'
+                  dispensingClassification: Not Subject To Medical Prescription
+                  behindTheCounter: By Licensed Pharmacist - Behind the Counter (BTC)
+                  medicalPrescriptionType: null
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  PriceResponse:
+    type: object
+    properties:
+      registrationNumber:
+        type: string
+        description: Product Registration Number - رقم تسجيل المستحضر
+        example: '2208240355'
+      priceUpdateMessage:
+        type: string
+        description: Message displayed when a certificate has a pending approved request - رسالة تظهر في حال وجود طلب معتمد معلق
+        example: null
+      certificates:
+        type: array
+        description: Certificates list with prices - قائمة الشهادات مع الأسعار
+        items:
+          type: object
+          properties:
+            certificateNumber:
+              type: string
+              description: Certificate Number - رقم الشهادة
+              example: '0000002149'
+            price:
+              type: number
+              format: float
+              description: Product Price - سعر المستحضر
+              example: 27.6
+            startDate:
+              type: string
+              format: date-time
+              description: Certificate Start Date - تاريخ بداية الشهادة
+              example: '2026-01-04T11:41:08.24'
+    required:
+      - registrationNumber
+      - certificates
+  AlternativesResponse:
+    type: object
+    properties:
+      registrationNumber:
+        type: string
+        description: Inquired Product Registration Number - رقم تسجيل المستحضر الأساسي
+        example: '2208240355'
+      certificateNumber:
+        type: string
+        description: Last Certificate Number - رقم آخر شهادة مسجلة
+        example: '0000002149'
+      certificateStatus:
+        type: string
+        description: Last Certificate Status - حالة آخر شهادة مسجلة
+        example: Invalid
+      price:
+        type: string
+        description: Product Price - سعر المستحضر
+        example: '27.60'
+      alternatives:
+        type: array
+        description: List of alternative products - قائمة المستحضرات البديلة
+        items:
+          type: object
+          properties:
+            registrationNumber:
+              type: string
+              description: Alternative Product Registration Number - رقم تسجيل المستحضر البديل
+              example: '1511240443'
+            tradeName:
+              type: string
+              description: Alternative Product Trade Name - الاسم التجاري للمستحضر البديل
+              example: ProposedTradeName_En441DE
+            price:
+              type: string
+              description: Alternative Product Price - سعر المستحضر البديل
+              example: '27.60'
+            certificateStatus:
+              type: string
+              description: Alternative Product Certificate Status - حالة شهادة المستحضر البديل
+              example: Registered
+            activeSubstances:
+              type: array
+              description: Alternative Active Substances - المواد الفعالة للمستحضر البديل
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Active Substance Name - اسم المادة الفعالة
+                    example: TEST
+                  quantity:
+                    type: string
+                    description: Quantity - الكمية
+                    example: '3'
+                  unit:
+                    type: string
+                    description: Unit Name - الوحدة
+                    example: Curreny 2
+                required:
+                  - name
+                  - quantity
+                  - unit
+          required:
+            - registrationNumber
+            - tradeName
+            - price
+            - certificateStatus
+            - activeSubstances
+    required:
+      - registrationNumber
+      - certificateNumber
+      - certificateStatus
+      - price
+      - alternatives
+  StatusResponse:
+    type: object
+    required:
+      - tradeName
+    properties:
+      tradeName:
+        type: string
+        description: Product Trade Name - الاسم التجاري للمستحضر
+        example: ProposedTradeName_En23119
+      certificateStatus:
+        type: string
+        description: Certificate Status - حالة الشهادة
+        example: Invalid
+  DispensingResponse:
+    type: object
+    properties:
+      registrationNumber:
+        type: string
+        description: Product Registration Number - رقم تسجيل المستحضر
+        example: '2208240355'
+      certificateStatus:
+        type: string
+        description: Certificate Status - حالة الشهادة
+        example: Invalid
+      certificateUpdateMessage:
+        type: string
+        description: Message displayed when a certificate has a pending approved request - رسالة تظهر في حال وجود طلب معتمد معلق
+        example: There is an update on the certificate data.
+      certificates:
+        type: array
+        description: Certificates list - قائمة الشهادات
+        items:
+          type: object
+          properties:
+            certificateNumber:
+              type: string
+              description: Certificate Number - رقم الشهادة
+              example: '0000002149'
+            startDate:
+              type: string
+              format: date-time
+              description: Certificate Start Date - تاريخ بداية الشهادة
+              example: '2026-01-04T11:41:08.24'
+            dispensingClassification:
+              type: string
+              description: Proposed Dispensing Classification - تصنيف الصرف المقترح
+              example: Not Subject To Medical Prescription
+            behindTheCounter:
+              type: string
+              description: Behind Over The Counter - صرف خلف المنضدة
+              example: By Licensed Pharmacist - Behind the Counter (BTC)
+            medicalPrescriptionType:
+              type: string
+              description: Medical Prescription Type - نوع الوصفة الطبية
+              example: null
+          required:
+            - certificateNumber
+            - startDate
+    required:
+      - registrationNumber
+      - certificates
+responses:
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    description: |
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+  ErrorResponse400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.2 - message: Registration number must be 20 digits or less
+      code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+  ErrorResponse401:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+  ErrorResponse403:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 403.1.1
+        message: you do not have permission for giving resource
+  ErrorResponse404:
+    description: not found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+  ErrorResponse429:
+    description: Quota Violation
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit exceeded
+  ErrorResponse500:
+    description: internal server error
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error

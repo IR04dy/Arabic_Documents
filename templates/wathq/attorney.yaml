@@ -1,0 +1,553 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Wathq Attorney APIs
+host: api.wathq.sa
+
+basePath: /v1/attorney
+tags:
+  - name: Attorney
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  /lookup:
+    get:
+      summary: Get Attorney texts - استرجاع معرفات نصوص الوكالات الشرعية
+      tags:
+        - Lookup
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookupSuccessResponse'
+          examples:
+          
+            example-1:
+              id: 1
+              controlLable: البيع والإفراغ للمشتري
+              attorneyTypeName: العقارات
+              childControls:
+                - id: 20065
+                  controlLable: استلام الثمن
+                  attorneyTypeName: العقارات
+                  childControls:
+                    - id: 2
+                      controlLable: بشيك
+                      attorneyTypeName: العقارات
+                      childControls:
+                        - id: 3345
+                          controlLable: مصدق
+                          attorneyTypeName: العقارات
+                          childControls: []
+                        - id: 334563
+                          controlLable: باسمي
+                          attorneyTypeName: العقارات
+                          childControls: []
+                        - id: 3
+                          controlLable: باسم المالك
+                          attorneyTypeName: العقارات
+                          childControls: []
+                        - id: 334
+                          controlLable: باسم الورثة
+                          attorneyTypeName: العقارات
+                          childControls: []
+                        - id: 334562
+                          controlLable: باسم الوكيل الأول
+                          attorneyTypeName: العقارات
+                          childControls: []
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+      operationId: attornytexts_Lookup
+      security:
+        - Authorization: []
+      description: Retrive attorny texts
+    parameters: []
+  /info/{code}:
+    parameters:
+      - type: string
+        name: code
+        description: attorney number - رقم الوكالة
+        in: path
+        required: true
+      - type: string
+        in: query
+        name: principalId
+        description: >-
+          identification number for one of the attorney principals - رقم هوية
+          احد الموكلين (principalId or agentId is required along with code)
+      - type: string
+        in: query
+        name: agentId
+        description: >-
+          identification number for one of the attorney agents - رقم هوية احد
+          الوكلاء (principalId or agentId is required along with code)
+    get:
+      summary: Verify Attorney Details - التحقق من بيانات الوكالة الشرعية
+      tags:
+        - Attorney
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/infoSuccessResponse'
+          examples:
+            example-1:
+              attorneyNumber: 4317608
+              status: منتهية
+              expiryDate: 2022/03/24
+              attorneyType: وكالة أصلية
+              AllowedToActOnBehalf:
+                - IdentityNo: '2424404131'
+                  SocialTypeID: 3
+                  SocialTypeName: إقامة
+                  Name: محمد اسامة ناصف زيتون
+                  Type: 1
+                  TypeName: فردى
+                  TypeNameEn: Individual
+                  SefaID: 1
+                  SefaName: أصالة عن نفسه
+                  NationalNumber: null
+                  CRNumber: null
+                  KararNumber: null
+                  MalakiNumber: null
+                  DocumentTypeName: null
+                  CompanyRepresentTypeID: null
+                  CompanyRepresentTypeName: null
+                  SakkNumber: null
+              principals:
+                - id: '2424404131'
+                  name: محمد اسامة ناصف زيتون
+                  birthday: '0001-01-01T00:00:00'
+                  SefaId: 1
+                  SefaName: أصالة عن نفسه
+              agents:
+                - name: عبدالرحمن محمد عبدالله الحنيشل
+                  id: '1059608891'
+                  birthday: '1987-08-27T00:00:00'
+                  SefaID: 1
+                  SefaName: أصالة عن نفسه
+                - name: عبدالمجيد عبدالله ابراهيم الفارس
+                  id: '1102244140'
+                  birthday: '1995-01-20T00:00:00'
+                  SefaID: 1
+                  SefaName: أصالة عن نفسه
+                - name: عمرو محمد على حمد
+                  id: '2487449122'
+                  birthday: '1990-09-01T00:00:00'
+                  SefaID: 1
+                  SefaName: أصالة عن نفسه
+              agentsBehavior:
+                ar: مجتمعين
+                en: togther
+              attorneyText: "الحـمد لله وحـده والصـلاة والسـلام على من لا نبـي بعـده ،                وبـعـد :\r\nفمن خلال الخدمات الإلكترونية لوزارة العدل، تم إصدار وكالة إلكترونياً رقم ٤٣١٧٦٠٨ للموكل:\r\nمحمد اسامة ناصف زيتون  الجنسية بموجب إقامة رقم ٢٤٢٤٤٠٤١٣١\r\n\t  وقـد تـم الاقـرار بتـوكـيـل : \r\n\r\n١- عبدالرحمن محمد عبدالله الحنيشل سعودي الجنسية بموجب سجل مدني رقم ١٠٥٩٦٠٨٨٩١\r\n٢- عبدالمجيد عبدالله ابراهيم الفارس سعودي الجنسية بموجب سجل مدني رقم ١١٠٢٢٤٤١٤٠\r\n٣- عمرو محمد على حمد مصري الجنسية بموجب إقامة رقم ٢٤٨٧٤٤٩١٢٢ مجتمعين \r\n فيما يخص [طلب الخدمات] وذلك في مراجعة شركة المياه ادخال المياه  - وفيما يخص [العقارات] قبول التنازل والإفراغ - الرهن - فك الرهن - بيع  الاستلام و التسليم  - مراجعة جميع الجهات ذات العلاقة وإنهاء جميع الإجراءات اللازمة والتوقيع فيما يتطلب ذلك -وله حق توكيل غيره ، حرر بتاريخ ١٤٤٣/٠٢/٢١ هـ وصلى الله وسلم على نبينا محمد وآله وصحبه أجمعين."
+              textList:
+                - id: 326
+                  text: مراجعة شركة المياه
+                  type: طلب الخدمات
+                - id: 327
+                  text: ادخال المياه
+                  type: طلب الخدمات
+                - id: 201
+                  text: قبول التنازل والإفراغ
+                  type: العقارات
+                - id: 11
+                  text: الرهن
+                  type: العقارات
+                - id: 12
+                  text: فك الرهن
+                  type: العقارات
+                - id: 15
+                  text: بيع
+                  type: العقارات
+                - id: 5000000
+                  text: الاستلام و التسليم
+                  type: null
+                - id: 1000000
+                  text: >-
+                    مراجعة جميع الجهات ذات العلاقة وإنهاء جميع الإجراءات اللازمة
+                    والتوقيع فيما يتطلب ذلك
+                  type: null
+                - id: 2000000
+                  text: وله حق توكيل غيره
+                  type: null
+        '400':
+          $ref: '#/responses/verfiyErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '403':
+          $ref: '#/responses/ErrorResponse403'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+      operationId: verfiy
+      security:
+        - Authorization: []
+      description: Verfiy Attorney Information Details
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+        minLength: 4
+        maxLength: 10
+      message:
+        type: string
+  lookupSuccessResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+      controlLable:
+        type: string
+        example:  البيع والإفراغ للمشتري
+      attorneyTypeName: 
+        type: string
+        example: العقارات
+
+      childControls:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 20065
+            controlLable:
+              type: string
+              example: استلام الثمن
+            attorneyTypeName:
+              type: string
+              example: العقارات
+            childControls:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 2
+                  controlLable:
+                    type: string
+                    example: بشيك
+                  attorneyTypeName:
+                    type: string
+                    example: العقارات 
+                  childControls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 3345
+                        controlLable:
+                          type: string
+                          example: مصدق
+                        attorneyTypeName:
+                          type: string
+                          example: العقارات
+                        childControls:
+                          type: array
+                          items:
+                            type: object
+                            properties: {}
+  infoSuccessResponse:
+    type: object
+    properties:
+      code:
+        type: integer
+        example: 4317XXX
+      status:
+        type: string
+        example: منتهية
+      issueHijriDate:
+        type: string
+        example: 1443/02/21
+      issueGregDate:
+        type: string
+        example: 2021/09/28  
+      expiryHijriDate:
+        type: string
+        example: 1443/08/21  
+      expiryGregDate:
+        type: string
+        example: 2022/03/24  
+      attorneyType:
+        type: string
+        example: وكالة أصلية
+      location:
+        type: object
+        properties:
+          id:
+            type: number
+            example: 10005
+          name:
+            type: string
+            example: خدمات الوكالات الإلكترونية  
+      AllowedToActOnBehalf:
+        type: array
+        items:
+          type: object
+          properties:
+            IdentityNo:
+              type: string
+              example: 242440XXXX
+            SocialTypeID:
+              type: integer
+              example: 3
+            SocialTypeName:
+              type: string
+              example: إقامه
+            Name:
+              type: string
+              example: محمد اسامة ناصف
+            Type:
+              type: integer
+              example: 1
+            TypeName:
+              type: string
+              example: فردي
+            TypeNameEn:
+              type: string
+              example: Individual
+            SefaID:
+              type: integer
+              example: 1
+            SefaName:
+              type: string
+              example: أصالة عن نفسه 
+            NationalNumber:
+              type: integer
+              example: 100983XX
+            CRNumber:
+              type: integer
+              example: 200XXX
+            KararNumber:
+              type: integer
+            MalakiNumber:
+              type: integer
+            DocumentTypeName:
+              type: string
+            CompanyRepresentTypeID:
+              type: integer
+            CompanyRepresentTypeName:
+              type: string
+            SakkNumber:
+              type: integer
+      principals:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 242440XXXX
+            name:
+              type: string
+              example: محمد اسامة ناصف
+            birthday:
+              type: string
+              example: 0001-01-01T00:00:00
+            SefaId:
+              type: integer
+              example: 1
+            SefaName:
+              type: string
+              example: أصالة عن نفسه
+      agents:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 103440XXXX
+            name:
+              type: string
+              example: عبدالرحمن محمد عبدالله 
+            birthday:
+              type: string
+              example: 0001-01-01T00:00:00
+            SefaId:
+              type: integer
+              example: 1
+            SefaName:
+              type: string
+              example: أصالة عن نفسه
+      agentsBehavior:
+        type: object
+        properties:
+          ar:
+            type: string
+            example: مجتمعين
+          en:
+            type: string
+            example: togther
+      text:
+        type: string
+        example: 'الحـمد لله وحـده والصـلاة والسـلام على من لا نبـي بعـده ،وبـعـد :\r\nفمن خلال الخدمات الإلكترونية لوزارة العدل، تم إصدار وكالة إلكترونياً رقم ٢٤٤٧٤٤٩١٢ للموكل:\r\nمحمد اسامة ناصف  الجنسية بموجب إقامة رقم ٢٤٢٤٤0000\r\n\t  وقـد تـم الاقـرار بتـوكـيـل : \r\n\r\n١- عبدالرحمن محمد عبدالله سعودي الجنسية بموجب سجل مدني رقم ١٠٥٩٦٠٨٨٩١\r\n٢- عبدالمجيد عبدالله  سعودي الجنسية بموجب سجل مدني رقم ١١٠٢٢٤٤١٤٠\r\n٣- عمرو محمد على حمد مصري الجنسية بموجب إقامة رقم ٢٤٨٧٤٤٩١٢٢ مجتمعين \r\n فيما يخص [طلب الخدمات] وذلك في مراجعة شركة المياه ادخال المياه  - وفيما يخص [العقارات] قبول التنازل والإفراغ - الرهن - فك الرهن - بيع  الاستلام و التسليم  - مراجعة جميع الجهات ذات العلاقة وإنهاء جميع الإجراءات اللازمة والتوقيع فيما يتطلب ذلك -وله حق توكيل غيره ، حرر بتاريخ ١٤٤٣/٠٢/٢١ هـ وصلى الله وسلم على نبينا محمد وآله وصحبه أجمعين.:'
+      textList:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 12
+            text:
+              type: string
+              example: فك الرهن
+            type:
+              type: integer 
+              example: العقارات
+responses:
+  verfiyErrorResponse400:
+    description: |-
+      **business error Here is the listed of code** :
+
+        code: 400.1.1- message: Attorney number is not correct
+        code: 400.1.2- message: Input data is required
+        code: 400.1.3- message: ID must be 10 digits
+        code: 400.1.4- message: Attorney number must be around 10 digits
+        code: 400.1.5- message: ID is not related to attorney  
+        code: 400.1.6- message: Attorney number must be digits
+        code: 400.1.7- message: ID must be digits
+        
+        
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Attorney number is not correct
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.2.15</code> 
+        <message>Commercial Attorney code must be digits</message>   </error>
+  ErrorResponse401:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>401.1.1</code> 
+        <message>Invalid ApiKey</message>   </error>
+  ErrorResponse403:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 403.1.1
+        message: you do not have permission for giving resource
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>403.1.1</code> 
+        <message>you do not have permission for giving resource</message>  
+        </error>
+  ErrorResponse404:
+    description: not found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>404.2.1</code> 
+        <message>No Results Found</message>   </error>
+  ErrorResponse429:
+    description: Quota Violation
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit  exceeded
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>429.1.1</code> 
+        <message>Rate limit quota violation. Quota limit  exceeded</message>  
+        </error>
+  ErrorResponse500:
+    description: internal server error
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.3.1
+        message: Internal Error
+      application/xml: >-
+        <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.3.1</code> 
+        <message>Internal Error</message>   </error>

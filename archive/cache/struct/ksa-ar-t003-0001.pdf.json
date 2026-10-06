@@ -1,0 +1,361 @@
+{
+ "document_type": "عقد عمل غير محدد المدة",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات السجل التجاري",
+   "fields": [
+    {
+     "label": "رقم السجل التجاري",
+     "value": "1128927371",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 2,
+      "start": 57,
+      "end": 67,
+      "quote": "رقم السجل التجاري: 1128927371"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات العامل",
+   "fields": [
+    {
+     "label": "اسم العامل",
+     "value": "احمد احمد بن عدوان",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 1618,
+      "end": 1636,
+      "quote": "اسم العامل: احمد احمد بن عدوان | اسم الممثل: محمد محمد الزبيدي"
+     }
+    },
+    {
+     "label": "التوقيع",
+     "value": "_____",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 1678,
+      "end": 1683,
+      "quote": "التوقيع: _____ | التوقيع: _____"
+     }
+    },
+    {
+     "label": "التاريخ",
+     "value": "12/05/2024",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 21,
+      "start": 1710,
+      "end": 1720,
+      "quote": "التاريخ: 12/05/2024 | التاريخ: 12/05/2024"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات صاحب العمل",
+   "fields": [
+    {
+     "label": "اسم الممثل",
+     "value": "محمد محمد الزبيدي",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 1651,
+      "end": 1668,
+      "quote": "اسم العامل: احمد احمد بن عدوان | اسم الممثل: محمد محمد الزبيدي"
+     }
+    },
+    {
+     "label": "التوقيع",
+     "value": "_____",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 1678,
+      "end": 1683,
+      "quote": "التوقيع: _____ | التوقيع: _____"
+     }
+    },
+    {
+     "label": "التاريخ",
+     "value": "12/05/2024",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 21,
+      "start": 1710,
+      "end": 1720,
+      "quote": "التاريخ: 12/05/2024 | التاريخ: 12/05/2024"
+     }
+    }
+   ]
+  },
+  {
+   "title": "ملاحظات عامة",
+   "fields": [
+    {
+     "label": "تاريخ إبرام العقد",
+     "value": "12/05/2024",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 5,
+      "start": 128,
+      "end": 138,
+      "quote": "أبرم هذا العقد بتاريخ 12/05/2024 بين صاحب العمل والعامل المبينة بياناتهما في ملحق بيانات الأطراف، ويعد الملحق جزءاً لا يتجزأ من العقد."
+     }
+    },
+    {
+     "label": "مدة العقد",
+     "value": "غير محددة",
+     "origin": "document"
+    },
+    {
+     "label": "مصدر التفسير",
+     "value": "نظام العمل واللوائح والقرارات النافذة في المملكة العربية السعودية",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 432,
+      "end": 497,
+      "quote": "…ملاحقه وسياساته المشار إليها صراحة. تفسر أحكام العقد بما يتفق مع نظام العمل واللوائح والقرارات النافذة في المملكة العربية السعودية."
+     }
+    }
+   ]
+  },
+  {
+   "title": "طبيعة العمل والمهام",
+   "fields": [
+    {
+     "label": "الوظيفة",
+     "value": "أمين مستودع",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 553,
+      "end": 564,
+      "quote": "يعمل العامل لدى صاحب العمل بوظيفة أمين مستودع ضمن إدارة المستودعات، ويباشر المهام المرتبطة بهذه الوظيفة وما يسن…"
+     }
+    },
+    {
+     "label": "الإدارة",
+     "value": "إدارة المستودعات",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 569,
+      "end": 585,
+      "quote": "يعمل العامل لدى صاحب العمل بوظيفة أمين مستودع ضمن إدارة المستودعات، ويباشر المهام المرتبطة بهذه الوظيفة وما يسند إليه من أعمال مماثل…"
+     }
+    },
+    {
+     "label": "مقر العمل الأساسي",
+     "value": "مقر الشركة",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 704,
+      "end": 714,
+      "quote": "…ن أعمال مماثلة تتفق مع مؤهلاته وخبرته. ويكون مقر العمل الأساسي في مقر الشركة، ويجوز التكليف بالعمل في موقع آخر وفق المتطلبات النظامية وبما لا…"
+     }
+    },
+    {
+     "label": "مدة الفترة التجريبية",
+     "value": "ثلاثة أشهر",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 828,
+      "end": 838,
+      "quote": "يخضع العامل لفترة تجربة مدتها ثلاثة اشهر وتراعى عند حسابها الأحكام النظامية والحد الأقصى المقرر لها."
+     }
+    }
+   ]
+  },
+  {
+   "title": "ساعات العمل والراحة",
+   "fields": [
+    {
+     "label": "نوع الدوام",
+     "value": "وفق جدول العمل المعتمد",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 12,
+      "start": 944,
+      "end": 966,
+      "quote": "تحدد ساعات العمل والراحة وفق جدول العمل المعتمد لدى صاحب العمل، ويكون نمط الدوام وفقاً للشروط والأحكام المنصوص عليها في هذا المستند وأيام العمل وفقاً للشروط والأحكام المنصوص عليها في هذا المستند."
+     }
+    },
+    {
+     "label": "أيام العمل",
+     "value": "وفق الشروط والأحكام المنصوص عليها في هذا المستند",
+     "origin": "document"
+    }
+   ]
+  },
+  {
+   "title": "الإجازات",
+   "fields": [
+    {
+     "label": "إجازة سنوية",
+     "value": "ممنوحة بعد انتهاء فترة التجربة",
+     "origin": "document"
+    },
+    {
+     "label": "إجازات مرضية ورسمية",
+     "value": "ممنوحة وفق الأحكام النافذة وسياسة المنشأة",
+     "origin": "document"
+    }
+   ]
+  },
+  {
+   "title": "الأجر والمزايا",
+   "fields": [
+    {
+     "label": "مصدر الأجر والمزايا",
+     "value": "محدد في ملحق الأجر والتحويل البنكي",
+     "origin": "document"
+    },
+    {
+     "label": "مدة دفع الأجر",
+     "value": "في المواعيد المقررة وفق الأنظمة وسياسة الرواتب",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 16,
+      "start": 1402,
+      "end": 1448,
+      "quote": "يستحق العامل الأجر والمزايا المحددة في ملحق الأجر والتحويل البنكي، وتدفع في المواعيد المقررة وفق الأنظمة وسياسة الرواتب."
+     }
+    },
+    {
+     "label": "إمكانية التعديل",
+     "value": "ممكن وفق السياسة المعتمدة دون خرق الحقوق المكتسبة",
+     "origin": "document"
+    }
+   ]
+  },
+  {
+   "title": "ملاحق العقد",
+   "fields": [
+    {
+     "label": "ملحق بيانات الأطراف",
+     "value": "جزء لا يتجزأ من العقد",
+     "origin": "document"
+    },
+    {
+     "label": "ملحق الأجر والتحويل البنكي",
+     "value": "محدد الأجر والمزايا",
+     "origin": "document"
+    }
+   ]
+  },
+  {
+   "title": "ملاحظات إضافية",
+   "fields": [
+    {
+     "label": "رقم العقد",
+     "value": "CON-98122",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 22,
+      "start": 1760,
+      "end": 1769,
+      "quote": "1 | [ختم رسمي] | CON-98122"
+     }
+    }
+   ]
+  }
+ ],
+ "expiry": {
+  "status": "unknown",
+  "status_ar": "غير محدّد — تحتاج مراجعة",
+  "date_text": "",
+  "date_normalized": "",
+  "calendar": "",
+  "date_gregorian": "",
+  "days_remaining": null,
+  "basis": "",
+  "confidence": "low",
+  "verified": false,
+  "derived": false,
+  "label": "",
+  "source": null,
+  "converter": "",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "لم يُعثر على تاريخ انتهاء في المستند",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "generic_document",
+  "name_ar": "",
+  "name_en": "unrecognised document",
+  "family": "",
+  "confidence": 0.0,
+  "source": "fallback",
+  "generic": true,
+  "needs_review": true,
+  "rules_score": 0.0,
+  "corroborated": false,
+  "evidence": [],
+  "rules": [
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 10,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "unknown",
+   "family_confidence": 0.0,
+   "template_id": "unknown",
+   "confidence": 0.0,
+   "evidence": []
+  },
+  "error": null,
+  "ms": 876
+ }
+}

@@ -1,0 +1,246 @@
+swagger: "2.0"
+info:
+  version: 1.0.1
+  title: Wathq Employee Information API
+host: api.wathq.sa
+basePath: /masdr/employee
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+  - application/xml
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  "/v2/info":
+    get:
+      tags:
+        - Employee Information
+      summary: "retrieves employee information"
+      description: "retrieves employment information, wages, and relationships in the private sector "
+      operationId: info
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - name: id
+          in: header
+          required: true
+          description: Identification number or Iqama number - رقم الهوية أو رقم الإقامة
+          type: string
+          minLength: 10
+          maxLength: 10
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            $ref: "#/definitions/info"
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+        "400":
+          description: >
+            **business error , Here is listed of code** :
+              code: 400.1.1  - message: Input data is required
+              code: 400.1.2  - message: National ID / Iqama number must be in valid format
+
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          schema:
+            $ref: "#/definitions/error"
+          examples:
+            application/json:
+              code: 400.1.1
+              message: Input data is required
+        "401":
+          description: unauthorized
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          schema:
+            $ref: "#/definitions/error"
+          examples:
+            application/json:
+              code: 401.1.1
+              message: Invalid ApiKey
+        "403":
+          description: unauthorized
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          schema:
+            $ref: "#/definitions/error"
+          examples:
+            application/json:
+              code: 403.1.1
+              message: you do not have permission for giving resource
+        "404":
+          description: >
+            **business error , Here is listed of code** :
+              code: 404.2.1  - message: No Results Found
+
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          schema:
+            $ref: "#/definitions/error"
+          examples:
+            application/json:
+              code: 404.2.1
+              message: No Results Found
+
+        "500":
+          description: internal server error
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request
+          schema:
+            $ref: "#/definitions/error"
+          examples:
+            application/json:
+              code: 500.1.1
+              message: Internal Server Error
+        default:
+          $ref: "#/responses/DefaultErrorResponse"
+      security:
+        - Authorization: []
+
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+        minLength: 4
+        maxLength: 10
+      message:
+        type: string
+
+  info:
+    type: object
+    required:
+      - name
+      - nationality
+      - workingMonths
+      - employmentInfo
+
+    properties:
+      name:
+        type: string
+        example: محمد عبدالله
+        description: Contributor full name
+      nationality:
+        type: string
+        example: السعودية
+        description: Nationality of contributor.
+      workingMonths:
+        type: string
+        example: 124
+        description: Total number of contribution periods in GOSI for that contributor.
+      employmentInfo:
+        type: array
+        items:
+          type: object
+          properties:
+            employer:
+              type: string
+              example: مؤسسة الخير التجارية
+              description: Establishment name in Arabic.
+            status:
+              type: string
+              example: Active
+              description: |
+                The status of the contributor in the establishment
+                   * Active
+                   * Inactive 
+                   * Public pension 
+                   * Private pension
+            wageDetails:
+              type: object
+              properties:
+                basicWage:
+                  type: number
+                  example: 3000
+                  description: Contributor monthly basic wage
+                housingAllowance:
+                  type: number
+                  example: 0
+                  description: Contributor monthly housing allowance.
+                otherAllowance:
+                  type: number
+                  example: 0
+                  description: Contributor monthly other allowances.
+                fullWage:
+                  type: number
+                  example: 3000
+                  description: Contributor full wage
+
+responses:
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    description: >
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br
+      /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or
+      scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal
+      errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API
+      resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the
+      Standard timeout window.<br />
+    schema:
+      $ref: "#/definitions/error"
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error

@@ -1,0 +1,1361 @@
+# The Wathq catalog for the verify-data tab (التحقق من البيانات).
+#
+# One entry per endpoint the tab offers. Built from Wathq's own Swagger files
+# (templates/wathq/<product>.yaml) and price list, by agents that read each
+# spec and skeptics that re-checked them; then reviewed. wathq_catalog.py
+# loads this strictly at boot and cross-checks every path and parameter
+# against the spec, so a typo here fails the app instead of a paid call.
+#
+#   price     prepaid SAR per successful call (Wathq's price list)
+#   lookup    a reference list (code tables), not data about one entity
+#   language  sends ?language=ar|en
+#   inputs    name/location exactly as Wathq spells them; kind picks the
+#             validator (wathq_catalog.KINDS); personal = a person's ID —
+#             never echoed back, logged or shown unmasked
+#   one_of    at least one of these optional inputs is required
+#   personal  response paths ([] = list item) masked before the browser sees them
+#   redact    free-text response paths whose long digit runs are masked
+#   labels    Arabic labels for fields the spec describes only in English
+
+products:
+- id: cr
+  label: السجل التجاري
+  label_en: Commercial Registration
+  base: /commercial-registration
+  sandbox_base: /sandbox/commercial-registration
+  endpoints:
+  - id: fullinfo
+    path: /fullinfo/{id}
+    label: البيانات الكاملة للسجل التجاري
+    description: تُرجع كافة بيانات السجل التجاري من تواريخ وحالة ورأس مال وشركاء ومديرين ومصفين وأنشطة وبيانات اتصال
+      وتجارة إلكترونية.
+    price: 12
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    personal:
+    - contactInfo.email
+    - contactInfo.mobileNo
+    - contactInfo.phoneNo
+    - liquidators[].identity.id
+    - management.managers[].identity.id
+    - parties[].identity.id
+    labels:
+      entityType: نوع الكيان
+      entityType.characters: صفات الشركة
+      eCommerce.eStore: المتاجر الإلكترونية
+      eCommerce.eStore[].storeActivities: أنشطة المتجر الإلكتروني
+      parties[].identity: بيانات إثبات الشريك / المالك
+      management.managers[].identity: بيانات إثبات المدير
+      liquidators[].identity: بيانات إثبات المصفي
+  - id: info
+    path: /info/{id}
+    label: البيانات الأساسية للسجل التجاري
+    description: تُرجع البيانات الأساسية للسجل التجاري مثل الاسم والتواريخ والحالة ونوع الكيان والأنشطة.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    labels:
+      entityType: نوع الكيان
+      entityType.characters: صفات الشركة
+      entityType.characterList: صفات الشركة
+      duration: مدة الشركة
+  - id: branches
+    path: /branches/{id}
+    label: فروع السجل التجاري
+    description: تُرجع قائمة بالسجلات الفرعية (الفروع) التابعة للسجل التجاري.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    labels:
+      '[].entityType': نوع الكيان
+      '[].entityType.characters': صفات الشركة
+      '[].entityType.characterList': صفات الشركة
+  - id: status
+    path: /status/{id}
+    label: حالة السجل التجاري
+    description: تُرجع حالة السجل التجاري (فعّال، معلّق، مشطوب…).
+    price: 2
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs: &id001
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    labels: &id002
+      confirmationDate: تاريخ التأكيد السنوي للسجل التجاري
+      confirmationDate.gregorian: تاريخ التأكيد السنوي (ميلادي)
+      confirmationDate.hijri: تاريخ التأكيد السنوي (هجري)
+      reactivationDate: تاريخ رفع تعليق السجل التجاري
+      reactivationDate.gregorian: تاريخ رفع التعليق (ميلادي)
+      reactivationDate.hijri: تاريخ رفع التعليق (هجري)
+      suspensionDate: تاريخ تعليق السجل التجاري
+      suspensionDate.gregorian: تاريخ التعليق (ميلادي)
+      suspensionDate.hijri: تاريخ التعليق (هجري)
+      deletionDate: تاريخ شطب السجل التجاري
+      deletionDate.gregorian: تاريخ الشطب (ميلادي)
+      deletionDate.hijri: تاريخ الشطب (هجري)
+  - id: status_dates
+    path: /status/{id}
+    label: حالة السجل التجاري مع التواريخ
+    description: تُرجع حالة السجل التجاري مع تواريخ التأكيد والتعليق وإعادة التفعيل والشطب.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs: *id001
+    labels: *id002
+    fixed:
+      includeDates: 'true'
+  - id: capital
+    path: /capital/{id}
+    label: رأس مال السجل التجاري
+    description: تُرجع تفاصيل رأس مال السجل التجاري وعملته وتوزيعه على الحصص أو الأسهم.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+  - id: managers
+    path: /managers/{id}
+    label: المديرون وأعضاء مجلس الإدارة
+    description: تُرجع قائمة المديرين وأعضاء مجلس الإدارة إن وُجد مع هوياتهم وجنسياتهم ومناصبهم.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    personal:
+    - '[].identity.id'
+    labels:
+      '[].identity': بيانات إثبات المدير
+  - id: owners
+    path: /owners/{id}
+    label: الملاك والشركاء وحصصهم
+    description: تُرجع مالك المؤسسة أو قائمة الشركاء في الشركة مع هوياتهم ونسب حصصهم.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    personal:
+    - '[].identity.id'
+    - identity.id
+    labels:
+      '[].identity': بيانات إثبات الشريك / المالك
+      identity: بيانات إثبات الشريك / المالك
+  - id: related
+    path: /v2/related
+    label: السجلات التجارية المرتبطة بهوية
+    description: تُرجع كافة السجلات التجارية المرتبطة برقم هوية معيّن مع نوع العلاقة بكل سجل.
+    price: 5
+    lookup: false
+    in_sandbox: false
+    language: true
+    inputs:
+    - name: id
+      location: header
+      kind: person_or_entity_id
+      label: رقم الهوية / الإثبات
+      required: true
+      personal: true
+      pattern: '[0-9]{3,20}'
+      pattern_by:
+        idType:
+          National_ID: 1[0-9]{9}
+          Resident_ID: 2[0-9]{9}
+    - name: idType
+      location: header
+      kind: id_type
+      label: نوع الهوية
+      required: true
+      choices:
+      - value: National_ID
+        label: هوية وطنية
+      - value: Resident_ID
+        label: هوية مقيم (إقامة)
+      - value: Passport
+        label: جواز سفر
+      - value: GCC_ID
+        label: هوية مواطني دول مجلس التعاون الخليجي
+      - value: Endowment_Deed_No
+        label: رقم صك الوقف
+      - value: License_No
+        label: رقم الترخيص
+      - value: CR_National_ID
+        label: الرقم الوطني الموحد للسجل التجاري
+      - value: Foreign_CR_No
+        label: رقم السجل التجاري الأجنبي
+      - value: National_Number
+        label: الرقم الوطني الموحد للمنشأة
+      - value: Boarder_Number
+        label: رقم الحدود
+    - name: nationality
+      location: query
+      kind: nationality
+      label: رمز الجنسية
+      required: false
+      pattern: '[0-9]+'
+      required_if:
+        idType:
+        - Passport
+        - Foreign_CR_No
+    personal:
+    - identity.id
+    labels:
+      result: بيانات ترقيم النتائج
+      identity: بيانات إثبات صاحب الهوية
+  - id: owns
+    path: /v2/owns
+    label: التحقق من امتلاك هوية لسجل تجاري
+    description: تُرجع نعم أو لا بحسب ما إذا كان صاحب الهوية مالكاً أو شريكاً في سجل تجاري.
+    price: 2
+    lookup: false
+    in_sandbox: false
+    language: true
+    inputs:
+    - name: id
+      location: header
+      kind: person_or_entity_id
+      label: رقم الهوية / الإثبات
+      required: true
+      personal: true
+      pattern: '[0-9]{3,20}'
+      pattern_by:
+        idType:
+          National_ID: 1[0-9]{9}
+          Resident_ID: 2[0-9]{9}
+    - name: idType
+      location: header
+      kind: id_type
+      label: نوع الهوية
+      required: true
+      choices:
+      - value: National_ID
+        label: هوية وطنية
+      - value: Resident_ID
+        label: هوية مقيم (إقامة)
+      - value: Passport
+        label: جواز سفر
+      - value: GCC_ID
+        label: هوية مواطني دول مجلس التعاون الخليجي
+      - value: Endowment_Deed_No
+        label: رقم صك الوقف
+      - value: License_No
+        label: رقم الترخيص
+      - value: CR_National_ID
+        label: الرقم الوطني الموحد للسجل التجاري
+      - value: Foreign_CR_No
+        label: رقم السجل التجاري الأجنبي
+      - value: National_Number
+        label: الرقم الوطني الموحد للمنشأة
+      - value: Boarder_Number
+        label: رقم الحدود
+    - name: nationality
+      location: query
+      kind: nationality
+      label: رمز الجنسية
+      required: false
+      pattern: '[0-9]+'
+      required_if:
+        idType:
+        - Passport
+        - Foreign_CR_No
+    labels:
+      ownsCr: يمتلك سجلاً تجارياً
+  - id: cr_national_number
+    path: /crNationalNumber/{id}
+    label: الرقم الوطني الموحد من رقم السجل
+    description: تُرجع الرقم الوطني الموحد (700) المقابل لرقم السجل التجاري القديم.
+    price: 2
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: path
+      kind: cr_number_any
+      label: رقم السجل التجاري
+      required: true
+      pattern: '[1-6][0-9]{9}'
+  - id: beneficiary
+    path: /beneficiary/{id}
+    label: المستفيدون الحقيقيون
+    description: تُرجع بيانات المستفيدين الحقيقيين من السجل التجاري بما في ذلك الإعفاءات وأسباب الإضافة وبيانات
+      الأوصياء.
+    price: 0
+    lookup: false
+    in_sandbox: false
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري (700) أو رقم السجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+      legacy_ok: true
+    personal:
+    - beneficiaries[].guardian.identity.id
+    - beneficiaries[].identity.id
+    redact:
+    - exemption.reasons[].additionalText
+    - beneficiaries[].addingReasons[].additionalText
+  - id: lookup_status
+    path: /lookup/status
+    label: حالات السجل التجاري
+    description: تُرجع جميع حالات السجل التجاري المعتمدة برموزها وأسمائها بالعربية والإنجليزية.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_entity_type
+    path: /lookup/entityType
+    label: أنواع الكيان التجاري
+    description: تُرجع جميع أنواع الكيانات التجارية (مثل شركة ومؤسسة) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_company_form
+    path: /lookup/companyForm
+    label: أشكال الشركات
+    description: تُرجع جميع أشكال الشركات القانونية (مثل ذات المسؤولية المحدودة) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_company_character
+    path: /lookup/companyCharacter
+    label: صفات الشركات
+    description: تُرجع جميع صفات الشركات (مثل شخص واحد أو غير ربحية) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_relation
+    path: /lookup/relation
+    label: أنواع العلاقة بالسجل
+    description: تُرجع جميع أنواع العلاقة بالسجل التجاري (مثل مالك وشريك ومدير) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_manager_positions
+    path: /lookup/managerPositions
+    label: مناصب المديرين
+    description: تُرجع جميع مناصب المديرين وأعضاء المجالس برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_identifier_type
+    path: /lookup/identifierType
+    label: أنواع الإثبات
+    description: تُرجع جميع أنواع وثائق الإثبات (مثل الهوية الوطنية وجواز السفر) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_management_structure
+    path: /lookup/managementStructure
+    label: أشكال الهيكل الإداري
+    description: تُرجع جميع أشكال الهيكل الإداري للمنشآت (مثل مدير أو مجلس مديرين) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_partner_type
+    path: /lookup/partnerType
+    label: أنواع الشركاء
+    description: تُرجع جميع أنواع الشركاء (مثل فرد سعودي أو مستثمر أجنبي) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_partnership_type
+    path: /lookup/partnershipType
+    label: أنواع الشراكة
+    description: تُرجع جميع أنواع طبيعة الشراكة (مثل شريك برأس المال) برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_nationalities
+    path: /lookup/nationalities
+    label: الجنسيات
+    description: تُرجع جميع الجنسيات برموزها الداخلية ورموز NIC وأسمائها بالعربية والإنجليزية.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      '[].id': الرمز
+      '[].nicCode': رمز الجنسية (NIC)
+      '[].nameAr': الاسم بالعربية
+      '[].nameEn': الاسم بالإنجليزية
+      id: الرمز
+      nicCode: رمز الجنسية (NIC)
+      nameAr: الاسم بالعربية
+      nameEn: الاسم بالإنجليزية
+  - id: lookup_activities
+    path: /lookup/activities
+    label: الأنشطة التجارية (ISIC)
+    description: تُرجع شجرة الأنشطة التجارية بمستوياتها الثلاثة مع الجهات المصرحة لكل نشاط.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      '[].category': فئات النشاط (المستوى الثاني)
+      '[].category[].isic': الأنشطة التفصيلية (المستوى الثالث)
+      '[].category[].isic[].authority.cancelRequired': يتطلب الإلغاء لدى الجهة المصرحة
+  - id: lookup_cities
+    path: /lookup/cities
+    label: المدن
+    description: تُرجع جميع المدن برموزها وأسمائها ورمز مكتب السجل التجاري والمنطقة التابعة لها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      crOfficeId: رمز مكتب السجل التجاري
+      regionId: رمز المنطقة
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+      '[].crOfficeId': رمز مكتب السجل التجاري
+      '[].regionId': رمز المنطقة
+  - id: lookup_currencies
+    path: /lookup/currencies
+    label: العملات
+    description: تُرجع جميع العملات المعتمدة لرأس مال السجلات برموزها وأسمائها.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_beneficiary
+    path: /lookup/beneficiary
+    label: أنواع المستفيدين الحقيقيين
+    description: تُرجع جميع أنواع المستفيدين الحقيقيين برموزها وأسمائها.
+    price: 0
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+  - id: lookup_guardian
+    path: /lookup/guardian
+    label: أنواع الأوصياء
+    description: تُرجع جميع أنواع الأوصياء على المستفيدين الحقيقيين برموزها وأسمائها.
+    price: 0
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+- id: contracts
+  label: عقود الشركات
+  label_en: Company Contracts
+  base: /company-contract
+  sandbox_base: /sandbox/company-contract
+  endpoints:
+  - id: info
+    path: /info/{crNationalNumber}
+    label: بيانات عقد تأسيس الشركة
+    description: 'تعيد بيانات عقد تأسيس الشركة كاملة: بيانات المنشأة ورأس المال والشركاء والمديرين والأنشطة وقرارات
+      الشركاء ووسائل الإبلاغ والبنود النصية.'
+    price: 12
+    lookup: false
+    in_sandbox: true
+    language: true
+    view: contract
+    inputs:
+    - name: crNationalNumber
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+    - name: copyNumber
+      location: query
+      kind: copy_number
+      label: رقم نسخة العقد
+      required: false
+      pattern: '[0-9]{1,5}'
+    personal:
+    - entity.management.managers[].identity.id
+    - entity.parties[].guardian.identity.id
+    - entity.parties[].identity.id
+    labels:
+      entity: بيانات المنشأة
+      entity.entityType: نوع الكيان
+      entity.entityType.characters: صفات الشركة
+      entity.parties[].identity: إثبات هوية الشريك
+      entity.parties[].guardian.identity: إثبات هوية الوصي
+      entity.management.managers[].identity: إثبات هوية المدير
+      entity.management.directorsBoard.rewards: منح مجلس الإدارة
+      entity.management.directorsBoard.positions: مناصب مجلس الإدارة
+      setAsideDetails.profitAllocation: تخصيص الأرباح المجنبة
+      setAsideDetails.isSetAsideEnabled: هل يُجنَّب جزء من الأرباح
+  - id: management
+    path: /management/{crNationalNumber}
+    label: بيانات المديرين
+    description: تعيد الهيكل الإداري للشركة وقائمة المديرين ومناصبهم وبيانات مجلس المديرين ومجلس الإدارة.
+    price: 5
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: crNationalNumber
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+    personal:
+    - managers[].identity.id
+    redact:
+    - dismissalMethod
+    - managementBoard.additionalText
+    - managementBoard.wayOfWork
+    - directorsBoard.additionalText
+    - directorsBoard.wayOfWork
+    - directorsBoard.membershipExpiryTerms
+    - directorsBoard.boardCallMechanism
+    labels:
+      managers[].identity: إثبات هوية المدير
+      directorsBoard.positions: مناصب مجلس الإدارة
+  - id: manager
+    path: /manager/{crNationalNumber}/{id}/{idType}
+    label: بيانات وصلاحيات مدير
+    description: تعيد بيانات مدير محدد في الشركة ومناصبه وصلاحياته وطريقة ممارسة كل صلاحية وجواز التوكيل والإنابة
+      فيها.
+    price: 12
+    lookup: false
+    in_sandbox: true
+    language: true
+    inputs:
+    - name: crNationalNumber
+      location: path
+      kind: company_number
+      label: الرقم الوطني الموحد للسجل التجاري
+      required: true
+      pattern: '[0-9]{10}'
+    - name: id
+      location: path
+      kind: person_or_entity_id
+      label: رقم هوية المدير
+      required: true
+      personal: true
+      pattern: '[0-9]{3,20}'
+      pattern_by:
+        idType:
+          National_ID: 1[0-9]{9}
+          Resident_ID: 2[0-9]{9}
+    - name: idType
+      location: path
+      kind: id_type
+      label: نوع الهوية
+      required: true
+      choices:
+      - value: National_ID
+        label: هوية وطنية
+      - value: Resident_ID
+        label: هوية مقيم
+      - value: Passport
+        label: جواز سفر
+      - value: GCC_ID
+        label: هوية مواطن خليجي
+      - value: Endowment_Deed_No
+        label: رقم صك الوقف
+      - value: License_No
+        label: رقم الترخيص
+      - value: CR_National_ID
+        label: الرقم الوطني الموحد للمنشأة
+      - value: Foreign_CR_No
+        label: رقم السجل التجاري الأجنبي
+      - value: National_Number
+        label: الرقم الوطني
+      - value: Boarder_Number
+        label: رقم الحدود
+      - value: CR_Number
+        label: رقم السجل التجاري
+      - value: UndefinedD
+        label: غير محدد
+      sandbox_choices:
+      - National_ID
+      - Resident_ID
+      - Passport
+      - GCC_ID
+      - Endowment_Deed_No
+      - CR_National_ID
+      - Foreign_CR_No
+    - name: permissionId
+      location: query
+      kind: permission_id
+      label: رمز صلاحية المدير
+      required: false
+      pattern: '[0-9]{3,4}'
+    personal:
+    - '[].identity.id'
+    - identity.id
+    redact:
+    - '[].permissions[].specialConditionText'
+    labels:
+      '[].identity': إثبات هوية المدير
+      '[].nationality': الجنسية
+      '[].positions': مناصب المدير بالمجلس
+      '[].permissions': صلاحيات المدير
+  - id: lookup_article_parts
+    path: /lookup/articleParts
+    label: أبواب البنود النصية
+    description: تعيد الجدول المرجعي لأبواب البنود النصية في عقود الشركات (الرمز والاسم بالعربية والإنجليزية).
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+  - id: lookup_partner_decision
+    path: /lookup/partnerDecision
+    label: قرارات الشركاء
+    description: تعيد الجدول المرجعي لقرارات الشركاء (الرمز والاسم بالعربية والإنجليزية).
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+  - id: lookup_exercise_method
+    path: /lookup/exerciseMethod
+    label: طرق ممارسة الصلاحيات
+    description: تعيد الجدول المرجعي لطرق ممارسة صلاحيات المديرين مثل منفرد أو مجتمعين (الرمز والاسم بالعربية والإنجليزية).
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+- id: national_address
+  label: العنوان الوطني
+  label_en: National Address
+  base: /spl/national/address
+  sandbox_base: ''
+  endpoints:
+  - id: info
+    path: /info/{crNumber}
+    label: العنوان الوطني للمنشأة
+    description: يعيد قائمة بالعناوين الوطنية المسجلة للمنشأة (رقم المبنى والشارع والحي والمدينة والرمز البريدي
+      والرقم الإضافي والإحداثيات وحالة العنوان) عن طريق رقم السجل التجاري أو الرقم الوطني الموحد.
+    price: 2
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: crNumber
+      location: path
+      kind: cr_number_any
+      label: رقم السجل التجاري أو الرقم الوطني الموحد
+      required: true
+      pattern: '[0-9]{10}'
+    labels:
+      '[].title': اسم المنشأة
+      '[].address': العنوان
+      '[].address2': العنوان المختصر (المدينة، الرمز البريدي، الرقم الإضافي)
+      '[].latitude': خط العرض
+      '[].longitude': خط الطول
+      '[].buildingNumber': رقم المبنى
+      '[].street': الشارع
+      '[].district': الحي
+      '[].districtId': رمز الحي
+      '[].city': المدينة
+      '[].cityId': رمز المدينة
+      '[].postCode': الرمز البريدي
+      '[].additionalNumber': الرقم الإضافي
+      '[].regionName': المنطقة
+      '[].regionId': رمز المنطقة
+      '[].isPrimaryAddress': العنوان الرئيسي
+      '[].unitNumber': رقم الوحدة
+      '[].restriction': القيود
+      '[].pkAddressId': معرّف العنوان
+      '[].status': حالة العنوان
+- id: attorney
+  label: الوكالات الشرعية
+  label_en: Power of Attorney
+  base: /v1/attorney
+  sandbox_base: ''
+  endpoints:
+  - id: info
+    path: /info/{code}
+    label: التحقق من بيانات الوكالة الشرعية
+    description: يتحقق من وكالة شرعية برقمها مع رقم هوية أحد الموكلين أو أحد الوكلاء، ويعيد حالتها ونوعها وتواريخها
+      وجهة إصدارها وأطرافها ونصها وبنودها.
+    price: 5
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: code
+      location: path
+      kind: attorney_code
+      label: رقم الوكالة
+      required: true
+      pattern: '[0-9]{1,10}'
+    - name: principalId
+      location: query
+      kind: person_or_entity_id
+      label: رقم هوية أحد الموكلين
+      required: false
+      personal: true
+      pattern: '[0-9]{10}'
+    - name: agentId
+      location: query
+      kind: person_or_entity_id
+      label: رقم هوية أحد الوكلاء
+      required: false
+      personal: true
+      pattern: '[0-9]{10}'
+    one_of:
+    - principalId
+    - agentId
+    personal:
+    - AllowedToActOnBehalf[].IdentityNo
+    - AllowedToActOnBehalf[].NationalNumber
+    - agents[].birthday
+    - agents[].id
+    - principals[].birthday
+    - principals[].id
+    redact:
+    - text
+    - attorneyText
+    labels:
+      code: رقم الوكالة
+      attorneyNumber: رقم الوكالة
+      status: حالة الوكالة
+      issueHijriDate: تاريخ الإصدار (هجري)
+      issueGregDate: تاريخ الإصدار (ميلادي)
+      expiryHijriDate: تاريخ الانتهاء (هجري)
+      expiryGregDate: تاريخ الانتهاء (ميلادي)
+      expiryDate: تاريخ الانتهاء
+      attorneyType: نوع الوكالة
+      location: جهة الإصدار
+      location.id: رمز جهة الإصدار
+      location.name: اسم جهة الإصدار
+      AllowedToActOnBehalf: الموكلون وصفات تمثيلهم
+      AllowedToActOnBehalf[].IdentityNo: رقم الهوية
+      AllowedToActOnBehalf[].SocialTypeID: رمز نوع الهوية
+      AllowedToActOnBehalf[].SocialTypeName: نوع الهوية
+      AllowedToActOnBehalf[].Name: الاسم
+      AllowedToActOnBehalf[].Type: رمز نوع الطرف
+      AllowedToActOnBehalf[].TypeName: نوع الطرف
+      AllowedToActOnBehalf[].TypeNameEn: نوع الطرف (بالإنجليزية)
+      AllowedToActOnBehalf[].SefaID: رمز الصفة
+      AllowedToActOnBehalf[].SefaName: الصفة
+      AllowedToActOnBehalf[].NationalNumber: الرقم الوطني
+      AllowedToActOnBehalf[].CRNumber: رقم السجل التجاري
+      AllowedToActOnBehalf[].KararNumber: رقم القرار
+      AllowedToActOnBehalf[].MalakiNumber: رقم الأمر الملكي
+      AllowedToActOnBehalf[].DocumentTypeName: نوع المستند
+      AllowedToActOnBehalf[].CompanyRepresentTypeID: رمز نوع تمثيل المنشأة
+      AllowedToActOnBehalf[].CompanyRepresentTypeName: نوع تمثيل المنشأة
+      AllowedToActOnBehalf[].SakkNumber: رقم الصك
+      principals: الموكلون
+      principals[].id: رقم هوية الموكل
+      principals[].name: اسم الموكل
+      principals[].birthday: تاريخ ميلاد الموكل
+      principals[].SefaId: رمز صفة الموكل
+      principals[].SefaID: رمز صفة الموكل
+      principals[].SefaName: صفة الموكل
+      agents: الوكلاء
+      agents[].id: رقم هوية الوكيل
+      agents[].name: اسم الوكيل
+      agents[].birthday: تاريخ ميلاد الوكيل
+      agents[].SefaId: رمز صفة الوكيل
+      agents[].SefaID: رمز صفة الوكيل
+      agents[].SefaName: صفة الوكيل
+      agentsBehavior: طريقة تصرف الوكلاء
+      agentsBehavior.ar: طريقة تصرف الوكلاء (عربي)
+      agentsBehavior.en: طريقة تصرف الوكلاء (إنجليزي)
+      text: نص الوكالة
+      attorneyText: نص الوكالة
+      textList: بنود الوكالة
+      textList[].id: معرف البند
+      textList[].text: نص البند
+      textList[].type: تصنيف البند
+  - id: lookup
+    path: /lookup
+    label: معرفات نصوص الوكالات الشرعية
+    description: يعيد شجرة معرفات ونصوص بنود الوكالات الشرعية مصنفة حسب نوع الوكالة، مع البنود الفرعية لكل بند.
+    price: 5
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      id: معرف النص
+      controlLable: نص البند
+      attorneyTypeName: نوع الوكالة
+      childControls: البنود الفرعية
+      childControls[].id: معرف النص
+      childControls[].controlLable: نص البند
+      childControls[].attorneyTypeName: نوع الوكالة
+      childControls[].childControls: البنود الفرعية
+      childControls[].childControls[].id: معرف النص
+      childControls[].childControls[].controlLable: نص البند
+      childControls[].childControls[].attorneyTypeName: نوع الوكالة
+      childControls[].childControls[].childControls: البنود الفرعية
+      childControls[].childControls[].childControls[].id: معرف النص
+      childControls[].childControls[].childControls[].controlLable: نص البند
+      childControls[].childControls[].childControls[].attorneyTypeName: نوع الوكالة
+      childControls[].childControls[].childControls[].childControls: البنود الفرعية
+- id: real_estate
+  label: الصكوك العقارية
+  label_en: Real Estate Deeds
+  base: /moj/real-estate
+  sandbox_base: ''
+  endpoints:
+  - id: deed
+    path: /deed/{deedNumber}/{idNumber}/{idType}
+    label: بيانات الصك العقاري
+    description: 'يعيد بيانات الصك العقاري كاملة: رقم الصك وتاريخه، وجهة الإصدار، والحالة، والمساحة والقيود (رهن،
+      إيقاف، تقييد، وصية)، والملاك وحصصهم، وحدود الصك، وتفاصيل كل عقار (المنطقة والمدينة والحي ورقم القطعة والمخطط
+      والحدود).'
+    price: 5
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: deedNumber
+      location: path
+      kind: deed_number
+      label: رقم الصك
+      required: true
+      pattern: '[0-9]+'
+    - name: idNumber
+      location: path
+      kind: person_or_entity_id
+      label: رقم هوية أحد الملاك
+      required: true
+      personal: true
+      pattern: '[A-Za-z0-9]+'
+      pattern_by:
+        idType:
+          National_ID: 1[0-9]{9}
+          Resident_ID: 2[0-9]{9}
+    - name: idType
+      location: path
+      kind: id_type
+      label: نوع الهوية
+      required: true
+      choices:
+      - value: National_ID
+        label: هوية وطنية
+      - value: Resident_ID
+        label: هوية مقيم (إقامة)
+      - value: Passport
+        label: جواز سفر
+      - value: CR_NO
+        label: سجل تجاري
+      - value: Endowment_Deed_No
+        label: رقم صك الوقف
+      - value: license_No
+        label: رقم الترخيص
+      - value: Foreign_CR_No
+        label: سجل تجاري أجنبي
+      - value: Gov_National_ID
+        label: الرقم الوطني للجهة الحكومية
+    personal:
+    - ownerDetails[].birthDate
+    - ownerDetails[].idNumber
+    redact:
+    - deedDetails.deedText
+    - realEstateDetails[].locationDescription
+    - deedLimitsDetails.northLimitDescription
+    - deedLimitsDetails.southLimitDescription
+    - deedLimitsDetails.eastLimitDescription
+    - deedLimitsDetails.westLimitDescription
+    - realEstateDetails[].realEstateBorderDetails.northLimitDescription
+    - realEstateDetails[].realEstateBorderDetails.southLimitDescription
+    - realEstateDetails[].realEstateBorderDetails.eastLimitDescription
+    - realEstateDetails[].realEstateBorderDetails.westLimitDescription
+    labels:
+      deedDetails: تفاصيل الصك
+      deedDetails.deedNumber: رقم الصك
+      deedDetails.deedSerial: الرقم التسلسلي للصك
+      deedDetails.deedDate: تاريخ الصك (هجري)
+      deedDetails.deedText: نص الصك
+      courtDetails: جهة إصدار الصك
+      courtDetails.deedSource: مصدر الصك (كتابة العدل / المحكمة)
+      courtDetails.deedCity: مدينة إصدار الصك
+      deedStatus: حالة الصك
+      deedInfo: معلومات الصك
+      deedInfo.deedArea: مساحة الصك (م²)
+      deedInfo.deedAreaText: مساحة الصك (نصاً)
+      deedInfo.isRealEstateConstrained: هل العقار مقيد
+      deedInfo.isRealEstateHalted: هل العقار موقوف عن التصرف
+      deedInfo.isRealEstateMortgaged: هل العقار مرهون
+      deedInfo.isRealEstateTestamented: هل العقار موصى به
+      ownerDetails: الملاك
+      ownerDetails[].ownerName: اسم المالك
+      ownerDetails[].birthDate: تاريخ الميلاد (هجري)
+      ownerDetails[].idNumber: رقم هوية المالك
+      ownerDetails[].idType: رمز نوع الهوية
+      ownerDetails[].idTypeText: نوع الهوية
+      ownerDetails[].ownerType: نوع المالك
+      ownerDetails[].nationality: الجنسية
+      ownerDetails[].owningArea: المساحة المملوكة (م²)
+      ownerDetails[].owningAmount: حصة الملكية
+      ownerDetails[].constrained: مقيد
+      ownerDetails[].halt: موقوف عن التصرف
+      ownerDetails[].pawned: مرهون
+      ownerDetails[].testament: موصى به
+      deedLimitsDetails: حدود الصك
+      deedLimitsDetails.northLimitName: الحد الشمالي
+      deedLimitsDetails.northLimitDescription: وصف الحد الشمالي
+      deedLimitsDetails.northLimitLength: طول الحد الشمالي (م)
+      deedLimitsDetails.northLimitLengthChar: طول الحد الشمالي (نصاً)
+      deedLimitsDetails.southLimitName: الحد الجنوبي
+      deedLimitsDetails.southLimitDescription: وصف الحد الجنوبي
+      deedLimitsDetails.southLimitLength: طول الحد الجنوبي (م)
+      deedLimitsDetails.southLimitLengthChar: طول الحد الجنوبي (نصاً)
+      deedLimitsDetails.eastLimitName: الحد الشرقي
+      deedLimitsDetails.eastLimitDescription: وصف الحد الشرقي
+      deedLimitsDetails.eastLimitLength: طول الحد الشرقي (م)
+      deedLimitsDetails.eastLimitLengthChar: طول الحد الشرقي (نصاً)
+      deedLimitsDetails.westLimitName: الحد الغربي
+      deedLimitsDetails.westLimitDescription: وصف الحد الغربي
+      deedLimitsDetails.westLimitLength: طول الحد الغربي (م)
+      deedLimitsDetails.westLimitLengthChar: طول الحد الغربي (نصاً)
+      realEstateDetails: تفاصيل العقارات
+      realEstateDetails[].deedSerial: الرقم التسلسلي للصك
+      realEstateDetails[].regionCode: رمز المنطقة
+      realEstateDetails[].regionName: المنطقة
+      realEstateDetails[].cityCode: رمز المدينة
+      realEstateDetails[].cityName: المدينة
+      realEstateDetails[].realEstateTypeName: نوع العقار
+      realEstateDetails[].landNumber: رقم القطعة
+      realEstateDetails[].planNumber: رقم المخطط
+      realEstateDetails[].area: المساحة (م²)
+      realEstateDetails[].areaText: المساحة (نصاً)
+      realEstateDetails[].districtCode: رمز الحي
+      realEstateDetails[].districtName: الحي
+      realEstateDetails[].locationDescription: وصف الموقع
+      realEstateDetails[].constrained: مقيد
+      realEstateDetails[].halt: موقوف عن التصرف
+      realEstateDetails[].pawned: مرهون
+      realEstateDetails[].testament: موصى به
+      realEstateDetails[].isNorthRiyadhExceptioned: مستثنى من إيقاف أراضي شمال الرياض
+      realEstateDetails[].realEstateBorderDetails: حدود العقار
+      realEstateDetails[].realEstateBorderDetails.northLimitDescription: وصف الحد الشمالي
+      realEstateDetails[].realEstateBorderDetails.northLimitLength: طول الحد الشمالي (م)
+      realEstateDetails[].realEstateBorderDetails.northLimitLengthChar: طول الحد الشمالي (نصاً)
+      realEstateDetails[].realEstateBorderDetails.southLimitDescription: وصف الحد الجنوبي
+      realEstateDetails[].realEstateBorderDetails.southLimitLength: طول الحد الجنوبي (م)
+      realEstateDetails[].realEstateBorderDetails.southLimitLengthChar: طول الحد الجنوبي (نصاً)
+      realEstateDetails[].realEstateBorderDetails.eastLimitDescription: وصف الحد الشرقي
+      realEstateDetails[].realEstateBorderDetails.eastLimitLength: طول الحد الشرقي (م)
+      realEstateDetails[].realEstateBorderDetails.eastLimitLengthChar: طول الحد الشرقي (نصاً)
+      realEstateDetails[].realEstateBorderDetails.westLimitDescription: وصف الحد الغربي
+      realEstateDetails[].realEstateBorderDetails.westLimitLength: طول الحد الغربي (م)
+      realEstateDetails[].realEstateBorderDetails.westLimitLengthChar: طول الحد الغربي (نصاً)
+- id: employee
+  label: معلومات الموظفين
+  label_en: Employee Information
+  base: /masdr/employee
+  sandbox_base: ''
+  endpoints:
+  - id: info
+    path: /v2/info
+    label: استرجاع بيانات الموظف
+    description: يعيد اسم المشترك وجنسيته وعدد أشهر اشتراكه في التأمينات الاجتماعية، مع قائمة المنشآت التي يعمل
+      أو عمل لديها في القطاع الخاص وحالته فيها وتفاصيل أجره.
+    price: 7
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: header
+      kind: person_or_entity_id
+      label: رقم الهوية أو رقم الإقامة
+      required: true
+      personal: true
+      pattern: '[12][0-9]{9}'
+    labels:
+      name: اسم المشترك الكامل
+      nationality: الجنسية
+      workingMonths: إجمالي أشهر الاشتراك في التأمينات الاجتماعية
+      employmentInfo: بيانات التوظيف
+      employmentInfo[].employer: اسم المنشأة
+      employmentInfo[].status: حالة المشترك في المنشأة
+      employmentInfo[].wageDetails: تفاصيل الأجر
+      employmentInfo[].wageDetails.basicWage: الأجر الأساسي الشهري
+      employmentInfo[].wageDetails.housingAllowance: بدل السكن الشهري
+      employmentInfo[].wageDetails.otherAllowance: البدلات الأخرى الشهرية
+      employmentInfo[].wageDetails.fullWage: إجمالي الأجر
+- id: investor
+  label: المستثمرون (وزارة الاستثمار)
+  label_en: Investors (MISA)
+  base: /investor
+  sandbox_base: ''
+  endpoints:
+  - id: fullinfo
+    path: /fullinfo/{id}
+    label: بيانات المستثمر الكاملة
+    description: يعيد كامل بيانات الكيان الأجنبي المستثمر (البيانات الأساسية وحالة التسجيل) وقائمة الشركاء ونسب
+      ملكيتهم وبيانات المفوَّض.
+    price: 50
+    lookup: false
+    in_sandbox: false
+    language: true
+    inputs:
+    - name: id
+      location: path
+      kind: investor_id
+      label: الرقم الموحد (700)
+      required: true
+      pattern: 70[0-9]{8,10}
+    personal:
+    - delegate.delegateType.id
+    - delegate.email
+    - delegate.identity.id
+    - delegate.phone
+    - parties[].id
+    - partners[].id
+    labels:
+      parties: الشركاء
+      parties[].partnerType: نوع الشريك
+      parties[].partnerType.id: معرف نوع الشريك
+      parties[].partnerType.name: وصف نوع الشريك
+      parties[].id: معرف الشريك لدى وزارة الاستثمار
+      parties[].name: الاسم الكامل للشريك
+      parties[].nationality: جنسية الشريك
+      parties[].partnerShare: نسبة ملكية الشريك
+      delegate.identity: هوية المفوَّض
+      delegate.identity.typeId: معرف نوع هوية المفوَّض
+      delegate.identity.typeName: نوع هوية المفوَّض
+      delegate.identity.id: رقم هوية المفوَّض
+      delegate.delegationStartDate: تاريخ بداية التفويض
+      delegate.delegationExpDate: تاريخ انتهاء التفويض
+  - id: lookup_status
+    path: /lookups/status
+    label: حالات تسجيل المستثمر
+    description: 'يعيد قائمة بجميع حالات تسجيل المستثمر (مثل: نشط) مع رموزها وأسمائها بالعربية والإنجليزية.'
+    price: 0
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+  - id: lookup_partner_type
+    path: /lookups/partnerType
+    label: أنواع الشريك
+    description: 'يعيد قائمة بجميع أنواع الشريك (مثل: فرد، منظمة) مع رموزها وأسمائها بالعربية والإنجليزية.'
+    price: 0
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+  - id: lookup_delegate_type
+    path: /lookups/delegateType
+    label: أنواع هوية المفوَّض
+    description: 'يعيد قائمة بجميع أنواع هوية المفوَّض (مثل: هوية وطنية) مع رموزها وأسمائها بالعربية والإنجليزية.'
+    price: 0
+    lookup: true
+    in_sandbox: false
+    language: false
+    inputs: []
+    labels:
+      '[].id': الرمز
+      '[].nameAr': الاسم بالعربية
+      '[].nameEr': الاسم بالإنجليزية
+      '[].nameEn': الاسم بالإنجليزية
+      id: الرمز
+      nameAr: الاسم بالعربية
+      nameEr: الاسم بالإنجليزية
+      nameEn: الاسم بالإنجليزية
+- id: drug
+  label: معلومات الأدوية
+  label_en: Drug Information
+  base: /drugs
+  sandbox_base: ''
+  endpoints:
+  - id: price
+    path: /price/{id}
+    label: سعر الدواء
+    description: تُرجع قائمة شهادات المستحضر مع سعر كل شهادة وتاريخ بدايتها، ورسالة عند وجود طلب تحديث سعر معتمد
+      معلق.
+    price: 0
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: path
+      kind: drug_id
+      label: رقم تسجيل المستحضر
+      required: true
+      pattern: '[0-9]{1,20}'
+  - id: alternatives
+    path: /alternatives/{id}
+    label: البدائل الدوائية
+    description: تُرجع بيانات آخر شهادة للمستحضر وسعره وقائمة المستحضرات البديلة بأسمائها التجارية وأسعارها وحالاتها
+      وموادها الفعالة.
+    price: 0
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: path
+      kind: drug_id
+      label: رقم تسجيل المستحضر الأساسي
+      required: true
+      pattern: '[0-9]{1,20}'
+  - id: status
+    path: /status/{id}
+    label: حالة تسجيل الدواء
+    description: تُرجع الاسم التجاري للمستحضر وحالة شهادة تسجيله.
+    price: 0
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: path
+      kind: drug_id
+      label: رقم تسجيل المستحضر
+      required: true
+      pattern: '[0-9]{1,20}'
+  - id: dispensing
+    path: /dispensing/{id}
+    label: الصرف الدوائي (الوصفة الطبية)
+    description: تُرجع حالة شهادة المستحضر وقائمة شهاداته مع تصنيف الصرف وطريقة الصرف خلف المنضدة ونوع الوصفة الطبية
+      المعتمدة.
+    price: 0
+    lookup: false
+    in_sandbox: false
+    language: false
+    inputs:
+    - name: id
+      location: path
+      kind: drug_id
+      label: رقم تسجيل المستحضر
+      required: true
+      pattern: '[0-9]{1,20}'

@@ -1,0 +1,381 @@
+{
+ "document_type": "رخصة نشاط تجاري",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات الرخصة",
+   "fields": [
+    {
+     "label": "رقم الرخصة",
+     "value": "٩٤٠١٠٢٨٧",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 229,
+      "end": 237,
+      "quote": "رقم الرخصة | ٩٤٠١٠٢٨٧"
+     }
+    },
+    {
+     "label": "نوع الرخصة",
+     "value": "رخصة نشاط تجاري",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 8,
+      "start": 251,
+      "end": 266,
+      "quote": "نوع الرخصة | رخصة نشاط تجاري"
+     }
+    },
+    {
+     "label": "حالة الرخصة",
+     "value": "سارية",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 281,
+      "end": 286,
+      "quote": "حالة الرخصة | سارية"
+     }
+    },
+    {
+     "label": "تاريخ الإصدار",
+     "value": "١٥ سبتمبر ٢٠٢٦",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 303,
+      "end": 317,
+      "quote": "تاريخ الإصدار | ١٥ سبتمبر ٢٠٢٦"
+     }
+    },
+    {
+     "label": "تاريخ الانتهاء",
+     "value": "١٤ سبتمبر ٢٠٢٧",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 11,
+      "start": 335,
+      "end": 349,
+      "quote": "تاريخ الانتهاء | ١٤ سبتمبر ٢٠٢٧"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات صاحب الرخصة",
+   "fields": [
+    {
+     "label": "الاسم",
+     "value": "أحمد خالد عبدالرحمن السبيعي",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 13,
+      "start": 377,
+      "end": 404,
+      "quote": "الاسم | أحمد خالد عبدالرحمن السبيعي"
+     }
+    },
+    {
+     "label": "رقم الهوية",
+     "value": "١٠٢٧٨٤٦٣٩١ (رقم اصطناعي)",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 14,
+      "start": 418,
+      "end": 442,
+      "quote": "رقم الهوية | ١٠٢٧٨٤٦٣٩١ (رقم اصطناعي)"
+     }
+    },
+    {
+     "label": "رقم الجوال",
+     "value": "٠٥٥٠١٢٣٤٥٦",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 15,
+      "start": 456,
+      "end": 466,
+      "quote": "رقم الجوال | ٠٥٥٠١٢٣٤٥٦"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات المنشأة والنشاط",
+   "fields": [
+    {
+     "label": "الاسم التجاري",
+     "value": "مقهى سحابة النخيل",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 17,
+      "start": 506,
+      "end": 523,
+      "quote": "الاسم التجاري | مقهى سحابة النخيل"
+     }
+    },
+    {
+     "label": "السجل التجاري",
+     "value": "١٠١٠٨٤٢٧٦٣",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 18,
+      "start": 540,
+      "end": 550,
+      "quote": "السجل التجاري | ١٠١٠٨٤٢٧٦٣"
+     }
+    },
+    {
+     "label": "النشاط المرخص",
+     "value": "مقهى لتقديم المشروبات الساخنة والباردة مع تقديم منتجات التبغ",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 567,
+      "end": 627,
+      "quote": "النشاط المرخص | مقهى لتقديم المشروبات الساخنة والباردة مع تقديم منتجات التبغ"
+     }
+    },
+    {
+     "label": "العنوان",
+     "value": "مدينة النور، حي الندى، شارع ١٢، مبنى ٤٥، محل ٧",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 638,
+      "end": 684,
+      "quote": "العنوان | مدينة النور، حي الندى، شارع ١٢، مبنى ٤٥، محل ٧"
+     }
+    },
+    {
+     "label": "الموقع العقاري",
+     "value": "المخطط ن/٢١ - القطعة ٣١٨",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 21,
+      "start": 702,
+      "end": 726,
+      "quote": "الموقع العقاري | المخطط ن/٢١ - القطعة ٣١٨"
+     }
+    }
+   ]
+  },
+  {
+   "title": "نطاق الترخيص والاشتراطات الخاصة",
+   "fields": [
+    {
+     "label": "المساحة الإجمالية",
+     "value": "م ١٨٠ م2",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 4,
+      "start": 845,
+      "end": 853,
+      "quote": "م ١٨٠ م2 | المساحة الإجمالية"
+     }
+    },
+    {
+     "label": "الطاقة الاستيعابية",
+     "value": "٧٢ مقعدًا",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 5,
+      "start": 874,
+      "end": 883,
+      "quote": "٧٢ مقعدًا | الطاقة الاستيعابية"
+     }
+    },
+    {
+     "label": "مساحة تقديم التبغ",
+     "value": "٨٠ م2",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 6,
+      "start": 905,
+      "end": 910,
+      "quote": "٨٠ م2 | مساحة تقديم التبغ"
+     }
+    },
+    {
+     "label": "ساعات العمل",
+     "value": "يوميًا من ٤:٠٠ مساءً إلى ٢:٠٠ صباحًا",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 7,
+      "start": 931,
+      "end": 967,
+      "quote": "يوميًا من ٤:٠٠ مساءً إلى ٢:٠٠ صباحًا | ساعات العمل"
+     }
+    },
+    {
+     "label": "الاشتراطات والضوابط",
+     "value": "م | الاشتراط | الحالة\n١ | يمنع دخول أو خدمة من نقل أعمارهم عن ١٨ عامًا، وتثبت لوحة المنع عند المدخل. | إلزامي\n٢ | تفصل منطقة تقديم التبغ عن منطقة إعداد المشروبات بحاجز وممر واضحين. | إلزامي\n٣ | نظام مستقل بمعدل لا يقل عن ١٠ مرات تبديل للهواء في الساعة. | معتمد\n٤ | تنظف المرشحات وتوثق صيانتها مرة كل ٣ أشهر. | دوري\n٥ | يمنع بيع منتجات التبغ خارج العبوات النظامية أو عبر خدمة التوصيل. | إلزامي\n٦ | تقتصر خدمة منتجات التبغ على المنطقة المحددة في المخطط المعتمد. | خاص\n٧ | شهادة تداول أغذية رقم غ/٢٢١٩ - سارية | ساري\n٨ | شهادة سلامة رقم س/٤٨١٦، صالحة حتى ١٠ سبتمبر ٢٠٢٧. | ساري",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 9,
+      "start": 1002,
+      "end": 1576,
+      "quote": "م | الاشتراط | الحالة"
+     }
+    },
+    {
+     "label": "تاريخ آخر معاينة",
+     "value": "١٢ سبتمبر ٢٠٢٦",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 19,
+      "start": 1619,
+      "end": 1633,
+      "quote": "تاريخ آخر معاينة | ١٢ سبتمبر ٢٠٢٦"
+     }
+    },
+    {
+     "label": "نتيجة المعاينة",
+     "value": "مطابق مع ملاحظة غير جوهرية",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 20,
+      "start": 1651,
+      "end": 1677,
+      "quote": "نتيجة المعاينة | مطابق مع ملاحظة غير جوهرية"
+     }
+    },
+    {
+     "label": "إجمالي الرسوم",
+     "value": "٧،٥٠٠ ريال",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 21,
+      "start": 1694,
+      "end": 1704,
+      "quote": "إجمالي الرسوم | ٧،٥٠٠ ريال"
+     }
+    },
+    {
+     "label": "مرجع السداد",
+     "value": "إيصال رقم ٢٦٠٩١٥٧٤",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 22,
+      "start": 1719,
+      "end": 1737,
+      "quote": "مرجع السداد | إيصال رقم ٢٦٠٩١٥٧٤"
+     }
+    },
+    {
+     "label": "مهلة التجديد",
+     "value": "يقدم طلب التجديد قبل انتهاء الرخصة ب ٣٠ يومًا.",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 23,
+      "start": 1753,
+      "end": 1799,
+      "quote": "مهلة التجديد | يقدم طلب التجديد قبل انتهاء الرخصة ب ٣٠ يومًا."
+     }
+    }
+   ]
+  }
+ ],
+ "expiry": {
+  "status": "valid",
+  "status_ar": "سارية بحسب تاريخ الانتهاء",
+  "date_text": "14 سبتمبر ٢٠٢٧",
+  "date_normalized": "2027-09-14",
+  "calendar": "gregorian",
+  "date_gregorian": "2027-09-14",
+  "days_remaining": 344,
+  "basis": "template_field",
+  "confidence": "high",
+  "verified": true,
+  "derived": false,
+  "label": "تاريخ الانتهاء",
+  "source": {
+   "page": 1,
+   "line": 11,
+   "start": 335,
+   "end": 349,
+   "quote": "تاريخ الانتهاء | ١٤ سبتمبر ٢٠٢٧"
+  },
+  "converter": "none",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "generic_document",
+  "name_ar": "",
+  "name_en": "unrecognised document",
+  "family": "",
+  "confidence": 0.0,
+  "source": "fallback",
+  "generic": true,
+  "needs_review": true,
+  "rules_score": 0.0,
+  "corroborated": false,
+  "evidence": [],
+  "rules": [
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 10,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "unknown",
+   "family_confidence": 0.0,
+   "template_id": "unknown",
+   "confidence": 0.0,
+   "evidence": []
+  },
+  "error": null,
+  "ms": 814
+ }
+}

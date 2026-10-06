@@ -1,0 +1,309 @@
+{
+ "document_type": "طلب إصدار رخصة بلدية",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات مقدم الطلب",
+   "fields": [
+    {
+     "label": "الاسم",
+     "value": "احمد احمد بن عدوان",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 228,
+      "end": 246,
+      "quote": "الاسم | (احمد احمد بن عدوان)"
+     }
+    },
+    {
+     "label": "رقم الهوية الوطنية",
+     "value": "١٢٣٤٥٦٧٨٩",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 8,
+      "start": 269,
+      "end": 278,
+      "quote": "رقم الهوية الوطنية | ١٢٣٤٥٦٧٨٩"
+     }
+    },
+    {
+     "label": "الصفة",
+     "value": "مالك المنشأة",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 287,
+      "end": 299,
+      "quote": "الصفة | مالك المنشأة"
+     }
+    },
+    {
+     "label": "رقم الجوال",
+     "value": "٠٥٠٥٠٥٠٥٠٥٠٥٠",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 313,
+      "end": 326,
+      "quote": "رقم الجوال | ٠٥٠٥٠٥٠٥٠٥٠٥٠"
+     }
+    },
+    {
+     "label": "البريد الإلكتروني",
+     "value": "applicant@example.test",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 11,
+      "start": 347,
+      "end": 369,
+      "quote": "البريد الإلكتروني | applicant@example.test"
+     }
+    },
+    {
+     "label": "السن عند تقديم الطلب",
+     "value": "٤٥",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 12,
+      "start": 393,
+      "end": 395,
+      "quote": "السن عند تقديم الطلب | ٤٥"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات المنشأة",
+   "fields": [
+    {
+     "label": "الاسم التجاري",
+     "value": "مقهى الرياض",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 15,
+      "start": 450,
+      "end": 461,
+      "quote": "الاسم التجاري | مقهى الرياض"
+     }
+    },
+    {
+     "label": "رقم السجل التجاري",
+     "value": "١٠١٠١٠١٠١٠١١٠",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 16,
+      "start": 482,
+      "end": 495,
+      "quote": "رقم السجل التجاري | ١٠١٠١٠١٠١٠١١٠"
+     }
+    },
+    {
+     "label": "النشاط المطلوب",
+     "value": "تشغيل مقهى + تقديم منتجات التبغ (المعسل)",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 17,
+      "start": 513,
+      "end": 553,
+      "quote": "النشاط المطلوب | تشغيل مقهى + تقديم منتجات التبغ (المعسل)"
+     }
+    },
+    {
+     "label": "المدينة / الحي",
+     "value": "الرياض — حي الشفا",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 18,
+      "start": 571,
+      "end": 588,
+      "quote": "المدينة / الحي | الرياض — حي الشفا"
+     }
+    },
+    {
+     "label": "المساحة",
+     "value": "٢٤٠ م٢ (مائتان وأربعون متراً مربعاً)",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 599,
+      "end": 635,
+      "quote": "المساحة | ٢٤٠ م٢ (مائتان وأربعون متراً مربعاً)"
+     }
+    },
+    {
+     "label": "نوع المبنى ورقمه",
+     "value": "تجاري — رقم المبنى ٢٣",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 655,
+      "end": 676,
+      "quote": "نوع المبنى ورقمه | تجاري — رقم المبنى ٢٣"
+     }
+    },
+    {
+     "label": "صفة الانتفاع",
+     "value": "عقد إيجار مدته ثلاث سنوات",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 21,
+      "start": 692,
+      "end": 717,
+      "quote": "صفة الانتفاع | عقد إيجار مدته ثلاث سنوات"
+     }
+    }
+   ]
+  },
+  {
+   "title": "النشاط المطلوب الترخيص له",
+   "fields": [
+    {
+     "label": "النشاط المطلوب",
+     "value": "تقديم المعسل للمرتادين داخل النطاق العمراني، بوصف المنشأة «مقهى»",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 23,
+      "start": 767,
+      "end": 831,
+      "quote": "يُطلب الترخيص بتقديم المعسل للمرتادين داخل النطاق العمراني، بوصف المنشأة «مقهى»"
+     }
+    }
+   ]
+  },
+  {
+   "title": "إقرار",
+   "fields": [
+    {
+     "label": "الاسم",
+     "value": "احمد احمد بن عدوان",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 228,
+      "end": 246,
+      "quote": "الاسم | (احمد احمد بن عدوان)"
+     }
+    },
+    {
+     "label": "التوقيع",
+     "value": "احمد بن عدوان",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 27,
+      "start": 1004,
+      "end": 1017,
+      "quote": "احمد احمد بن عدوان | احمد بن عدوان | ٢١/٩/١٤٤٣"
+     }
+    },
+    {
+     "label": "تاريخ انتهاء الطلب",
+     "value": "٢١/٩/١٤٤٣",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 27,
+      "start": 1036,
+      "end": 1045,
+      "quote": "احمد احمد بن عدوان | احمد بن عدوان | ٢١/٩/١٤٤٣"
+     }
+    }
+   ]
+  }
+ ],
+ "expiry": {
+  "status": "expired",
+  "status_ar": "منتهية",
+  "date_text": "٢١/٩/١٤٤٣",
+  "date_normalized": "1443-09-21",
+  "calendar": "hijri",
+  "date_gregorian": "2022-04-22",
+  "days_remaining": -1627,
+  "basis": "label",
+  "confidence": "high",
+  "verified": true,
+  "derived": false,
+  "label": "تاريخ انتهاء",
+  "source": {
+   "page": 1,
+   "line": 27,
+   "start": 1036,
+   "end": 1045,
+   "quote": "احمد احمد بن عدوان | احمد بن عدوان | ٢١/٩/١٤٤٣"
+  },
+  "converter": "hijridate",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "generic_document",
+  "name_ar": "",
+  "name_en": "unrecognised document",
+  "family": "",
+  "confidence": 0.0,
+  "source": "fallback",
+  "generic": true,
+  "needs_review": true,
+  "rules_score": 0.0,
+  "corroborated": false,
+  "evidence": [],
+  "rules": [
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 10,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "unknown",
+   "family_confidence": 0.0,
+   "template_id": "unknown",
+   "confidence": 0.0,
+   "evidence": []
+  },
+  "error": null,
+  "ms": 782
+ }
+}

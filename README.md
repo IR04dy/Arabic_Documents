@@ -174,6 +174,17 @@ It keeps its register under `data/complaints/` (git-ignored). The model it uses
 can be switched between Qwen3, ALLaM and an OpenAI-compatible endpoint. See
 [`COMPLAINTS.md`](COMPLAINTS.md).
 
+**التحقق من البيانات** queries every Wathq product from one tab: السجل التجاري،
+عقود الشركات، العنوان الوطني، الوكالات الشرعية، الصكوك العقارية، معلومات الموظفين،
+المستثمرون and معلومات الأدوية (8 products, 47 queries). Pick a product and a
+query (its price is on it), fill the form the tab builds for it, and press
+**استعلام من وثق**. This is the app's only call to the internet, and most
+queries are billed to your Wathq package; one of 20 SAR or more asks to be
+confirmed. It needs `WATHQ_API_KEY`; without it the tab loads and says what to
+set. Personal data (IDs, phones, e-mails, birth dates) is masked on the server,
+and answers stay in memory only. Services, setup, costs, terms and errors are
+in [`WATHQ_INTEGRATION.md`](WATHQ_INTEGRATION.md).
+
 ### Stopping
 
 Press **Ctrl+C** in the terminal running `run.ps1`. The app's shutdown handler
@@ -203,6 +214,11 @@ map:
 | `POST` | `/export/docx` | OCR text → plain RTL Word `.docx` |
 | `POST` | `/export/layout-docx` | PDF/image + page texts + page layouts → a `.docx` that rebuilds the original page |
 | various | `/complaints/*` | The complaints tab: intake, register, review, analytics, insights (see *Complaints (CMS)* in `API.md`) |
+| `GET`  | `/wathq/status` | Verify-data tab: is a Wathq key set, which environment, requests sent |
+| `GET`  | `/wathq/catalog` | Verify-data tab: every Wathq product and query, with prices and inputs |
+| `POST` | `/wathq/query` | Run one Wathq query (paid for most; see *Data verification (Wathq)* in `API.md`) |
+| `POST` | `/wathq/suggest` | After structuring: which Wathq services can verify this document, ranked by the local model, key fields pre-filled; no Wathq call |
+| `POST` | `/wathq/company-contract` | A company's official contract data from Wathq (the older single-product route) |
 
 ```bash
 curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
@@ -238,6 +254,18 @@ curl -s -F file=@document.pdf http://127.0.0.1:8100/extract
 | `test_complaints*.py`, `test_complaints_ui.js` | Tests for the complaints tab (see `COMPLAINTS.md`; the UI tests need node). |
 | `samples/complaints/` | Synthetic complaint PDFs with labels, and two held-out text sets for evaluation. |
 | `COMPLAINTS.md` | The complaints tab: pipeline, priority model, review, switching the model, data, evaluation. |
+| `wathq_client.py` | Verify-data tab: the HTTPS client for Wathq (fixed host, `apiKey` header, verified TLS, no redirects, Arabic error mapping). |
+| `wathq_verify.py` | Verify-data tab: number parsing (unified vs CR) and the whitelist that shapes and masks Wathq's contract answer. |
+| `wathq_catalog.py` | Verify-data tab: loads `templates/wathq/catalog.yaml`, cross-checks it against Wathq's specs, and turns a form into a validated request. |
+| `wathq_view.py` | Verify-data tab: any Wathq answer → Arabic-labelled display nodes, with personal data masked on the server. |
+| `wathq_suggest.py` | Verify-data tab: after structuring, asks the local model which Wathq services fit the extracted data (one question, repeated until None) and pre-fills their key fields. |
+| `templates/wathq/` | Wathq's own Swagger files (one per product) and `catalog.yaml`, the 47 queries the tab offers. |
+| `wathq_api.py` | Verify-data tab: the `/wathq` routes (local-only, same-origin, one lookup at a time, in-memory cache). |
+| `wathq_ui.js`, `wathq.css` | The verify-data tab's script and stylesheet, served at `/wathq/ui.js` and `/wathq/ui.css`. |
+| `wathq_probe.py` | Verify-data diagnostic: one request with your key, printing the answer's shape (never its data). |
+| `wathq_smoke.py` | Verify-data diagnostic: tries every Wathq service once with numbers you type (not echoed) and reports which answer and which refuse, with Wathq's own wording. |
+| `test_wathq_*.py` | Tests for the verify-data tab (catalog, view, routes, client, privacy); they never contact Wathq. |
+| `WATHQ_INTEGRATION.md` | The verify-data tab: setup, settings, costs, privacy and terms, errors. |
 | `fetch_llama_server.ps1` | Downloads the official llama.cpp CUDA build into `vendor/`. |
 | `vendor/llama-cuda/` | Vendored `llama-server.exe` + CUDA runtime (git-ignored). |
 | `requirements.txt` | Python dependencies. |

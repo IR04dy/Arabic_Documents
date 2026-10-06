@@ -1,0 +1,710 @@
+swagger: '2.0'
+info:
+  title: Wathq Investor API
+  version: 6.14.0
+host: api.wathq.sa
+basePath: /investor
+schemes:
+  - https
+paths:
+  '/fullinfo/{id}':
+    get:
+      tags:
+        - Investor
+      summary: Retrieves all Investor data
+      description: 'Retrieves full details of foreign invested entities, as well as all details of partners and authorized representatives - الاستعلام عن كامل بيانات الكيانات الاجنبية المستثمرة وعن كافة بيانات الشركاء والمفوضين'
+      operationId: fullinfo
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - name: id
+          in: path
+          description: |
+            Unified number given by SDAIA  - الرقم الموحد الصادر من سدايا
+          required: true
+          type: string
+        - name: language
+          in: query
+          description: 'Information language - لغة البيانات  '
+          type: string
+          enum:
+            - ar
+            - en
+      schemes:
+        - https
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/FullInfoResponse'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              entityInfo:
+                crNationalNumber: '70012345678'
+                name: تموين الخطوط الجوية السعودية
+                regestrationType: Registration of Real Estate Ownership
+                country: AU
+                originCr: '4030175741'
+                addressCountryCode: SA
+                email: saudiairlinestest@gmail.com
+                countryNumberExt: '+966'
+                phone: '122337400'
+                annualUpdateDate: '2026-11-29'
+                status:
+                  id: '2'
+                  name: نشط
+              parties:
+                - partnerType:
+                    id: '1'
+                    name: فرد
+                  id: '1180317'
+                  name: جوني شجاع
+                  nationality: AU
+                  partnerShare: '50.000000'
+                - partnerType:
+                    id: '2'
+                    name: منظمة
+                  id: '1180702'
+                  name: شركة اي بي سي
+                  nationality: BE
+                  partnerShare: '50.000000'
+              delegate:
+                identity:
+                  typeId: 1
+                  typeName: هوية وطنية
+                  id: '123123123'
+                name: Njoud Alsahli
+                nationality: null
+                email: testcontact@gmail.com
+                countryNumberExt: '+966'
+                phone: '342348324'
+                delegationStartDate: '2025-12-15'
+                delegationExpDate: '2026-12-31'
+        '400':
+          description: |
+            **Business Errors, here is the list of codes:
+            code: 400.1.1 - message: Input data is required
+            code: 400.1.2 - message: National number must be digits only
+            code: 400.1.3 - message: National Number must be between 10 and 12 digits
+            code: 400.1.4 - message: Language should be 'ar' or 'en'
+            code: 400.1.5 - message: Retrieval failed. Inquiry is allowed only using the unified commercial register number (700).
+            code: 404.2.1 - message: No Results Found
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 400.1.1
+              message: Input data is required
+        '401':
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 401.1.1
+              message: Invalid ApiKey
+        '404':
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 404.2.1
+              message: No Results Found
+        '500':
+          description: internal server error
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 500.1.1
+              message: Internal Server Error
+        default:
+          description: |
+            Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 500.1.1
+              message: Internal Server Error
+      security:
+        - Authorization: []
+  /lookups/status:
+    get:
+      tags:
+        - lookups
+      summary: Retrieves all status lookups
+      description: 'Retrieves all status lookups - الاستعلام عن كافه حالات تسجيل المستثمر '
+      produces:
+        - application/json
+        - application/xml
+      schemes:
+        - https
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: نشط
+              nameEn: Active
+        '401':
+          $ref: '#/responses/undefined'
+        '403':
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 403.1.1
+              message: you do not have permission for giving resource
+        '404':
+          $ref: '#/responses/undefined'
+        '429':
+          description: Quota Violation
+          schema:
+            $ref: '#/definitions/error'
+          headers:
+            THIQAH-API-ApiMsgRef:
+              description: unique guid for each request
+              type: string
+              format: uuid
+            THIQAH-API-ClientMsgRef:
+              description: The original client reference value sent in the request
+              type: string
+              format: uuid
+          examples:
+            application/json:
+              code: 429.1.1
+              message: Rate limit quota violation. Quota limit  exceeded
+        '500':
+          $ref: '#/responses/undefined'
+        default:
+          $ref: '#/responses/undefined'
+      security:
+        - Authorization: []
+  /lookups/partnerType:
+    get:
+      tags:
+        - lookups
+      summary: Retrieves all partner type lookups
+      description: Retrieves all partner type lookups - الاستعلام عن كافة أنواع الشريك
+      produces:
+        - application/json
+        - application/xml
+      schemes:
+        - https
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: فرد
+              nameEn: Individual
+        '401':
+          $ref: '#/responses/undefined'
+        '403':
+          $ref: '#/responses/undefined'
+        '404':
+          $ref: '#/responses/undefined'
+        '429':
+          $ref: '#/responses/undefined'
+        '500':
+          $ref: '#/responses/undefined'
+        default:
+          $ref: '#/responses/undefined'
+      security:
+        - Authorization: []
+  /lookups/delegateType:
+    get:
+      tags:
+        - lookups
+      summary: Retrieves all delegate lookups
+      description: Retrieves all delegate lookups - الاستعلام عن كافة أنواع المفوض
+      produces:
+        - application/json
+        - application/xml
+      schemes:
+        - https
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+            application/json:
+              id: 1
+              nameAr: هوية وطنية
+              nameEn: Saudi ID
+        '401':
+          $ref: '#/responses/undefined'
+        '403':
+          $ref: '#/responses/undefined'
+        '404':
+          $ref: '#/responses/undefined'
+        '429':
+          $ref: '#/responses/undefined'
+        '500':
+          $ref: '#/responses/undefined'
+        default:
+          $ref: '#/responses/undefined'
+      security:
+        - Authorization: []
+tags:
+  - name: Investor
+    description: ' '
+definitions:
+  FullInfoResponse:
+    type: object
+    properties:
+      entityInfo:
+        type: object
+        description: |
+          Entity basic information - بيانات المنشأة الأساسية
+        properties:
+          crNationalNumber:
+            type: string
+            description: |
+              Unified Number given by SDAIA - الرقم الموحد الصادر من سدايا
+          regestrationType:
+            type: string
+            description: |
+              Registration Type - نوع التسجيل
+          name:
+            type: string
+            description: |
+              EntityName - أسم المنشأة
+          country:
+            type: string
+            description: |
+              Entity Country of Origiin - دولة منشأ المنشأة
+            maxLength: 3
+          originCr:
+            type: string
+            description: |
+              Commercial registration number in origin country - رقم السجل التجاري في دولة المنشأ
+            maxLength: 15
+          email:
+            type: string
+            description: |
+              Entity Official Email Address - البريد الإلكتروني الرسمي للمنشأة
+            maxLength: 241
+          countryNumberExt:
+            type: string
+            description: |
+              Country dialing code (e.g., +966, +971) - رمز الاتصال الدولي
+            maxLength: 5
+          phone:
+            type: string
+            description: |
+              Entity Phone number - رقم هاتف المنشأة
+            maxLength: 10
+          addressCountryCode:
+            type: string
+            description: |
+              Entity Adress - عنوان المنشأة
+            maxLength: 3
+          status:
+            type: object
+            description: |
+              Registration Status - حالة التسجيل
+            properties:
+              id:
+                type: string
+                description: |
+                  Registration Status id - معرف حالة التسجيل
+                maxLength: 1
+              name:
+                type: string
+                description: |
+                  Registration Status Descreption - وصف حالة التسجيل
+                maxLength: 10
+            required:
+              - id
+              - name
+          annualUpdateDate:
+            type: string
+            description: |
+              Up coming Annual update date - تاريخ التحديث السنوي القادم
+            format: date
+        required:
+          - crNationalNumber
+          - regestrationType
+          - name
+          - country
+          - originCr
+          - email
+          - countryNumberExt
+          - phone
+          - addressCountryCode
+          - status
+          - annualUpdateDate
+      partners:
+        type: array
+        description: |
+          List of partners of the entity - قائمة بالمساهمين في المنشأة
+        items:
+          type: object
+          properties:
+            partnersType:
+              type: object
+              description: |
+                partners Type - نوع الشريك
+              properties:
+                id:
+                  type: string
+                  description: |
+                    partner Type ID - معرف نوع  الشريك
+                  maxLength: 1
+                name:
+                  type: string
+                  description: |
+                    partner Type Description - وصف نوع الشريك
+              required:
+                - id
+                - name
+            id:
+              type: string
+              description: |
+                partner Identification Number at the Ministry - معرف الشريك لدى وزارة الاستثمار
+              maxLength: 15
+            name:
+              type: string
+              description: |
+                partner full name - الاسم الكامل للشريك
+            nationality:
+              type: string
+              description: |
+                partner Nationality - جنسية الشريك
+              maxLength: 3
+            partnerShare:
+              type: string
+              description: |
+                partner Ownership Percentage - نسبة ملكية الشريك
+          required:
+            - partnersType
+            - id
+            - name
+            - nationality
+            - partnerShare
+      delegate:
+        type: object
+        description: |
+          Delegate information - بيانات المفوَّض
+        properties:
+          delegateType:
+            type: object
+            description: |
+              Delegate Type - نوع المفوَّض
+            properties:
+              typeId:
+                type: string
+                description: |
+                  Delegate Type ID - معرف نوع هوية المفوَّض
+                maxLength: 1
+              typeName:
+                type: string
+                description: |
+                  Delegate  Type Description - وصف نوع هوية المفوَّض
+                maxLength: 100
+              id:
+                type: string
+                description: |
+                  Delegate ID - رقم هوية المفوض
+            required:
+              - typeId
+              - typeName
+              - id
+          name:
+            type: string
+            description: |
+              Delegate Full Name - الاسم الكامل للمفوَّض
+          nationality:
+            type: string
+            description: |
+              Delegate Nationality - جنسية المفوَّض
+            maxLength: 3
+          delegStartDate:
+            type: string
+            description: |
+              Delegation Start Date - تاريخ بداية التفويض
+            format: date
+          delegExpDate:
+            type: string
+            description: |
+              Delegation Expiry Date - تاريخ انتهاء التفويض
+            format: date
+          countryNumberExt:
+            type: string
+            description: |
+              Country dialing code (e.g., +966, +971) - رمز الاتصال الدولي
+            maxLength: 5
+          phone:
+            type: string
+            description: |
+              Delegate Mobile number - رقم جوال المفوَّض
+            maxLength: 10
+          email:
+            type: string
+            description: |
+              Delegate Email address - البريد الإلكتروني للمفوَّض
+            maxLength: 241
+        required:
+          - delegateType
+          - name
+          - nationality
+          - delegStartDate
+          - delegExpDate
+          - countryNumberExt
+          - phone
+          - email
+    required:
+      - entityInfo
+      - partners
+      - delegate
+  error:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    required:
+      - code
+      - message
+  lookup:
+    type: object
+    properties:
+      id:
+        type: integer
+      nameAr:
+        type: string
+      nameEr:
+        type: string
+responses:
+  DefaultErrorResponse:
+    description: |
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.1.1</code>  <message>Internal Server Error</message>   </error>
+  ErrorResponse400:
+    description: |
+      **Business Errors, here is the list of codes:
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.2 - message: National number must be digits only
+      code: 400.1.3 - message: National Number must be between 10 and 12 digits
+      code: 400.1.4 - message: Language should be 'ar' or 'en'
+      code: 400.1.5 - message: Retrieval failed. Inquiry is allowed only using the unified commercial register number (700).
+      code: 404.2.1 - message: No Results Found
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Input data is required
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>400.1.1</code>  <message>Input data is required</message>   </error>
+  ErrorResponse401:
+    description: unauthorized
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>401.1.1</code>  <message>Invalid ApiKey</message>   </error>
+  ErrorResponse403:
+    description: unauthorized
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 403.1.1
+        message: you do not have permission for giving resource
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>403.1.1</code>  <message>you do not have permission for giving resource</message>   </error>
+  ErrorResponse404:
+    description: not found
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>404.2.1</code>  <message>No Results Found</message>   </error>
+  ErrorResponse429:
+    description: Quota Violation
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit  exceeded
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>429.1.1</code>  <message>Rate limit quota violation. Quota limit  exceeded</message>   </error>
+  ErrorResponse500:
+    description: internal server error
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.1.1</code>  <message>Internal Server Error</message>   </error>
+  undefined:
+    description: Quota Violation
+    schema:
+      $ref: '#/definitions/error'
+    headers:
+      THIQAH-API-ApiMsgRef:
+        description: unique guid for each request
+        type: string
+        format: uuid
+      THIQAH-API-ClientMsgRef:
+        description: The original client reference value sent in the request
+        type: string
+        format: uuid
+    examples:
+      application/json:
+        code: 429.1.1
+        message: Rate limit quota violation. Quota limit  exceeded
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header

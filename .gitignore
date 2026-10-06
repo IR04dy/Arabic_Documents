@@ -17,3 +17,10 @@ models/
 
 # Complaint-management register (SQLite) and uploaded complaint files: personal data, never committed
 data/
+
+# Secrets: API keys (e.g. WATHQ_API_KEY_FILE) belong outside the repo; these
+# patterns stop one dropped here by mistake from being committed.
+.env
+.env.*
+*.key
+secrets/

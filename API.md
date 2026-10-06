@@ -1236,6 +1236,294 @@ $env:PYTHONIOENCODING = "utf-8"
 .\.venv\Scripts\python.exe -m unittest test_complaints_taxonomy test_complaints_llm test_complaints test_complaints_store test_complaints_api test_complaints_ui test_pdfium_lock test_comparison test_comparison_api test_regulations_client -q
 ```
 
+
+## Data verification (Wathq)
+
+The **التحقق من البيانات** tab's backend. It queries every product
+[Wathq](https://developer.wathq.sa) publishes: 8 products and 47 queries,
+listed by `GET /wathq/catalog` and run through `POST /wathq/query`.
+These are the app's only routes that reach the internet, and **every lookup that
+reaches Wathq is billed** to the key's package. Setup, settings, costs and terms
+are in [`WATHQ_INTEGRATION.md`](WATHQ_INTEGRATION.md).
+
+### Conventions
+
+- **Local only.** `/wathq/status` and the lookup answer `403` unless the
+  connection comes from this machine (a loopback peer) *and* the request is
+  addressed to `127.0.0.1`, `localhost` or `::1`. The `Host` header alone is not
+  trusted, because a LAN client can set it when `APP_ALLOWED_HOSTS` opens the app
+  to a network. `WATHQ_ALLOW_REMOTE=1` lifts this. The assets (`/wathq/ui.js`,
+  `/wathq/ui.css`) load from any allowed host.
+- **Same origin.** A lookup needs `X-Wathq-Request: 1` and
+  `Content-Type: application/json`. It is refused (`403`) when `Sec-Fetch-Site`
+  is anything but `same-origin` or `none`, or when `Origin` is not the app's
+  own. The custom header forces a CORS preflight that the app never answers, so
+  another website open in the same browser cannot trigger a paid lookup.
+- **Errors** are `{"error": "<Arabic message>"}`, plus `"code"` (Wathq's dotted
+  error code, e.g. `404.2.1`) when Wathq sent one, and `"detail"`: Wathq's own
+  wording for the error when it sent any (one line, any run of 9+ digits kept
+  only by its last four). Once a request has gone to Wathq, the body also
+  carries `"sent"`, because a failed call may still be billed. Responses are
+  `Cache-Control: no-store`.
+- **The key** never appears in a response, a log line or an error.
+
+### `GET /wathq/status`
+
+```json
+{"configured": true, "env": "production", "sent": 3, "cache_seconds": 900, "reason": ""}
+```
+
+| Field | Meaning |
+|---|---|
+| `configured` | A usable key is set (`WATHQ_API_KEY`, or the file in `WATHQ_API_KEY_FILE`). |
+| `env` | `production` or `sandbox` (`WATHQ_ENV`). Empty when the settings are invalid. |
+| `sent` | Requests this process has sent to Wathq since it started, failed ones included. Each may be billed. Wathq's own balance is on the portal. |
+| `cache_seconds` | How long an answer is reused (`WATHQ_CACHE_SECONDS`). |
+| `reason` | Why `configured` is false, in Arabic: no key, an unreadable key file, a malformed key, or an invalid setting. |
+
+### `GET /wathq/catalog`
+
+Every product and query the tab offers, from `templates/wathq/catalog.yaml`,
+for the current environment. Same local-only rule as `/wathq/status`.
+
+```json
+{"env": "production", "products": [{
+  "id": "cr", "label": "السجل التجاري", "label_en": "Commercial Registration", "sandbox": true,
+  "endpoints": [{
+    "id": "cr.fullinfo", "label": "البيانات الكاملة للسجل التجاري", "description": "…",
+    "price": 12.0, "lookup": false, "view": "generic", "available": true, "language": true,
+    "converts": true, "legacy_ok": true, "one_of": [],
+    "inputs": [{"name": "id", "kind": "company_number", "label": "…", "required": true,
+                "personal": false, "choices": [], "required_if": {}, "pattern_by": {},
+                "hint": ""}]}]}]}
+```
+
+| Field | Meaning |
+|---|---|
+| `price` | Wathq's prepaid SAR per successful call; `0` free, `-1` not listed. |
+| `lookup` | A reference list (code table) rather than data about one entity. |
+| `available` | `false` when the product or query has no sandbox and `WATHQ_ENV=sandbox`. |
+| `language` | The query takes `language` (`ar`/`en`). |
+| `converts` | An old CR number may be typed for the unified number; it costs one extra conversion request. |
+| `legacy_ok` | Commercial Registration only: when an old CR number has no unified number (a struck-off record), the query is retried once with the old number. |
+| `one_of` | Input names of which at least one is required. |
+| `inputs[].required_if` | `{other input: [values]}`: required when the other input has one of these values (a nationality for passports). |
+| `inputs[].pattern_by` | `{other input: {value: regex}}`: a stricter pattern for some values of the other input (a national ID is `1` + 9 digits). |
+| `inputs[].kind` | The validator: `unified_number`, `company_number`, `cr_number_any`, `person_or_entity_id`, `id_type`, `deed_number`, `attorney_code`, `drug_id`, `investor_id`, `permission_id`, `copy_number`, `nationality`, `boolean`. |
+| `inputs[].personal` | The value identifies a person: never echoed back or logged. |
+| `inputs[].choices` | The allowed values (`value`, Arabic `label`) of an enum, for the current environment (the sandbox accepts fewer ID types). |
+
+The catalog never includes which response fields are masked.
+
+### `POST /wathq/query`
+
+Runs one catalog query. Same guards as the company-contract lookup
+(`X-Wathq-Request: 1`, same origin, local only, JSON, one at a time). Body at
+most 8 KB:
+
+```json
+{"endpoint": "cr.fullinfo", "inputs": {"id": "7001272475"}, "language": "ar"}
+```
+
+`inputs` holds the catalog input names only; an unknown name is a `400`.
+Values are cleaned as the catalog says (Arabic digits folded, separators
+dropped, enums checked), and an old CR number is converted first where the
+query converts. Header parameters (`employee.info`'s `id`, `cr.related` and
+`cr.owns`) are sent to Wathq as headers.
+
+Response `200`:
+
+```json
+{
+  "source": "wathq", "endpoint": "cr.fullinfo", "label": "البيانات الكاملة للسجل التجاري",
+  "product": "السجل التجاري", "env": "production", "price": 12.0,
+  "query": {"inputs": {"id": "7001272475"}, "converted": false, "national_number": "",
+            "legacy_used": false},
+  "cached": false, "calls_used": 1, "sent": 7, "fetched_at": "2026-10-03T23:29:00+03:00",
+  "view_type": "generic",
+  "view": [
+    {"type": "field", "label": "رقم السجل التجاري", "value": "1010711252"},
+    {"type": "group", "label": "بيانات الاتصال", "children": [
+      {"type": "field", "label": "رقم الجوال", "value": "•••••1101"}]},
+    {"type": "cards", "label": "قائمة الشركاء / مالك المؤسسة", "items": [
+      {"type": "group", "label": "قائمة الشركاء / مالك المؤسسة (1)", "children": ["…"]}]},
+    {"type": "list", "label": "قائمة أنشطة السجل التجاري", "items": ["…"]},
+    {"type": "table", "label": "…", "columns": ["…"], "rows": [["…"]]}
+  ]
+}
+```
+
+- **`view`** is the answer as display nodes: `field` (label, value), `group`
+  (label, children), `list` (label, items), `table` (label, columns, rows) and
+  `cards` (label, items of groups). Labels are Arabic, taken from Wathq's spec.
+  Every value is a string; booleans read نعم / لا.
+- **Personal data is masked on the server**: identity, iqama, passport, border
+  and phone numbers keep their last four characters, an e-mail its first letter
+  and domain, a date of birth its year. In free text every run of nine or more
+  digits keeps its last four. A list cut at 300 items carries `truncated: true`
+  and `total`.
+- **`query.inputs`** echoes only non-personal inputs. A person's ID never comes
+  back. `legacy_used` is true when a struck-off record was found by its old CR
+  number.
+- **`language`** is ignored (and doesn't split the cache) for queries that don't
+  take it.
+- **`contracts.info`** answers with `view_type: "contract"` and the dedicated
+  company-contract shape of `POST /wathq/company-contract` instead of `view`.
+- Reference lists are cached for a day, other answers for `WATHQ_CACHE_SECONDS`.
+
+Errors are as for the company-contract lookup, plus `400` for an unknown
+endpoint, an unknown input, a missing required input, a missing one-of input,
+or a query unavailable in the sandbox.
+
+### `POST /wathq/suggest`
+
+Which Wathq services can verify this document. The page calls it as soon as
+`/structure` succeeds, with the structured result; no Wathq call is made.
+
+```json
+{"struct": { "sections": [ ... ] }}
+```
+
+The structured result is flattened to `label: value` lines and the local model
+(the structurer, Qwen) is asked one question: these lines, the list of services
+(name + the data each returns), which service can verify the document, one
+name or `None`. The chosen service is removed and the question is repeated
+until `None`. The order of the answers is the ranking: the tab ticks the first
+and lists the rest unticked; the user approves before anything is sent.
+
+```json
+{"pairs": 23, "env": "production",
+ "services": [
+  {"id": "power_of_attorney", "label": "الوكالة", "endpoint": "attorney.info",
+   "endpoint_label": "التحقق من بيانات الوكالة الشرعية", "price": 5, "available": true,
+   "inputs": {"code": "4317608", "principalId": "1023456789"},
+   "inputs_spec": [ ... the endpoint's inputs as in /wathq/catalog ... ],
+   "one_of": ["principalId", "agentId"], "converts": false}]}
+```
+
+- `inputs` are read from the document's own lines by label (رقم الوكالة, رقم
+  هوية الموكل, السجل التجاري…), digits folded; nothing is invented, and a key
+  the document lacks is simply absent so the tab asks for it.
+- The same local-only and same-origin guards as `/wathq/query` apply; the
+  body is capped at 256 KB.
+- `503` with a plain message when the local model is busy or not loaded;
+  `400` when `struct` is not an object.
+
+### `POST /wathq/compare`
+
+What the document says against what one register answered. The tab calls it
+after each query it ran from the suggestions block; no Wathq call is made.
+
+```json
+{"struct": { "sections": [ ... ] }, "result": { ...a /wathq/query answer... }}
+```
+
+Both sides are flattened to `label: value` lines. Numbers, dates and masked
+IDs (last four digits) are compared exactly by code; the remaining register
+lines go to the local model in one question, which answers only with line ids
+and a verdict. When the model links a numeric or date line to a document line,
+the two values are still compared exactly by code.
+
+```json
+{"document_lines": 23,
+ "counts": {"matches": 5, "partly_matches": 1, "differs": 0, "not_in_document": 3, "not_compared": 2},
+ "rows": [
+  {"label": "حالة الوكالة", "register": "سارية", "document": "سارية", "document_label": "حالة الوكالة",
+   "verdict": "matches", "verdict_ar": "يطابق", "by": "model"},
+  {"label": "جهة الإصدار", "register": "كتابة العدل الأولى", "document": "", "document_label": "",
+   "verdict": "not_in_document", "verdict_ar": "غير وارد في المستند", "by": "model"}]}
+```
+
+- Verdicts: `matches` يطابق · `partly_matches` يطابق جزئيًا · `differs` يختلف
+  عن سجل وثق · `not_in_document` غير وارد في المستند · `not_compared` لم تتم
+  مقارنته (the model gave no ruling). `by` is `code` or `model`.
+- The same guards as `/wathq/query`; body capped at 512 KB; `503` when the
+  model is unavailable, `400` when `struct` or `result` is not an object.
+
+### `POST /wathq/company-contract`
+
+Request (at most 4 KB):
+
+```json
+{"number": "7001272124", "language": "ar"}
+```
+
+| Field | Meaning |
+|---|---|
+| `number` | The unified national number (10 digits starting with `70`) or an old commercial-registration number (10 digits starting with `1`–`6`, the issuing office's code; `71…`–`79…` is refused before any call). Arabic-Indic and Persian digits, spaces, dashes, dots and bidi marks are accepted and removed. |
+| `language` | `ar` (default) or `en`: the language Wathq answers in. |
+
+An old CR number is first converted with the Commercial Registration product
+(`GET /commercial-registration/crNationalNumber/{cr}`), then the contract is
+fetched (`GET /company-contract/info/{crNationalNumber}`). That is two billed
+requests; a unified number needs one. The conversion is production-only,
+because Wathq's sandbox has no such endpoint. Answers and conversions are cached
+in memory per environment, number and language.
+
+Response `200`:
+
+```json
+{
+  "source": "wathq", "product": "company_contract", "env": "production",
+  "query": {"input": "1023236575", "kind": "cr", "national_number": "7001272124", "converted": true},
+  "cached": false, "calls_used": 2, "sent": 5,
+  "fetched_at": "2026-10-02T15:40:12+03:00",
+  "contract": {"copy_number": "1", "date": "2023-01-24"},
+  "entity": {"national_number": "7001272124", "cr_number": "1023236575", "name": "…",
+             "name_language": "اللغة العربية", "entity_type": "شركة", "legal_form": "ذات مسؤولية محدودة",
+             "characters": ["شخص واحد"], "duration": "25", "headquarters": "الرياض",
+             "license_based": false, "license_issuer": ""},
+  "capital": {"currency": "ريال سعودى",
+              "contribution": {"type": "نقدي", "cash": "100000", "in_kind": "0", "share_value": "1000",
+                               "cash_shares": "100", "in_kind_shares": "0"}},
+  "fiscal_year": {"first": false, "calendar": "ميلادي", "end": "2024/12/31"},
+  "parties": [{"name": "…", "type": "فرد سعودي", "id_masked": "••••••0001", "id_type": "هوية وطنية",
+               "nationality": "السعودية", "roles": ["شريك"], "cash_shares": "100", "in_kind_shares": "0",
+               "total_shares": "100", "profit_pct": "100", "loss_pct": "100", "cr_number": "", "license_no": ""}],
+  "management": {"structure": "مدير", "dismissal": "",
+                 "managers": [{"name": "…", "type": "سعودى", "id_masked": "••••••0003", "id_type": "هوية وطنية",
+                               "nationality": "السعودية", "positions": ["مدير"], "licensed": false}]},
+  "activities": [{"code": "4711", "name": "…"}],
+  "notification_channels": ["رسائل نصية"],
+  "decisions": [{"name": "زيادة رأس مال الشركة", "approve_pct": "75", "note": ""}],
+  "decisions_note": "",
+  "profit_set_aside": {"pct": "10", "purpose": "…"},
+  "articles": [{"part": "", "title": "", "text": "…"}]
+}
+```
+
+- **Values are strings**, booleans or `null`, whatever type Wathq used.
+  Amounts and counts are plain digits (`"100000"`), and `"0"` is kept.
+- **Identity numbers of people** (partners, managers, guardians) are masked to
+  their last four digits on the server. The full number never reaches the
+  browser. A partner that is itself a company keeps its `cr_number`.
+- **A whitelist.** Fields not listed here, such as Wathq's internal ids or the
+  board details, are dropped. Text is capped (a clause at 6,000 characters, 300
+  clauses, 200 rows per list), and Swagger placeholder values (`"string"`) are
+  removed.
+- **The capital** has `contribution` (shares), `stock` (with `stocks[]`), or
+  both, depending on the legal form. A party may carry a `guardian` object
+  (`name`, `id_masked`, `id_type`, `nationality`, `is_father`).
+- **`calls_used`** is the number of requests this lookup sent to Wathq. `0`
+  means it was answered from the cache. `cached` refers to the contract alone.
+
+| Status | When |
+|---|---|
+| `400` | `number` is not a unified or CR number, `language` is not `ar`/`en`, the body isn't a JSON object, or Wathq rejected the number. In the sandbox, an old CR number is refused because conversion is unavailable there. |
+| `403` from the conversion | The key's app isn't subscribed to Commercial Registration, which old CR numbers need. Answered as `502` with a message naming that product. |
+| `403` | Not local, cross-site, or missing `X-Wathq-Request: 1`. |
+| `404` | Wathq has no data for the number (`code` `404.2.1`). |
+| `409` | Another lookup is running. One runs at a time. |
+| `413` / `415` | The body is over 4 KB, or isn't JSON. |
+| `429` | Wathq's rate limit or quota was hit. |
+| `502` | Wathq refused the key (`401.1.1`), the key's app isn't subscribed to the product (`403`), the TLS certificate failed verification, or the answer was unusable. |
+| `503` | No key, invalid settings, or Wathq is unreachable. |
+| `504` | Wathq didn't answer within `WATHQ_TIMEOUT`. |
+
+```bash
+curl -s -X POST http://127.0.0.1:8100/wathq/company-contract -H "Content-Type: application/json" -H "X-Wathq-Request: 1" -d '{"number":"7001272124"}'
+```
+
 ## QR Bot integration
 
 The main backend exposes `/qr/health`, `POST /qr/jobs`, `GET /qr/jobs/{job_id}`,

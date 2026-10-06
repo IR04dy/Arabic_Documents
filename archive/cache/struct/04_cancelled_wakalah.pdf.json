@@ -1,0 +1,505 @@
+{
+ "document_type": "وكالة شرعية",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات الوكالة",
+   "fields": [
+    {
+     "label": "الجهة المصدرة",
+     "value": "كتابة العدل الأولى بمدينة الرياض",
+     "key": "issuing_authority",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 259,
+      "end": 291,
+      "quote": "الجهة المصدرة كتابة العدل الأولى بمدينة الرياض"
+     }
+    },
+    {
+     "label": "رقم الوكالة",
+     "value": "٧٥٠٤٣٢١١٨٤٤٥",
+     "key": "wakala_number",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 6,
+      "start": 152,
+      "end": 164,
+      "quote": "رقم الوكالة ٧٥٠٤٣٢١١٨٤٤٥"
+     }
+    },
+    {
+     "label": "تاريخ الوكالة",
+     "value": "١٠/١٠/١٤٤٥هـ",
+     "key": "wakala_issue_date_hijri",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 179,
+      "end": 191,
+      "quote": "تاريخ الوكالة ١٠/١٠/١٤٤٥هـ"
+     }
+    },
+    {
+     "label": "رقم الصك",
+     "value": "٧٥٠٤٣٢١١٨٤٤٥",
+     "key": "deed_number",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 6,
+      "start": 152,
+      "end": 164,
+      "quote": "رقم الوكالة ٧٥٠٤٣٢١١٨٤٤٥"
+     }
+    },
+    {
+     "label": "تاريخ الصك",
+     "value": "١٠/١٠/١٤٤٥هـ",
+     "key": "deed_date_hijri",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 179,
+      "end": 191,
+      "quote": "تاريخ الوكالة ١٠/١٠/١٤٤٥هـ"
+     }
+    },
+    {
+     "label": "المدينة",
+     "value": "الرياض",
+     "key": "issuing_city",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 285,
+      "end": 291,
+      "quote": "الجهة المصدرة كتابة العدل الأولى بمدينة الرياض"
+     }
+    },
+    {
+     "label": "حالة الوكالة",
+     "value": "لغاة",
+     "key": "wakala_status",
+     "required": false,
+     "status": "mismatch",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 8,
+      "start": 206,
+      "end": 210,
+      "quote": "حالة الوكالة ملغاة"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات الموكل",
+   "fields": [],
+   "record_label": "الموكل",
+   "records": [
+    [
+     {
+      "label": "اسم الموكل",
+      "value": "أحمد بن حسن بن عبدالله القحطاني",
+      "key": "principal_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 12,
+       "start": 312,
+       "end": 343,
+       "quote": "الاسم أحمد بن حسن بن عبدالله القحطاني"
+      }
+     },
+     {
+      "label": "رقم هوية الموكل",
+      "value": "١٠٦٦٤١٢٢٧٧",
+      "key": "principal_id_number",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 13,
+       "start": 355,
+       "end": 365,
+       "quote": "رقم الهوية ١٠٦٦٤١٢٢٧٧"
+      }
+     },
+     {
+      "label": "جنسية الموكل",
+      "value": "سعودي",
+      "key": "principal_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 14,
+       "start": 374,
+       "end": 379,
+       "quote": "الجنسية سعودي"
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "title": "بيانات الوكيل",
+   "fields": [],
+   "record_label": "الوكيل",
+   "records": [
+    [
+     {
+      "label": "اسم الوكيل",
+      "value": "علي بن رشيد بن جاسم الحجي",
+      "key": "agent_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 433,
+       "end": 458,
+       "quote": "الاسم علي بن رشيد بن جاسم الحجي"
+      }
+     },
+     {
+      "label": "رقم هوية الوكيل",
+      "value": "١٠٩٩٢٢٨٨٥٥",
+      "key": "agent_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 470,
+       "end": 480,
+       "quote": "رقم الهوية ١٠٩٩٢٢٨٨٥٥"
+      }
+     },
+     {
+      "label": "جنسية الوكيل",
+      "value": "سعودي",
+      "key": "agent_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 489,
+       "end": 494,
+       "quote": "الجنسية سعودي"
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "title": "موضوع الوكالة ونوعها",
+   "fields": [
+    {
+     "label": "نوع الوكالة",
+     "value": "خاصة",
+     "key": "wakala_scope",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 22,
+      "start": 558,
+      "end": 562,
+      "quote": "نوع الوكالة خاصة"
+     }
+    },
+    {
+     "label": "موضوع الوكالة",
+     "value": "بيع وإفراغ عقار",
+     "key": "wakala_subject",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 21,
+      "start": 530,
+      "end": 545,
+      "quote": "موضوع الوكالة بيع وإفراغ عقار"
+     }
+    }
+   ]
+  },
+  {
+   "title": "نص الوكالة والصلاحيات الممنوحة",
+   "fields": [
+    {
+     "label": "نص الوكالة",
+     "value": "",
+     "key": "wakala_text",
+     "required": true,
+     "status": "empty",
+     "origin": "model"
+    },
+    {
+     "label": "حق توكيل الغير",
+     "value": "لا",
+     "key": "substitution_allowed",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 2,
+      "line": 9,
+      "start": 982,
+      "end": 984,
+      "quote": "ملاحظة: ألغيت هذه الوكالة بناءً على طلب الموكل بتاريخ ٠٣/١٨/١٤٤٦هـ."
+     }
+    }
+   ]
+  },
+  {
+   "title": "مدة الوكالة وتاريخ انتهائها",
+   "fields": [
+    {
+     "label": "تاريخ انتهاء الوكالة",
+     "value": "١٢/٣٠/١٤٤٨هـ",
+     "key": "wakala_expiry_date_hijri",
+     "required": false,
+     "status": "mismatch",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 232,
+      "end": 244,
+      "quote": "تاريخ انتهاء الوكالة ١٢/٣٠/١٤٤٨هـ"
+     }
+    }
+   ]
+  },
+  {
+   "title": "معلومات أخرى في المستند",
+   "fields": [
+    {
+     "label": "تاريخ انتهاء الهوية",
+     "value": "١٢/١٠/١٤٥١هـ",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 15,
+      "start": 400,
+      "end": 412,
+      "quote": "تاريخ انتهاء الهوية ١٢/١٠/١٤٥١هـ"
+     }
+    },
+    {
+     "label": "المادة الأولى: نص الوكالة",
+     "value": "أقر الموكل المذكور أعلاه بأنه وكل وكيله المذكور وكالة شرعية معتبرة في بيع وإفراغ عقار، وفي مراجعة كافة الجهات الحكومية والأهلية ذات العلاقة، والتوقيع نيابةً عنه فيما ذكر، وقبض الثمن وتسليمه، واستلام الصكوك والوثائق اللازمة لذلك.",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 6,
+      "start": 734,
+      "end": 962,
+      "quote": "أقر الموكل المذكور أعلاه بأنه وكل وكيله المذكور وكالة شرعية معتبرة في بيع وإفراغ عقار، وفي مراجعة كافة الجهات الحكومية والأهلية ذات العلاقة، والتوقيع نيابةً عنه فيما ذكر، وقبض الثمن وتسليمه، واستلام الصكوك والوثائق اللازمة لذلك."
+     }
+    },
+    {
+     "label": "ملاحظة",
+     "value": "ألغيت هذه الوكالة بناءً على طلب الموكل بتاريخ ٠٣/١٨/١٤٤٦هـ.",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 9,
+      "start": 989,
+      "end": 1048,
+      "quote": "ملاحظة: ألغيت هذه الوكالة بناءً على طلب الموكل بتاريخ ٠٣/١٨/١٤٤٦هـ."
+     }
+    },
+    {
+     "label": "ختم كاتب العدل",
+     "value": ".....",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 10,
+      "start": 1065,
+      "end": 1070,
+      "quote": "ختم كاتب العدل: ....."
+     }
+    },
+    {
+     "label": "توقيع الموكل",
+     "value": ".....",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 11,
+      "start": 1085,
+      "end": 1090,
+      "quote": "توقيع الموكل: ....."
+     }
+    },
+    {
+     "label": "نوع الوثيقة",
+     "value": "وثيقة صادرة إلكترونياً ولا تحتاج إلى ختم يدوي",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 12,
+      "start": 1091,
+      "end": 1136,
+      "quote": "وثيقة صادرة إلكترونياً ولا تحتاج إلى ختم يدوي · للتحقق من صحة الوثيقة يُرجى زيارة بوابة ناجز"
+     }
+    },
+    {
+     "label": "ملاحظة للتحقق",
+     "value": "للتحقق من صحة الوثيقة يُرجى زيارة بوابة ناجز",
+     "origin": "document",
+     "source": {
+      "page": 2,
+      "line": 12,
+      "start": 1139,
+      "end": 1183,
+      "quote": "وثيقة صادرة إلكترونياً ولا تحتاج إلى ختم يدوي · للتحقق من صحة الوثيقة يُرجى زيارة بوابة ناجز"
+     }
+    }
+   ]
+  }
+ ],
+ "template_id": "wakalah_shariyyah",
+ "template_name_ar": "وكالة شرعية",
+ "missing_required": [
+  {
+   "key": "wakala_text",
+   "label_ar": "نص الوكالة",
+   "label_en": "Text of the grant"
+  }
+ ],
+ "extras": 7,
+ "passes": 3,
+ "expiry": {
+  "status": "unknown",
+  "status_ar": "غير محدّد — تحتاج مراجعة",
+  "date_text": "",
+  "date_normalized": "",
+  "calendar": "",
+  "date_gregorian": "",
+  "days_remaining": null,
+  "basis": "",
+  "confidence": "low",
+  "verified": false,
+  "derived": false,
+  "label": "",
+  "source": null,
+  "converter": "",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "لم يُعثر على تاريخ انتهاء في المستند",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "wakalah_shariyyah",
+  "name_ar": "وكالة شرعية",
+  "name_en": "Sharia power of attorney",
+  "family": "representation",
+  "confidence": 1.0,
+  "source": "llm+rules",
+  "generic": false,
+  "needs_review": false,
+  "rules_score": 0.75,
+  "corroborated": true,
+  "evidence": [
+   "وكالة شرعية",
+   "رقم الوكالة",
+   "حالة الوكالة ملغاة",
+   "نص الوكالة والصلاحيات الممنوحة",
+   "أقر الموكل المذكور أعلاه بأنه وكل وكيله المذكور وكالة شرعية معتبرة في بيع وإفراغ عقار",
+   "لا حق توكيل الغير",
+   "حالة الوكالة",
+   "نص الوكالة"
+  ],
+  "rules": [
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.75,
+    "raw": 6,
+    "max_raw": 8,
+    "hits": [
+     "وكالة شرعية",
+     "رقم الوكالة",
+     "حالة الوكالة",
+     "نص الوكالة",
+     "حق توكيل الغير",
+     "تاريخ انتهاء الوكالة",
+     "موضوع الوكالة",
+     "الصلاحيات الممنوحة"
+    ],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 10,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "representation",
+   "family_confidence": 0.99,
+   "template_id": "wakalah_shariyyah",
+   "confidence": 1.0,
+   "evidence": [
+    "وكالة شرعية",
+    "رقم الوكالة",
+    "حالة الوكالة ملغاة",
+    "نص الوكالة والصلاحيات الممنوحة",
+    "أقر الموكل المذكور أعلاه بأنه وكل وكيله المذكور وكالة شرعية معتبرة في بيع وإفراغ عقار",
+    "لا حق توكيل الغير"
+   ]
+  },
+  "error": null,
+  "ms": 2276
+ }
+}

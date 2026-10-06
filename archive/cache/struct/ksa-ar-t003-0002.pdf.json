@@ -1,0 +1,261 @@
+{
+ "document_type": "عقد عمل",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات السجل التجاري",
+   "fields": [
+    {
+     "label": "رقم السجل التجاري",
+     "value": "1128927371",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 1,
+      "start": 34,
+      "end": 44,
+      "quote": "رقم السجل التجاري: 1128927371"
+     }
+    }
+   ]
+  },
+  {
+   "title": "طبيعة العقد",
+   "fields": [
+    {
+     "label": "نوع العقد",
+     "value": "غير محدد المدة",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 2,
+      "start": 53,
+      "end": 67,
+      "quote": "عقد عمل غير محدد المدة"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات الأطراف",
+   "fields": [
+    {
+     "label": "اسم العامل",
+     "value": "احمد احمد بن عدوان",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 1544,
+      "end": 1562,
+      "quote": "اسم العامل: احمد احمد بن عدوان | اسم الممثل: محمد محمد الزبيدي"
+     }
+    },
+    {
+     "label": "اسم صاحب العمل / الممثل",
+     "value": "محمد محمد الزبيدي",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 19,
+      "start": 1577,
+      "end": 1594,
+      "quote": "اسم العامل: احمد احمد بن عدوان | اسم الممثل: محمد محمد الزبيدي"
+     }
+    }
+   ]
+  },
+  {
+   "title": "التوقيعات",
+   "fields": [
+    {
+     "label": "توقيع العامل",
+     "value": "_____",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 1604,
+      "end": 1609,
+      "quote": "التوقيع: _____ | التوقيع: _____"
+     }
+    },
+    {
+     "label": "توقيع صاحب العمل",
+     "value": "_____",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 20,
+      "start": 1604,
+      "end": 1609,
+      "quote": "التوقيع: _____ | التوقيع: _____"
+     }
+    },
+    {
+     "label": "تاريخ التوقيع",
+     "value": "12/05/2024",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 4,
+      "start": 105,
+      "end": 115,
+      "quote": "أبرم هذا العقد بتاريخ 12/05/2024 بين صاحب العمل والعامل المبينة بياناتهما في ملحق بيانات الأطراف، ويعد الملحق جزءاً لا يتجزأ من العقد."
+     }
+    }
+   ]
+  },
+  {
+   "title": "مراجعات وتعليمات عامة",
+   "fields": [
+    {
+     "label": "مدة التسجيل",
+     "value": "3 أشهر",
+     "origin": "document"
+    },
+    {
+     "label": "مقر العمل الأساسي",
+     "value": "مقر الشركة",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 681,
+      "end": 691,
+      "quote": "…ن أعمال مماثلة تتفق مع مؤهلاته وخبرته. ويكون مقر العمل الأساسي في مقر الشركة، ويجوز التكليف بالعمل في موقع آخر وفق المتطلبات النظامية وبما لا…"
+     }
+    },
+    {
+     "label": "مدة فترة التجربة",
+     "value": "ثلاثة أشهر",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 805,
+      "end": 815,
+      "quote": "يخضع العامل لفترة تجربة مدتها ثلاثة اشهر وتراعى عند حسابها الأحكام النظامية والحد الأقصى المقرر لها."
+     }
+    },
+    {
+     "label": "الإجازات",
+     "value": "الإجازات السنوية، المرضية، الرسمية، وغيرها وفق الأحكام النافذة",
+     "origin": "document"
+    },
+    {
+     "label": "الساعات والراحة",
+     "value": "وفق جدول العمل المعتمد",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 12,
+      "start": 921,
+      "end": 943,
+      "quote": "تحدد ساعات العمل والراحة وفق جدول العمل المعتمد لدى صاحب العمل، ويكون نمط الدوام وأيام العمل وفقاً للشروط والأحكام المنصوص عليها في هذا المستند."
+     }
+    },
+    {
+     "label": "الإجراءات النظامية",
+     "value": "تُفسر الأحكام بما يتفق مع نظام العمل واللوائح والقرارات النافذة في المملكة العربية السعودية",
+     "origin": "document"
+    }
+   ]
+  },
+  {
+   "title": "ملاحظات إضافية",
+   "fields": [
+    {
+     "label": "رقم العقد",
+     "value": "CON-98122",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 22,
+      "start": 1686,
+      "end": 1695,
+      "quote": "1 | [ختم رسمي] | CON-98122"
+     }
+    },
+    {
+     "label": "ملاحظة عن الملحق",
+     "value": "الملحق جزء لا يتجزأ من العقد",
+     "origin": "document"
+    }
+   ]
+  }
+ ],
+ "expiry": {
+  "status": "unknown",
+  "status_ar": "غير محدّد — تحتاج مراجعة",
+  "date_text": "",
+  "date_normalized": "",
+  "calendar": "",
+  "date_gregorian": "",
+  "days_remaining": null,
+  "basis": "",
+  "confidence": "low",
+  "verified": false,
+  "derived": false,
+  "label": "",
+  "source": null,
+  "converter": "",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "لم يُعثر على تاريخ انتهاء في المستند",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "generic_document",
+  "name_ar": "",
+  "name_en": "unrecognised document",
+  "family": "",
+  "confidence": 0.0,
+  "source": "fallback",
+  "generic": true,
+  "needs_review": true,
+  "rules_score": 0.0,
+  "corroborated": false,
+  "evidence": [],
+  "rules": [
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 10,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "unknown",
+   "family_confidence": 0.0,
+   "template_id": "unknown",
+   "confidence": 0.0,
+   "evidence": []
+  },
+  "error": null,
+  "ms": 873
+ }
+}

@@ -1,0 +1,1662 @@
+swagger: '2.0'
+info:
+  version: 2.0.0
+  title: Company Contracts
+host: api.wathq.sa
+basePath: /company-contract
+tags:
+  - name: Company Contract
+    description: ' '
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+  '/info/{crNationalNumber}':
+    parameters:
+      - type: string
+        name: crNationalNumber
+        in: path
+        required: true
+        description: Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+      - type: string
+        in: query
+        enum:
+          - ar
+          - en
+        name: language
+        description: contract information language - لغة بيانات عقد الشركة
+      - type: string
+        in: query
+        name: copyNumber
+        description: contract copy number - رقم نسخة العقد
+    get:
+      tags:
+       - Company Contract
+      summary: 'retrieves all company contract info, basic partners, and managers info'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/infoSuccessResponse'
+          examples:
+            application/json:
+              contractCopyNumber: 1
+              contractDate: '2023-01-24'
+              entity:
+                crNationalNumber: '7001272124'
+                crNumber: '1023236575'
+                name: شركة المجد
+                nameLangId: 1
+                nameLangDesc: اللغة العربية
+                companyDuration: 2
+                headquarterCityId: 3
+                headquarterCityName: الرياض
+                isLicenseBased: false
+                licenseIssuerNationalNo: null
+                licenseIssuerName: null
+                entityType:
+                  id: 1
+                  name: شركة
+                  formId: 1
+                  formName: ذات مسؤولية محدودة
+                  characters:
+                    - id: 1
+                      name: شخص واحد
+                capital:
+                  currencyId: 1
+                  currencyName: ريال سعودى
+                  contributionCapital:
+                    typeId: 2
+                    typeName: عيني
+                    cashCapital: 0
+                    inKindCapital: 100
+                    contributionValue: 20
+                    totalCashContribution: 0
+                    totalInKindContribution: 5
+                  stockCapital:
+                    typeId: 3
+                    typeName: نقدي وعيني
+                    cashCapital: 40000
+                    inKindCapital: 60000
+                    capital: 100000
+                    announcedCapital: 0
+                    paidCapital: 40000
+                    stocks:
+                      - typeId: 1
+                        typeName: ممتازة
+                        count: 1222
+                        value: 10000
+                        classReferenceID: null
+                        className: null
+                fiscalYear:
+                  isFirst: false
+                  calendarTypeId: 2
+                  calendarTypeName: ميلادي
+                  endMonth: 11
+                  endDay: 5
+                  endYear: 2024
+                parties:
+                  - name: فهد محمد معاذ خالد
+                    typeId: 1
+                    typeName: فرد سعودي
+                    identity:
+                      id: '1132381599'
+                      typeId: 1
+                      typeName: هوية وطنية
+                    partnership:
+                      - id: 2
+                        name: شريك
+                    partnerShare:
+                      cashContributionCount: 0
+                      inKindContributionCount: 0
+                      totalContributionCount: 0
+                    partnerProfitLossDistribution:
+                      profitDistribution: 0
+                      lossDistribution: 0
+                    nationality:
+                      id: 113
+                      name: السعودية
+                    crNumber: null
+                    licenseNo: null
+                    guardian:
+                      name: محمد عبدالله سعد القفاري
+                      identity:
+                        id: 1234567890
+                        typeId: 1
+                        typeName: هوية وطنية
+                      nationality:
+                        id: 1
+                        name: السعودية
+                      isFatherGuardian: true
+                management:
+                  structureId: 1
+                  structureName: مدير
+                  dismissalMethod: null
+                  managers:
+                    - name: فهد محمد معاذ خالد
+                      typeId: 1
+                      typeName: سعودى
+                      isLicensed: false
+                      identity:
+                        id: '1132381599'
+                        typeId: 1
+                        typeName: هوية وطنية
+                      nationality:
+                        id: 113
+                        name: السعودية
+                      positions:
+                        - id: 2
+                          name: نائب رئيس مجلس مديرين
+                  managementBoard:
+                    meetingQuorumId: 1
+                    meetingQuorumName: كل المديرين
+                    canDelegateAttendance: true
+                    termYears: 0
+                    wayOfWork: string
+                    meetingPlace: string
+                    additionalText: string
+                    positions:
+                      - id: 3
+                        name: رئيس مجلس مديرين
+                  directorsBoard:
+                    memberCount: 0
+                    termYears: 0
+                    value: 0
+                    valueMax: 0
+                    wayOfWork: string
+                    meetingPlace: string
+                    meetingQuorum: 0
+                    meetingLegalQuorum: 0
+                    canDelegateAttendance: true
+                    boardCallMechanism: string
+                    membershipExpiryTerms: string
+                    additionalText: string
+                    rewards:
+                      - id: string
+                        name: string
+                    positions:
+                      - id: 0
+                        name: string
+                activities:
+                  - id: '9820'
+                    name: الأنشطة غير المميَّزة لإنتاج الخدمات التي تقوم بها الأُسَر المعيشية الخاصة لاستخدامها الخاص
+              notificationChannel:
+                - id: 1
+                  name: رسائل نصية
+              partnerDecision:
+                - id: 1
+                  name: زيادة رأس مال الشركة
+                  approvePercentage: '100'
+                  approveAdditionalText: null
+              additionalDecisionText: null
+              setAsideDetails:
+                isSetAsideEnabled: true
+                profitAllocation:
+                  percentage: 15
+                  purpose: test side Profit Purpose
+              articles:
+                - id: 23
+                  text: يكون لمالك رأس المال الصلاحيات والسلطات المنصوص عليها في نظام الشركات، وتصدر قراراته كتابة، وتدون في سجل خاص لدى الشركة
+                  partId: null
+                  partName: null
+              additionalArticles:
+                - title: string
+                  text: string
+                  partId: 0
+                  partName: string
+        '400':
+          $ref: '#/responses/ErrorResponse400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'  
+      security:
+        - Authorization: []
+  '/management/{crNationalNumber}':
+    parameters:
+      - type: string
+        name: crNationalNumber
+        in: path
+        required: true
+        description: Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+      - type: string
+        in: query
+        enum:
+          - ar
+          - en
+        name: language
+        description: contract information language - لغة بيانات عقد الشركة
+    get:
+      tags:
+       - Company Contract
+      summary: 'retrieves all management info'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/managementResponse'
+          examples:
+            application/json:
+              structureId: 1
+              structureName: مدير
+              dismissalMethod: null
+              managers:
+                - name: فهد محمد معاذ خالد
+                  typeId: 1
+                  typeName: سعودى
+                  isLicensed: false
+                  identity:
+                    id: '1132381599'
+                    typeId: 1
+                    typeName: هوية وطنية
+                  nationality:
+                    id: 113
+                    name: السعودية
+                  positions:
+                    - id: 2
+                      name: نائب رئيس مجلس مديرين
+              managementBoard:
+                meetingQuorumId: 1
+                meetingQuorumName: كل المديرين
+                canDelegateAttendance: true
+                termYears: 0
+                wayOfWork: string
+                meetingPlace: string
+                additionalText: string
+                positions:
+                  - id: 3
+                    name: رئيس مجلس مديرين
+              directorsBoard:
+                memberCount: 0
+                termYears: 0
+                value: 0
+                valueMax: 0
+                wayOfWork: string
+                meetingPlace: string
+                meetingQuorum: 0
+                meetingLegalQuorum: 0
+                canDelegateAttendance: true
+                boardCallMechanism: string
+                membershipExpiryTerms: string
+                additionalText: string
+                rewards:
+                  - id: string
+                    name: string
+                positions:
+                  - id: 3
+                    name: رئيس مجل مديرين
+        '400':
+          $ref: '#/responses/ErrorResponseManagement400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse' 
+      security:
+        - Authorization: []
+  '/manager/{crNationalNumber}/{id}/{idType}':
+    parameters:
+      - type: string
+        name: crNationalNumber
+        in: path
+        required: true
+        description: Commercial Registration National Number - الرقم الوطني الموحد للسجل التجاري
+      - type: string
+        name: id
+        in: path
+        required: true
+        description: manger identification number - رقم هوية المدير
+      - type: string
+        enum:
+        - National_ID
+        - Resident_ID
+        - Passport
+        - GCC_ID
+        - Endowment_Deed_No
+        - License_No
+        - CR_National_ID
+        - Foreign_CR_No
+        - National_Number
+        - Boarder_Number
+        - CR_Number
+        - UndefinedD
+        name: idType
+        in: path
+        required: true
+        description: identification type - نوع الهوية
+      - name: permissionId
+        in: query
+        description: permission role id  - رمز صلاحية المدير
+        type: string
+        minLength: 3
+        maxLength: 4
+      - type: string
+        in: query
+        name: language
+        description: contract information language - لغة بيانات عقد الشركة
+        enum:
+          - ar
+          - en
+    get:
+      tags:
+       - Company Contract
+      summary: retrieves manager info with permissions
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/managerResponse'
+          examples:
+            application/json:
+              name: فهد محمد معاذ خالد
+              typeId: 1
+              typeName: سعودى
+              isLicensed: false
+              identity:
+                id: '1132381599'
+                typeId: 1
+                typeName: هوية وطنية
+              nationality:
+                id: 113
+                name: السعودية
+              positions:
+                - id: 2
+                  name: نائب رئيس مجلس مديرين
+              permissions:
+                - id: 77442
+                  name: قبول الرهن
+                  canIssuePOA: true
+                  canDelegate: true
+                  specialConditionText: له كامل الصلاحيات
+                  exerciseMethodId: 3
+                  exerciseMethodDescription: منفرد
+        '400':
+          $ref: '#/responses/ErrorResponseManager400'
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'  
+      operationId: ''
+      description: ''
+      security:
+        - Authorization: []
+  '/lookup/articleParts':
+    get:
+      summary: Retrieves all article parts lookups 
+      description: 'Retrieves all article parts lookups - الاستعلام عن كافة أبواب البنود النصية   '
+      tags: 
+      - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+           application/json:
+              id: 1
+              nameAr: تأسيس الشركة
+              nameEn: Establishment of the Company
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+       
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []      
+  '/lookup/partnerDecision':
+    get:
+      summary: Retrieves all partner decision lookups 
+      description: 'Retrieves all partner decision lookups - الاستعلام عن كافة قرارات الشركاء '
+      tags: 
+      - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+           application/json:
+              id: 10
+              nameAr: تعديل بيانات السجل التجاري
+              nameEn: Amending commercial register
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+       
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []            
+  '/lookup/exerciseMethod':
+    get:
+      summary: Retrieves all exercise method lookups
+      description:  'Retrieves all exercise method lookups - الاستعلام عن كافة طرق ممارسة الصلاحيات  ' 
+      tags: 
+      - lookups
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/lookup'
+          examples:
+           application/json:
+              id: 1
+              nameAr: منفرد
+              nameEn: Individual
+        '401':
+          $ref: '#/responses/ErrorResponse401'
+        
+        '404':
+          $ref: '#/responses/ErrorResponse404'
+       
+        '500':
+          $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'
+      security:
+        - Authorization: []            
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+        minLength: 4
+        maxLength: 10
+      message:
+        type: string
+  infoSuccessResponse:
+    type: object
+    properties:
+      contractCopyNumber:
+        type: integer
+        description: Contract Copy Number - رقم نسخة العقد
+      contractDate:
+        type: string
+        description: Contract Date - تاريخ العقد
+      entity:
+        type: object
+        required:
+          - crNationalNumber
+          - nameLangId
+          - nameLangDesc
+          - isLicenseBased
+          - capital
+          - parties
+        properties:
+          crNationalNumber:
+            type: string
+            description: CR National Number - الرقم الموحد للسجل التجاري
+          crNumber:
+            type: integer
+            description: CR Number - رقم السجل التجاري
+          name:
+            type: string
+            description: Entity Full Name (Arabic) - الاسم التجاري كامل باللغة العربية
+          nameLangId:
+            type: integer
+            description: Entity Name Language ID - رمز لغة الاسم التجاري
+          nameLangDesc:
+            type: string
+            description: Entity Name Language Description - وصف لغة الاسم التجاري
+          companyDuration:
+            type: integer
+            description: Company Duration - مدة الشركة
+          headquarterCityId:
+            type: integer
+            description: Headquarter City ID - رمز مدينة المقر الرئيس للشركة
+          headquarterCityName:
+            type: string
+            description: Headquarter City Name - وصف مدينة المقر الرئيس للشركة
+          isLicenseBased:
+            type: boolean
+            description: Is License Based - هل السجل مصدر بناء على ترخيص
+          licenseIssuerNationalNo:
+            type: string
+            description: License Issuer National Number - الرقم الموحد لجهة إصدار الترخيص
+          licenseIssuerName:
+            type: string
+            description: License Issuer Description - وصف جهة إصدار الترخيص
+          entityType:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Entity Type ID - رمز نوع الكيان
+              name:
+                type: string
+                description: Entity Type Description - وصف نوع الكيان
+              formId:
+                type: integer
+                description: Company Form ID - رمز شكل الشركة
+              formName:
+                type: string
+                description: Company Form Description - وصف شكل الشركة
+              characters:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Company Character ID - رمز صفة الشركة
+                    name:
+                      type: string
+                      description: Company Character Description - وصف صفة الشركة
+                  required:
+                    - id
+                    - name
+            required:
+              - id
+              - name
+              - formId
+              - formName
+          capital:
+            type: object
+            description: 'Capital -  رأس المال '
+            required:
+              - currencyId
+              - currencyName
+            properties:
+              currencyId:
+                type: integer
+                description: Capital Currency ID - رمز عملة رأس المال
+              currencyName:
+                type: string
+                description: Capital Currency Description - وصف عملة رأس المال
+              contributionCapital:
+                type: object
+                description: Contribution Capital Details - بيانات رأس المال لمجموعة الحصص
+                properties:
+                  typeId:
+                    type: integer
+                    description: Capital Type ID - رمز نوع رأس المال
+                  typeName:
+                    type: string
+                    description: Capital Type Description - وصف نوع رأس المال
+                  cashCapital:
+                    type: number
+                    description: Cash Capital - رأس المال النقدي
+                  inKindCapital:
+                    type: number
+                    description: In-kind Capital - رأس المال العيني
+                  contributionValue:
+                    type: number
+                    description: Contribution Value - قيمة الحصة
+                  totalCashContribution:
+                    type: number
+                    description: Total Cash Contribution - إجمالي عدد الحصص النقدية
+                  totalInKindContribution:
+                    type: number
+                    description: Total In-kind Contribution - إجمالي عدد الحصص العينية
+                required:
+                  - typeId
+                  - typeName
+                  - contributionValue
+                  - totalCashContribution
+                  - totalInKindContribution
+              stockCapital:
+                type: object
+                description: Stock Capital Details -  بيانات رأس المال لمجموعة الأسهم
+                properties:
+                  typeId:
+                    type: integer
+                    description: Capital Type ID - رمز نوع رأس المال
+                  typeName:
+                    type: string
+                    description: Capital Type Description - وصف نوع رأس المال
+                  cashCapital:
+                    type: number
+                    description: Cash Capital - رأس المال النقدي
+                  inKindCapital:
+                    type: number
+                    description: In-kind Capital - رأس المال العيني
+                  capital:
+                    type: number
+                    description: Capital - رأس المال المصدر
+                  announcedCapital:
+                    type: number
+                    description: Announced Capital - رأس المال المصرح به
+                  paidCapital:
+                    type: number
+                    description: Paid Capital - رأس المال المدفوع
+                  stocks:
+                    type: array
+                    description: Stock List - قائمة الأسهم
+                    items:
+                      type: object
+                      properties:
+                        typeId:
+                          type: integer
+                          description: Stock Type ID - رمز نوع السهم
+                        typeName:
+                          type: string
+                          description: Stock Type Description - وصف نوع السهم
+                        count:
+                          type: integer
+                          description: Stock Count - عدد الأسهم
+                        value:
+                          type: number
+                          description: Stock Value - قيمة السهم
+                        classReferenceID:
+                          type: integer
+                          description: Stock Class Reference ID - رمز فئة السهم
+                        className:
+                          type: string
+                          description: Stock Class Description - وصف فئة السهم
+                      required:
+                        - typeId
+                        - typeName
+                        - count
+                        - value
+                        - classReferenceID
+                        - className
+                required:
+                  - typeId
+                  - typeName
+                  - capital
+                  - paidCapital
+          fiscalYear:
+            type: object
+            description: Fiscal Year - السنة المالية للمنشأة
+            properties:
+              isFirst:
+                type: boolean
+                description: Is First Fiscal Year - هل السنة المالية الأولى
+              calendarTypeId:
+                type: integer
+                description: Calendar Type ID - رمز نوع التقويم
+              calendarTypeName:
+                type: string
+                description: Calendar Type Description - وصف نوع التقويم
+              endMonth:
+                type: integer
+                description: Fiscal Year End Month - شهر نهاية السنة المالية
+              endDay:
+                type: integer
+                description: Fiscal Year End Day - يوم نهاية السنة المالية
+              endYear:
+                type: integer
+                description: Fiscal Year End Year - سنة نهاية السنة المالية
+            required:
+              - isFirst
+              - calendarTypeId
+              - calendarTypeName
+          parties:
+            type: array
+            description: 'parity List - قائمة الشركاء / مالك المؤسسة '
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name - الاسم
+                typeId:
+                  type: integer
+                  description: Parity Type ID - رمز نوع الشريك
+                typeName:
+                  type: string
+                  description: Parity Type Description - وصف نوع الشريك
+                identity:
+                  type: object
+                  required:
+                    - id
+                    - typeId
+                    - typeName
+                  properties:
+                    id:
+                      type: string
+                      description: Identifier No - رقم الإثبات
+                    typeId:
+                      type: integer
+                      description: Identifier Type ID - رمز نوع الاثبات
+                    typeName:
+                      type: string
+                      description: Identifier Type Description - وصف نوع الاثبات
+                partnership:
+                  type: array
+                  description: partnership -   طبيعة الشراكة
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: Partnership Type ID - رمز طبيعة الشراكة
+                      name:
+                        type: string
+                        description: Partnership Type Description - وصف طبيعة الشراكة
+                    required:
+                      - id
+                      - name
+                partnerShare:
+                  type: object
+                  description: 'partnerShare - قائمة حصص الشريك '
+                  properties:
+                    cashContributionCount:
+                      type: integer
+                      description: Cash Contribution Count - عدد الحصص النقدية
+                    inKindContributionCount:
+                      type: integer
+                      description: In-kind Contribution Count - عدد الحصص العينية
+                    totalContributionCount:
+                      type: integer
+                      description: Total Contribution Count - إجمالي عدد حصص الشريك
+                partnerProfitLossDistribution:
+                  type: object
+                  description: 'Partner Profit Loss Distribution - نسب الربح والخسارة على الشركاء '
+                  properties:
+                    profitDistribution:
+                      type: integer
+
+                      description: 'Profit Percentage - النسبة من الأرباح '
+                    lossDistribution:
+                      type: integer
+                     
+                      description: Loss Percentage - النسبة من الخسائر
+                  required:
+                    - profitDistribution
+                    - lossDistribution
+                nationality:
+                  type: object
+                  description: Nationality - الجنسية
+                  properties:
+                    id:
+                      type: integer
+                      description: Nationality ID - رمز الجنسية
+                    name:
+                      type: string
+                      description: Nationality Description - وصف الجنسية
+                  required:
+                    - id
+                    - name
+                crNumber:
+                  type: string
+                  description: Commercial Registry Number - رقم السجل التجاري
+                licenseNo:
+                  type: string
+                  description: License No - رقم الترخيص
+                guardian:
+                  type: object
+                 
+                  description: Guardian Info - بيانات الوصي
+                  properties:
+                    name:
+                      type: string
+                     
+                      description: 'name - الاسم '
+                    identity:
+                      type: object
+                      
+                      required:
+                        - id
+                        - typeId
+                        - typeName
+                      properties:
+                        id:
+                          type: string
+                        
+                          description: Identifier No - رقم الإثبات
+                        typeId:
+                          type: integer
+                        
+                          description: Identifier Type ID - رمز نوع الاثبات
+                        typeName:
+                          type: string
+                         
+                          description: Identifier Type Description - وصف نوع الاثبات
+                    nationality:
+                      type: object
+                    
+                      description: Nationality - الجنسية
+                      required:
+                        - id
+                        - name
+                      properties:
+                        id:
+                          type: integer
+                         
+                          description: Nationality ID - رمز الجنسية
+                        name:
+                          type: string
+                         
+                          description: Nationality Description - وصف الجنسية
+                    isFatherGuardian:
+                      type: boolean
+                     
+                      description: Is Father Guardian - هل الوصي هو الأب؟
+                  required:
+                    - name
+                    - identity
+                    - nationality
+                    - isFatherGuardian
+              required:
+                - name
+                - typeId
+                - typeName
+                - identity
+          management:
+            type: object
+            description: Management Structure - نوع الهيكل الإداري  للمنشأة
+            properties:
+              structureId:
+                type: integer
+                description: Management Structure ID - رمز الهيكل الإداري
+              structureName:
+                type: string
+                description: Management Structure Description - وصف الهيكل الإداري
+              dismissalMethod:
+                type: string
+                description: Dismissal Method - طريقة العزل
+              managers:
+                type: array
+                description: 'Manager List - قائمة المديرين '
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Name - الاسم
+                    typeId:
+                      type: integer
+                      description: Manager Type ID - رمز نوع المدير
+                    typeName:
+                      type: string
+                      description: Manager Type Name - وصف نوع المدير
+                    isLicensed:
+                      type: boolean
+                      description: Is Licensed - هل مدير مرخص
+                    identity:
+                      type: object
+                      required:
+                        - id
+                        - typeId
+                        - typeName
+                      properties:
+                        id:
+                          type: string
+                          description: Identifier No - رقم الإثبات
+                        typeId:
+                          type: integer
+                          description: Identifier Type ID - رمز نوع الاثبات
+                        typeName:
+                          type: string
+                          description: Identifier Type Description - وصف نوع الاثبات
+                    nationality:
+                      type: object
+                      description: Nationality - الجنسية
+                      required:
+                        - id
+                        - name
+                      properties:
+                        id:
+                          type: integer
+                          description: Nationality ID - رمز الجنسية
+                        name:
+                          type: string
+                          description: Nationality Description - وصف الجنسية
+                    positions:
+                      type: array
+                      description: Manager Position List - قائمة مناصب المدير بالمجلس
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Manager Position ID - رمز منصب المدير بالمجلس
+                          name:
+                            type: string
+                            description: Manager Position Description - وصف منصب المدير بالمجلس
+                        required:
+                          - id
+                          - name
+                  required:
+                    - name
+                    - typeId
+                    - typeName
+                    - isLicensed
+                    - identity
+                    - nationality
+              managementBoard:
+                type: object
+                description: Management Board - مجلس المديرين
+                properties:
+                  meetingQuorumId:
+                    type: integer
+                    description: Meeting Quorum ID - رمز النصاب الصحيح للاجتماع
+                  meetingQuorumName:
+                    type: string
+                    description: Meeting Quorum Description (Arabic) - وصف النصاب الصحيح للاجتماع
+                  canDelegateAttendance:
+                    type: boolean
+                    description: Can Delegate Attendance - جواز التوكيل بالحضور
+                  termYears:
+                    type: integer
+                    description: Board Term Years - عدد سنوات المجلس
+                  wayOfWork:
+                    type: string
+                    description: Board Way of Work - طريقة عمل المجلس
+                  meetingPlace:
+                    type: string
+                    description: Board Meeting Place - مكان انعقاد الجلسات
+                  additionalText:
+                    type: string
+                    description: Additional Text - بيان إضافي
+                  positions:
+                    type: array
+                    description: Position List - قائمة مناصب مجلس المديرين
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: Position ID - رمز المنصب بالمجلس
+                        name:
+                          type: string
+                          description: Position Description (Arabic) - وصف المنصب بالمجلس باللغة العربية
+                      required:
+                        - id
+                        - name
+                required:
+                  - meetingQuorumId
+                  - meetingQuorumName
+              directorsBoard:
+                type: object
+                description: Directors Board - مجلس الإدارة
+                properties:
+                  memberCount:
+                    type: integer
+                    description: Board Member Count - عدد أعضاء مجلس الادارة
+                  termYears:
+                    type: integer
+                    description: Board Term Years - عدد سنوات المجلس
+                  value:
+                    type: integer
+                    description: Board Reward Value - قيمة منحة المجلس
+                  valueMax:
+                    type: integer
+                    description: Board Reward Value Max - قيمة منحة المجلس القصوى
+                  wayOfWork:
+                    type: string
+                    description: Board Way of Work - طريقة عمل المجلس
+                  meetingPlace:
+                    type: string
+                    description: Board Meeting Place - مكان انعقاد الجلسات
+                  meetingQuorum:
+                    type: integer
+                    description: Meeting Quorum - نصاب اجتماع الادارة
+                  meetingLegalQuorum:
+                    type: integer
+                    description: Meeting Legal Quorum - النصاب القانوني لاجتماع الادارة
+                  canDelegateAttendance:
+                    type: boolean
+                    description: Can Delegate Attendance - جواز التوكيل بالحضور
+                  boardCallMechanism:
+                    type: string
+                    description: Board Call Mechanism - طريقة تواصل المجلس
+                  membershipExpiryTerms:
+                    type: string
+                    description: Membership Expiry Terms - قواعد انهاء العضوية
+                  additionalText:
+                    type: string
+                    description: Additional Text - بيان إضافي
+                  rewards:
+                    type: array
+                    items:
+                      type: object
+                      description: |
+                        Board Reward List - قائمة منح المجلس
+                      properties:
+                        id:
+                          type: string
+                          description: 'Board Reward Id - رمز منحة المجلس '
+                        name:
+                          type: string
+                          description: Board Reward Description - وصف منحة المجلس
+                      required:
+                        - id
+                        - name
+                  positions:
+                    type: array
+                    description: |
+                      Board Reward List - قائمة منح المجلس
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: Position ID - رمز المنصب بالمجلس
+                        name:
+                          type: string
+                          description: Position Description (Arabic) - وصف المنصب بالمجلس باللغة العربية
+                      required:
+                        - id
+                        - name
+                required:
+                  - memberCount
+                  - termYears
+                  - meetingQuorum
+                  - meetingLegalQuorum
+            required:
+              - structureId
+              - structureName
+              - managers
+          activities:
+            type: array
+            description: Activity List - قائمة أنشطة السجل التجاري
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Activity ID - رمز النشاط التجاري
+                name:
+                  type: string
+                  description: Activity Description - وصف النشاط التجاري
+              required:
+                - id
+                - name
+      notificationChannel:
+        type: array
+        description: ' Notification Method List - قائمة وسائل الإبلاغ'
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: Notification Method ID - رمز وسيلة الابلاغ
+            name:
+              type: string
+              description: Notification Method Description (Arabic) - وصف وسيلة الابلاغ
+          required:
+            - id
+            - name
+      partnerDecision:
+        type: array
+        description: Partner Decision -  قرارات الشركاء
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: Partner Decision ID - رمز القرار
+            name:
+              type: string
+              description: Partner Decision Description (Arabic) - وصف القرار
+            approvePercentage:
+              type: string
+              description: Approve Percentage - النسبة اللازمة لاعتماد القرار
+            approveAdditionalText:
+              type: string
+              description: Approve Additional Text - شرط إضافي لاعتماد القرار
+          required:
+            - id
+            - name
+            - approvePercentage
+      additionalDecisionText:
+        type: string
+        description: Additional Decision Text - قرارات إضافية
+      setAsideDetails:
+        type: object
+        description: |
+          Set Aside Percentage - تجنيب نسبة من الارباح
+        properties:
+          isSetAsideEnabled:
+            type: boolean
+            description: Set Aside Percentage - تجنيب نسبة من الارباح
+          profitAllocation:
+            type: object
+            properties:
+              percentage:
+                type: integer
+                description: Side Profit Percentage - نسبة الأرباح المجنبة
+              purpose:
+                type: string
+                description: Side Profit Purpose - الغرض من تجنيب النسبة
+        required:
+          - isSetAsideEnabled
+      articles:
+        type: array
+        description: Contract  Article List - البنود النصية
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: Article ID - رمز البند
+            text:
+              type: string
+              description: Full Article Text - نص البند
+            partId:
+              type: integer
+              description: Part ID - رمز الباب
+            partName:
+              type: string
+              description: Part Description (Arabic) - وصف الباب باللغة العربية
+          required:
+            - id
+      additionalArticles:
+        type: array
+        description: |
+          additional Article -  البنود النصية الاضافية 
+        items:
+          type: object
+          properties:
+            title:
+              type: string
+              description: Article Title - عنوان البند
+            text:
+              type: string
+              description: Article Text - نص البند
+            partId:
+              type: integer
+              description: Part ID - رمز الباب
+            partName:
+              type: string
+              description: Part Description (Arabic) - وصف الباب باللغة العربية
+          required:
+            - title
+            - text
+    required:
+      - contractCopyNumber
+      - contractDate
+      - entity
+      - articles
+  managementResponse:
+    type: object
+    properties:
+      structureId:
+        type: integer
+        description: Management Structure ID - رمز الهيكل الإداري
+      structureName:
+        type: string
+        description: Management Structure Description - وصف الهيكل الإداري
+      dismissalMethod:
+        type: string
+        description: Dismissal Method - طريقة العزل
+      managers:
+        type: array
+        description: 'Manager List - قائمة المديرين '
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name - الاسم
+            typeId:
+              type: integer
+              description: Manager Type ID - رمز نوع المدير
+            typeName:
+              type: string
+              description: Manager Type Name - وصف نوع المدير
+            isLicensed:
+              type: boolean
+              description: Is Licensed - هل مدير مرخص
+            identity:
+              type: object
+              required:
+                - id
+                - typeId
+                - typeName
+              properties:
+                id:
+                  type: string
+                  description: Identifier No - رقم الإثبات
+                typeId:
+                  type: integer
+                  description: Identifier Type ID - رمز نوع الاثبات
+                typeName:
+                  type: string
+                  description: Identifier Type Description - وصف نوع الاثبات
+            nationality:
+              type: object
+              description: Nationality - الجنسية
+              required:
+                - id
+                - name
+              properties:
+                id:
+                  type: integer
+                  description: Nationality ID - رمز الجنسية
+                name:
+                  type: string
+                  description: Nationality Description - وصف الجنسية
+            positions:
+              type: array
+              description: Manager Position List - قائمة مناصب المدير بالمجلس
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Manager Position ID - رمز منصب المدير بالمجلس
+                  name:
+                    type: string
+                    description: Manager Position Description - وصف منصب المدير بالمجلس
+                required:
+                  - id
+                  - name
+          required:
+            - name
+            - typeId
+            - typeName
+            - isLicensed
+            - identity
+            - nationality
+      managementBoard:
+        type: object
+        description: Management Board - مجلس المديرين
+        properties:
+          meetingQuorumId:
+            type: integer
+            description: Meeting Quorum ID - رمز النصاب الصحيح للاجتماع
+          meetingQuorumName:
+            type: string
+            description: Meeting Quorum Description (Arabic) - وصف النصاب الصحيح للاجتماع
+          canDelegateAttendance:
+            type: boolean
+            description: Can Delegate Attendance - جواز التوكيل بالحضور
+          termYears:
+            type: integer
+            description: Board Term Years - عدد سنوات المجلس
+          wayOfWork:
+            type: string
+            description: Board Way of Work - طريقة عمل المجلس
+          meetingPlace:
+            type: string
+            description: Board Meeting Place - مكان انعقاد الجلسات
+          additionalText:
+            type: string
+            description: Additional Text - بيان إضافي
+          positions:
+            type: array
+            description: Position List - قائمة مناصب مجلس المديرين
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Position ID - رمز المنصب بالمجلس
+                name:
+                  type: string
+                  description: Position Description (Arabic) - وصف المنصب بالمجلس باللغة العربية
+              required:
+                - id
+                - name
+        required:
+          - meetingQuorumId
+          - meetingQuorumName
+      directorsBoard:
+        type: object
+        description: Directors Board - مجلس الإدارة
+        properties:
+          memberCount:
+            type: integer
+            description: Board Member Count - عدد أعضاء مجلس الادارة
+          termYears:
+            type: integer
+            description: Board Term Years - عدد سنوات المجلس
+          value:
+            type: integer
+            description: Board Reward Value - قيمة منحة المجلس
+          valueMax:
+            type: integer
+            description: Board Reward Value Max - قيمة منحة المجلس القصوى
+          wayOfWork:
+            type: string
+            description: Board Way of Work - طريقة عمل المجلس
+          meetingPlace:
+            type: string
+            description: Board Meeting Place - مكان انعقاد الجلسات
+          meetingQuorum:
+            type: integer
+            description: Meeting Quorum - نصاب اجتماع الادارة
+          meetingLegalQuorum:
+            type: integer
+            description: Meeting Legal Quorum - النصاب القانوني لاجتماع الادارة
+          canDelegateAttendance:
+            type: boolean
+            description: Can Delegate Attendance - جواز التوكيل بالحضور
+          boardCallMechanism:
+            type: string
+            description: Board Call Mechanism - طريقة تواصل المجلس
+          membershipExpiryTerms:
+            type: string
+            description: Membership Expiry Terms - قواعد انهاء العضوية
+          additionalText:
+            type: string
+            description: Additional Text - بيان إضافي
+          rewards:
+            type: array
+            description: |
+              Board Reward List - قائمة منح المجلس
+            required:
+              - id
+              - name
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: 'Board Reward Id - رمز منحة المجلس '
+                name:
+                  type: string
+                  description: Board Reward Description - وصف منحة المجلس
+          positions:
+            type: array
+            description: |
+              Board Reward List - قائمة منح المجلس
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Position ID - رمز المنصب بالمجلس
+                name:
+                  type: string
+                  description: Position Description (Arabic) - وصف المنصب بالمجلس باللغة العربية
+              required:
+                - id
+                - name
+        required:
+          - memberCount
+          - termYears
+          - meetingQuorum
+          - meetingLegalQuorum
+          - rewards
+          - positions
+    required:
+      - structureId
+      - structureName
+      - managers
+  managerResponse:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name - الاسم
+        typeId:
+          type: integer
+          description: Manager Type ID - رمز نوع المدير
+        typeName:
+          type: string
+          description: Manager Type Name - وصف نوع المدير
+        isLicensed:
+          type: boolean
+          description: Is Licensed - هل مدير مرخص
+        identity:
+          type: object
+          required:
+            - id
+            - typeId
+            - typeName
+          properties:
+            id:
+              type: string
+              description: Identifier No - رقم الإثبات
+            typeId:
+              type: integer
+              description: Identifier Type ID - رمز نوع الاثبات
+            typeName:
+              type: string
+              description: Identifier Type Description - وصف نوع الاثبات
+        nationality:
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: integer
+              description: Nationality ID - رمز الجنسية
+            name:
+              type: string
+              description: Nationality Description - وصف الجنسية
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Manager Position ID - رمز منصب المدير بالمجلس
+              name:
+                type: string
+                description: Manager Position Description - وصف منصب المدير بالمجلس
+            required:
+              - id
+              - name
+        permissions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Manager Permission ID - رمز الصلاحية
+              name:
+                type: string
+                description: Permission Description - وصف الصلاحية
+              canIssuePOA:
+                type: boolean
+                description: Can Issue POA  - جواز التوكيل
+              canDelegate:
+                type: boolean
+                description: Can Delegate - جواز الإنابة
+              specialConditionText:
+                type: string
+                description: Special Condition Text - شرط خاص بالصلاحية
+              exerciseMethodId:
+                type: integer
+                description: Exercise Method ID - رمز طريقة ممارسة الصلاحية
+              exerciseMethodDescription:
+                type: string
+                description: Exercise Method Description - وصف طريقة ممارسة الصلاحية
+            required:
+              - id
+              - name
+              - exerciseMethodId
+              - exerciseMethodDescription
+      required:
+        - name
+        - typeId
+        - typeName
+        - isLicensed
+        - identity
+        - nationality
+  lookup:
+    title: lookup
+    type: object
+    properties:
+      id:
+        type: integer
+      nameAr:
+        type: string
+        x-stoplight:
+          id: 0wd370dlsp0hm
+      nameEr:
+        type: string
+        
+    required:
+      - id
+      - nameAr
+      - nameEr         
+responses:
+  ErrorResponse400:
+    description: |
+      **business error , Here is listed of code** :
+       code: 400.1.1 - message: Input data is required
+       code: 400.1.2 - message: Commercial registration national number must be digits only
+       code: 400.1.3 - message: Commercial registration national number must be 10 digits
+       code: 400.1.4 - message: Language should be 'ar' or 'en
+       code: 400.1.5 - message: Contract copy number must be digits only
+       code: 400.1.9 - message: Contract copy number must not exceed 5 digits
+       code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Data inputs are required
+  ErrorResponseManagement400:
+    description: |
+      **business error , Here is listed of code** :
+       code: 400.1.1 - message: Input data is required
+       code: 400.1.2 - message: Commercial registration national number must be digits only
+       code: 400.1.3 - message: Commercial registration national number must be 10 digits
+       code: 400.1.4 - message: Language should be 'ar' or 'en
+       code: 404.2.1 - message: No Results Found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Data inputs are required
+  ErrorResponseManager400:
+    description: |
+      **business error , Here is listed of code** :
+      code: 400.1.1 - message: Input data is required
+      code: 400.1.2 - message: Commercial registration national number must be digits only
+      code: 400.1.3 - message: Commercial registration national number must be 10 digits
+      code: 400.1.4 - message: Language should be 'ar' or 'en
+      code: 400.1.6 - message: Invalid ID type
+      code: 400.1.7 - message: The ID number must be 3 to 20 digits
+      code: 400.1.8 - message: Permission Id must be digits
+      code: 404.2.1 - message: No Results Found
+
+       
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 400.1.1
+        message: Data inputs are required
+  ErrorResponse401:
+    description: unauthorized
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 401.1.1
+        message: Invalid ApiKey
+  ErrorResponse404:
+    description: not found
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 404.2.1
+        message: No Results Found
+  ErrorResponse500:
+    description: internal server error
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.2.1
+        message: Internal Error
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request
+    description: |
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br /> 400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br /> 401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br /> 403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br /> 404 Not Found - Resource/verb combination is not found. <br /> 409 Conflict - The operation is creating a conflict in the resource status<br /> 500 Internal Server Error - Internal errors within the API provider and its backends<br /> 502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br /> 503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br /> 504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+    examples:
+      application/json:
+        code: 500.1.1
+        message: Internal Server Error
+      application/xml: <?xml version="1.0" encoding="UTF-8"?>  <error>   <code>500.1.1</code>  <message>Internal Server Error</message>   </error>      

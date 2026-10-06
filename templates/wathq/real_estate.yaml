@@ -1,0 +1,466 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Wathq Real Estate API
+host: api.wathq.sa
+basePath: /moj/real-estate
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  Authorization:
+    type: apiKey
+    name: apiKey
+    in: header
+paths:
+ '/deed/{deedNumber}/{idNumber}/{idType}':
+    parameters:
+      - type: integer
+        name: deedNumber
+        in: path
+        required: true
+        description: deed number - رقم الصك
+      - type: string
+        name: idNumber
+        in: path
+        required: true
+        description: identification ID of owner - رقم هوية أحد الملاك
+      - type: string
+        name: idType
+        in: path
+        required: true
+        description: identification type - نوع الهوية
+        enum:
+          - National_ID
+          - Resident_ID
+          - Passport
+          - CR_NO
+          - Endowment_Deed_No
+          - license_No
+          - Foreign_CR_No
+          - Gov_National_ID
+    get:
+      summary: Get real estate deed details - الاستعلام عن بيانات الصك العقاري
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/deedSuccessResponse'
+        
+        '400':
+           $ref: '#/responses/ErrorResponse400'    
+        '401':
+           $ref: '#/responses/ErrorResponse401'
+        '404':
+           $ref: '#/responses/ErrorResponse404'
+        '500':
+             $ref: '#/responses/ErrorResponse500'
+        default:
+          $ref: '#/responses/DefaultErrorResponse'     
+      security:
+        - Authorization: []
+
+ 
+definitions:
+   deedSuccessResponse:
+      type: object
+      properties:
+        deedDetails:
+          type: object
+          properties:
+            deedNumber:
+              type: integer
+              example: 2323425XXXX
+            deedSerial:
+              type: integer
+              example: 2145xx
+            deedDate:
+              type: string
+              example: 1434-5-15
+            deedText:
+              type: string
+              example: null
+          required:
+            - deedNumber
+            - deedSerial
+        courtDetails:
+          type: object
+          properties:
+            deedSource:
+              type: string
+              example: كتابة العدل الأولى بجدة
+            deedCity:
+              type: string
+              example: جدة
+        deedStatus:
+          type: string
+          example: active
+        deedInfo:
+          type: object
+          properties:
+            deedArea:
+              type: number
+              example: 602.1
+            deedAreaText:
+              type: string
+              example: 602.1 متر مربع
+            isRealEstateConstrained:
+              type: boolean
+              example: false
+            isRealEstateHalted:
+              type: boolean
+              example: false
+            isRealEstateMortgaged:
+              type: boolean
+              example: false
+            isRealEstateTestamented:
+              type: boolean
+              example: false
+        ownerDetails:
+          type: array
+          items:
+            type: object
+            properties:
+              ownerName:
+                type: string
+                example: محمد خالد محمد ال محمد
+              birthDate:
+                type: string
+                example: 1400-01-01
+              idNumber:
+                type: string
+                example: 109479xxxx
+              idType:
+                type: string
+                example: 1
+              idTypeText:
+                type: string
+                example: سجل مدني
+              ownerType:
+                type: string
+                example: Personal
+              nationality:
+                type: string
+                example: سعودي
+              owningArea:
+                type: number
+                example: 150.525
+              owningAmount:
+                type: number
+                example: 25
+              constrained:
+                type: integer
+                example: 0
+              halt:
+                type: integer
+                example: 0
+              pawned:
+                type: integer
+                example: 0
+              testament:
+                type: integer
+                example: 0
+            required:
+              - idType
+              - idTypeText
+              - owningArea
+              - owningAmount
+              - constrained
+              - halt
+              - pawned
+              - testament
+        deedLimitsDetails:
+          type: object
+          properties:
+            northLimitName:
+              type: string
+              example: قطعه
+            northLimitDescription:
+              type: string
+              example: رقم 318
+            northLimitLength:
+              type: number
+              example: 27
+            northLimitLengthChar:
+              type: string
+              example: سبعة وعشرون متر
+            southLimitName:
+              type: string
+              example: قطعه
+            southLimitDescription:
+              type: string
+              example: رقم 344
+            southLimitLength:
+              type: number
+              example: 27
+            southLimitLengthChar:
+              type: string
+              example: سبعة وعشرون متر
+            eastLimitName:
+              type: string
+              example: شارع
+            eastLimitDescription:
+              type: string
+              example: بعرض 12 متر
+            eastLimitLength:
+              type: number
+              example: 22.6
+            eastLimitLengthChar:
+              type: string
+              example: اثنين وعشرون متر وستون سنتمتر
+            westLimitName:
+              type: string
+              example: قطعه
+            westLimitDescription:
+              type: string
+              example: رقم 876
+            westLimitLength:
+              type: number
+              example: 22
+            westLimitLengthChar:
+              type: string
+              example: اثنين وعشرون متر 
+          required:
+            - northLimitLength
+            - southLimitLength
+            - eastLimitLength
+            - westLimitLength
+        realEstateDetails:
+          type: array
+          items:
+            type: object
+            properties:
+              deedSerial:
+                type: integer
+                example: 123233xx
+              regionCode:
+                type: string
+                example: 4
+              regionName:
+                type: string
+                example: القصيم
+              cityCode:
+                type: integer
+                example: 37528
+              cityName:
+                type: string
+                example: جدة
+              realEstateTypeName:
+                type: string
+                example: null
+              landNumber:
+                type: string
+                example: 8443
+              planNumber:
+                type: string
+                example: 3 / 491 / ع / ت
+              area:
+                type: number
+                example: 602.1
+              areaText:
+                type: string
+                example: ستمائة و اثنين متر مربعا وعشره سنتمترا مربعا 
+              districtCode:
+                type: integer
+                example: 37165
+              districtName:
+                type: string
+                example: النهضة
+              locationDescription:
+                type: string
+                example: قطعة الارض  8443 مخطط 3 / 491
+              constrained:
+                type: integer
+                example: 0
+              halt:
+                type: integer
+                example: 0
+              pawned:
+                type: integer
+                example: 0
+              testament:
+                type: integer
+                example: 0
+              isNorthRiyadhExceptioned:
+                type: integer
+                example: 0
+              realEstateBorderDetails:
+                type: object
+                properties:
+                  northLimitDescription:
+                    type: string
+                    example: رقم 234
+                  northLimitLength:
+                    type: number
+                    example: 27
+                  northLimitLengthChar:
+                    type: string
+                    example: سبعة وعشرون متر
+                  southLimitDescription:
+                    type: string
+                    example: رقم 453  
+                  southLimitLength:
+                    type: number
+                    example: 27
+                  southLimitLengthChar:
+                    type: string
+                    example: سبعة وعشرون متر
+                  eastLimitDescription:
+                    type: string
+                    example: بعرض 12 م
+                  eastLimitLength:
+                    type: number
+                    example: 22ز6
+                  eastLimitLengthChar:
+                    type: string
+                    example: اثنين وعشرون متر وستون سنتمتر
+                  westLimitDescription:
+                    type: string
+                    example: رقم 123
+                  westLimitLength:
+                    type: number
+                    example: 22
+                  westLimitLengthChar:
+                    type: string
+                    example: اثنين وعشرون متر 
+                required:
+                  - northLimitLength
+                  - southLimitLength
+                  - eastLimitLength
+                  - westLimitLength
+            required:
+              - deedSerial
+              - cityCode
+              - area
+              - constrained
+              - halt
+              - pawned
+              - testament
+              - isNorthRiyadhExceptioned
+      description: ''
+   
+   error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+ 
+responses:
+  ErrorResponse400:
+          headers:
+                  THIQAH-API-ApiMsgRef:
+                    type: string
+                    format: uuid
+                    description: unique guid for each request
+      
+      
+                  THIQAH-API-ClientMsgRef:
+                    type: string
+                    format: uuid
+                    description: The original client reference value sent in the request     
+          description:  > 
+            **business error , Here is listed of code** :
+            
+              code: 400.1.2  - message: Deed number must be digits
+              code: 400.1.3  - message: Invalid ID Type
+              code: 400.1.4  - message: National ID must be digits only
+              code: 400.1.5  - message: National ID must be 10 digits
+              
+        
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+
+           application/json:
+              code: 400.1.1
+              message: All inputs data are required 
+  ErrorResponse401:
+          description: unauthorized
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request    
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+           application/json:
+              code: 401.1.1
+              message: Invalid ApiKey
+  ErrorResponse404:
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request     
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+           application/json:
+              code: 404.2.1
+              message: There is no matching data
+          description:  > 
+          
+            **business error , Here is listed of code** :
+                code: 404.2.1  - message: There is no matching data
+                code: 404.2.2  - message: Not Found 
+
+     
+
+  ErrorResponse500:
+          description: internal server error
+          headers:
+            THIQAH-API-ApiMsgRef:
+              type: string
+              format: uuid
+              description: unique guid for each request
+            THIQAH-API-ClientMsgRef:
+              type: string
+              format: uuid
+              description: The original client reference value sent in the request     
+          schema:
+            $ref: '#/definitions/error'
+                  
+          examples:
+            application/json:
+              code: 500.2.1
+              message: Internal Server Error                
+  DefaultErrorResponse:
+    headers:
+      THIQAH-API-ApiMsgRef:
+        type: string
+        format: uuid
+        description: unique guid for each request
+      THIQAH-API-ClientMsgRef:
+        type: string
+        format: uuid
+        description: The original client reference value sent in the request  
+    description: >
+      Supported HTTP Status Codes 400, 401, 403, 404, 409, 429, 500, 502, 503, 504 <br /><br />
+      400 Bad Request - Will be returned for any data processing errors which API consumer should correct.<br />
+      401 Unauthorized - Authentication errors. Credentials provided are not valid or expired.<br />
+      403 Forbidden - Authorization error. Credentials are valid, but insufficient privileges or scope.<br />
+      404 Not Found - Resource/verb combination is not found. <br />
+      409 Conflict - The operation is creating a conflict in the resource status<br />
+      500 Internal Server Error - Internal errors within the API provider and its backends<br />
+      502 Bad Gateway - The backend application provider did not provide a valid undestandable response<br />
+      503 Service Unavailable - API resource is not available for use and/or one of the backend providers is not available.<br />
+      504 Gateway Timeout - The backend application provider did not provide a response within the Standard timeout window.<br />
+    schema:
+      $ref: '#/definitions/error'
+  
+  
+                

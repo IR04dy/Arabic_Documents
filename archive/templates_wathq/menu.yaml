@@ -1,0 +1,1049 @@
+# VERIFICATION MENU — the single source the prompt menu, the review screen and the
+# run step are built from.  Grouped by THING (what the document is about), not by endpoint.
+#
+# Conventions
+#   key.required   true = the register cannot be opened without it; false = optional or
+#                  one-of/conditional (note_ar says which in plain words).
+#   key.shape      what a valid value looks like (digits are folded from Arabic-Indic and
+#                  separators stripped by the app before validation).
+#   fact.compare   exact | date | name | text | number | status | list | flag
+#   fact.source    the primary query and the response path the value is read from;
+#                  queries[].supplies maps every fact a query returns to its path there.
+#   fact.personal  true = masked to the last four digits before the browser; the exact
+#                  comparison must run server-side on the unmasked answer.
+#   prompt_ar      the item name as the compact prompt menu (menu_prompt.ar.txt) spells it
+#                  and as the LLM must echo it in the checklist ("item").  "X: Y" is a
+#                  grouped item (group X, sub-item Y).  Several facts may share one
+#                  prompt item (e.g. the Hijri and Gregorian issue dates share
+#                  "تاريخ الإصدار"; the twelve boundary facts share "حدود الصك"): the
+#                  LLM copies one printed value, the compare step tests it against every
+#                  fact behind the item.  A key and a fact with the same prompt_ar are one
+#                  checklist entry.  prompt_ar: null = register-only: not asked of the LLM
+#                  (to keep the prompt within budget), shown from the register answer and
+#                  compared as not_in_document unless the user types a value in review.
+#                  The LLM only reports items it found (no "absent" rows); its output schema
+#                  restricts "thing" to the thing ids and "item" to that thing's prompt_ar
+#                  strings.  Measured with the Qwen3-4B tokenizer (GGUF vocab, no model run)
+#                  the prompt menu above the ---- line is 1,496 tokens (517 whitespace-
+#                  separated words, first explanatory line included); the question, rules
+#                  and JSON shape below it are 641 tokens.  Arabic runs at about 3 tokens
+#                  per word, so the "1,000 words" rule of thumb must not be used here.
+#   key.derived_from  fact ids whose checklist value doubles as this key (a person's ID is
+#                  read from the partner / manager / beneficiary ID lines, never asked as
+#                  an item of its own).
+#   query.needs    key ids; "a | b" means one of them is enough; query.optional lists keys
+#                  that are sent when present; query.required_if names an optional key that
+#                  becomes mandatory for given values of another key (catalog required_if):
+#                  the run step refuses to send without it.  internal: true = a conversion
+#                  step the user never sees (old CR -> unified number).
+#   shared keys    cr_number and unified_number are ONE value across things: the review
+#                  screen asks once.  A person's ID is NOT shared: the company's partner /
+#                  manager and the employee on the same contract are different people.
+#   labels         label_ar comes from the Wathq spec descriptions (wathq_view.spec_labels)
+#                  or, for specs without descriptions (national address, attorney, deed,
+#                  employee), from the catalog's label overrides.  Generic spec labels
+#                  ("الاسم", "رقم الإثبات") are qualified by their owning object
+#                  (المدير / الشريك / المصفي); a leading "وصف " / "هل " may be dropped
+#                  when rendering the prompt.
+#   verdicts       matches | partly_matches | differs | not_in_document | not_in_register
+#
+version: 1
+verdicts: [matches, partly_matches, differs, not_in_document, not_in_register]
+shared_keys: [cr_number, unified_number]
+
+things:
+
+# =============================================================================
+- id: company
+  label_ar: "الشركة / المنشأة التجارية (السجل التجاري)"
+  label_en: "Company (commercial registration)"
+  about_ar: "سجل وزارة التجارة الذي يقيد كل شركة ومؤسسة برقمها واسمها وحالتها ورأس مالها وشركائها ومديريها وأنشطتها."
+  document_words_ar: "شهادة سجل تجاري، مستخرج السجل، عقد، فاتورة، ترويسة خطاب، عرض سعر، شهادة شطب، قرار تصفية، نموذج إفصاح عن المستفيد الحقيقي"
+  keys:
+    - id: cr_number
+      label_ar: "رقم السجل التجاري"
+      prompt_ar: "رقم السجل التجاري"
+      shape: "10 digits starting 1-6 (old CR number); converted silently to the unified number before any query"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين: رقم السجل التجاري أو الرقم الوطني الموحد؛ شهادة السجل الحديثة تطبع الاثنين معاً"
+      aliases_ar: ["رقم السجل التجاري", "السجل التجاري رقم", "سجل تجاري رقم", "س.ت", "رقم السجل", "C.R. No.", "CR"]
+    - id: unified_number
+      label_ar: "الرقم الوطني الموحد للسجل التجاري (700)"
+      prompt_ar: "الرقم الوطني الموحد"
+      shape: "10 digits starting 70"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين: الرقم الوطني الموحد أو رقم السجل التجاري"
+      aliases_ar: ["الرقم الوطني الموحد", "الرقم الموحد للمنشأة", "الرقم الموحد", "الرقم الوطني الموحد للمنشأة", "National Number", "UNN"]
+    - id: person_id
+      label_ar: "رقم الهوية / الإثبات"
+      prompt_ar: null
+      derived_from: [partner_ids, manager_ids, beneficiary_ids]
+      shape: "3-20 digits; national ID 1XXXXXXXXX, iqama 2XXXXXXXXX, or an entity number (700…, licence, endowment deed)"
+      personal: true
+      required: false
+      note_ar: "مسار بديل: حين يذكر المستند شخصاً برقم هويته ويصفه مالكاً أو شريكاً أو مديراً في شركة، أو لا يذكر رقم سجل الشركة أصلاً؛ لا يُسأل عنه النموذج بنداً مستقلاً بل يُؤخذ من «الشريك: رقم الهوية» أو «المدير: رقم الهوية» أو «المستفيد الحقيقي: رقم الهوية»؛ يلزم معه نوع الهوية"
+      aliases_ar: ["رقم الهوية", "رقم الهوية الوطنية", "هوية وطنية رقم", "سجل مدني رقم", "رقم بطاقة الأحوال", "رقم الإقامة", "إقامة رقم", "هوية مقيم", "جواز سفر رقم", "رقم الحدود", "هوية خليجية", "ID No."]
+    - id: person_id_type
+      label_ar: "نوع الهوية"
+      prompt_ar: null
+      derived_from: [partner_ids, manager_ids, beneficiary_ids]
+      shape: "one of National_ID | Resident_ID | Passport | GCC_ID | Endowment_Deed_No | License_No | CR_National_ID | Foreign_CR_No | National_Number | Boarder_Number"
+      personal: false
+      required: false
+      note_ar: "يلزم مع رقم الهوية؛ لا يُطبع كحقل بل يُستنتج من الكلمة المرافقة لرقم الهوية في موضع («where») السطر الذي أُخذ منه الرقم (هوية وطنية / سجل مدني ← National_ID، إقامة ← Resident_ID، جواز سفر ← Passport، هوية خليجية ← GCC_ID، رقم الحدود ← Boarder_Number) أو من أول رقم: ١ هوية وطنية، ٢ إقامة"
+      aliases_ar: ["هوية وطنية", "سجل مدني", "بطاقة أحوال", "إقامة", "هوية مقيم", "جواز سفر", "هوية خليجية", "رقم حدود", "صك وقف", "ترخيص"]
+    - id: person_nationality
+      label_ar: "الجنسية"
+      prompt_ar: null
+      shape: "nationality name as printed; the app converts it to the numeric NIC code"
+      personal: false
+      required: false
+      note_ar: "تلزم فقط حين تكون الهوية جواز سفر أو سجلاً تجارياً أجنبياً"
+      aliases_ar: ["الجنسية", "سعودي الجنسية", "مصري الجنسية", "Nationality"]
+  facts:
+    - {id: unified_number, label_ar: "الرقم الموحد للسجل التجاري", prompt_ar: "الرقم الوطني الموحد", compare: exact, source: {query: cr.info, path: crNationalNumber}}
+    - {id: cr_number, label_ar: "رقم السجل التجاري", prompt_ar: "رقم السجل التجاري", compare: exact, source: {query: cr.info, path: crNumber}}
+    - {id: company_name, label_ar: "الاسم التجاري للمنشأة", prompt_ar: "اسم الشركة", compare: name, source: {query: cr.info, path: name}}
+    - {id: entity_type, label_ar: "وصف نوع الكيان", prompt_ar: "نوع الكيان", compare: text, source: {query: cr.info, path: entityType.name}, note_ar: "شركة أو مؤسسة"}
+    - {id: legal_form, label_ar: "وصف شكل الشركة", prompt_ar: "الشكل القانوني", compare: text, source: {query: cr.info, path: entityType.formName}, note_ar: "ذات مسؤولية محدودة، مساهمة، مساهمة مبسطة، تضامن، توصية بسيطة"}
+    - {id: company_characters, label_ar: "وصف صفة الشركة", prompt_ar: null, compare: list, source: {query: cr.info, path: "entityType.characters[].name"}, note_ar: "شخص واحد، مهنية، غير ربحية، عائلية"}
+    - {id: cr_status, label_ar: "وصف حالة السجل التجاري", prompt_ar: "حالة السجل", compare: status, source: {query: cr.status, path: name}, note_ar: "فعال، معلق، مشطوب، منتهي"}
+    - {id: issue_date_gregorian, label_ar: "تاريخ اصدار السجل التجاري ميلادي", prompt_ar: "تاريخ الإصدار", compare: date, source: {query: cr.info, path: issueDateGregorian}}
+    - {id: issue_date_hijri, label_ar: "تاريخ اصدار السجل التجاري هجري", prompt_ar: "تاريخ الإصدار", compare: date, source: {query: cr.info, path: issueDateHijri}}
+    - {id: confirmation_date_gregorian, label_ar: "تاريخ التأكيد السنوي (ميلادي)", prompt_ar: "تاريخ التأكيد السنوي", compare: date, source: {query: cr.status_dates, path: confirmationDate.gregorian}, note_ar: "آخر تأكيد / تجديد؛ ليس «تاريخ انتهاء السجل» المطبوع على الشهادات القديمة (السجل لا يعيده، فلا يُقارن به)"}
+    - {id: confirmation_date_hijri, label_ar: "تاريخ التأكيد السنوي (هجري)", prompt_ar: "تاريخ التأكيد السنوي", compare: date, source: {query: cr.status_dates, path: confirmationDate.hijri}}
+    - {id: suspension_date, label_ar: "تاريخ التعليق (ميلادي)", prompt_ar: null, compare: date, source: {query: cr.status_dates, path: suspensionDate.gregorian}}
+    - {id: reactivation_date, label_ar: "تاريخ رفع التعليق (ميلادي)", prompt_ar: null, compare: date, source: {query: cr.status_dates, path: reactivationDate.gregorian}}
+    - {id: deletion_date, label_ar: "تاريخ الشطب (ميلادي)", prompt_ar: null, compare: date, source: {query: cr.status_dates, path: deletionDate.gregorian}}
+    - {id: company_duration, label_ar: "مدة الشركة", prompt_ar: "مدة الشركة", compare: number, source: {query: cr.info, path: companyDuration}, note_ar: "بالسنوات؛ قد تُكتب بالحروف"}
+    - {id: is_main_cr, label_ar: "هل السجل التجاري رئيسي", prompt_ar: "رئيسي أم فرع", compare: flag, source: {query: cr.info, path: isMain}, note_ar: "رئيسي أو فرع"}
+    - {id: main_cr_number, label_ar: "رقم السجل التجاري الرئيسي", prompt_ar: "رئيسي أم فرع", compare: exact, source: {query: cr.info, path: mainCrNumber}, note_ar: "على شهادة الفرع"}
+    - {id: main_unified_number, label_ar: "الرقم الموحد للسجل الرئيسي", prompt_ar: "رئيسي أم فرع", compare: exact, source: {query: cr.info, path: mainCrNationalNumber}}
+    - {id: in_liquidation, label_ar: "هل الشركة جاري تصفيتها", prompt_ar: "حالة السجل", compare: flag, source: {query: cr.info, path: inLiquidationProcess}}
+    - {id: headquarter_city, label_ar: "وصف مدينة المقر الرئيسي للشركة", prompt_ar: "مدينة المقر", compare: name, source: {query: cr.info, path: headquarterCityName}}
+    - {id: activities, label_ar: "وصف النشاط التجاري", prompt_ar: "الأنشطة", compare: list, source: {query: cr.info, path: "activities[].name"}, note_ar: "الأنشطة / أغراض الشركة؛ المستند قد يصوغها بغير النص الرسمي"}
+    - {id: activity_codes, label_ar: "رمز النشاط التجاري", prompt_ar: "الأنشطة", compare: list, source: {query: cr.info, path: "activities[].id"}, note_ar: "رمز ISIC"}
+    - {id: capital, label_ar: "رأس المال", prompt_ar: "رأس المال: الإجمالي", compare: number, source: {query: cr.capital, path: capital}}
+    - {id: capital_currency, label_ar: "وصف عملة رأس المال", prompt_ar: null, compare: text, source: {query: cr.capital, path: currencyName}}
+    - {id: capital_type, label_ar: "وصف نوع رأس المال", prompt_ar: null, compare: text, source: {query: cr.capital, path: contributionCapital.typeName}, note_ar: "نقدي / عيني / نقدي وعيني"}
+    - {id: cash_capital, label_ar: "رأس المال النقدي", prompt_ar: "رأس المال: النقدي", compare: number, source: {query: cr.capital, path: contributionCapital.cashCapital}}
+    - {id: in_kind_capital, label_ar: "رأس المال العيني", prompt_ar: "رأس المال: العيني", compare: number, source: {query: cr.capital, path: contributionCapital.inKindCapital}}
+    - {id: share_value, label_ar: "قيمة الحصة", prompt_ar: "رأس المال: قيمة الحصة", compare: number, source: {query: cr.capital, path: contributionCapital.contributionValue}}
+    - {id: total_cash_shares, label_ar: "إجمالي عدد الحصص النقدية", prompt_ar: "رأس المال: عدد الحصص", compare: number, source: {query: cr.capital, path: contributionCapital.totalCashContribution}}
+    - {id: total_in_kind_shares, label_ar: "إجمالي عدد الحصص العينية", prompt_ar: "رأس المال: عدد الحصص", compare: number, source: {query: cr.capital, path: contributionCapital.totalInKindContribution}}
+    - {id: issued_capital, label_ar: "راس المال المصدر", prompt_ar: "رأس المال: الإجمالي", compare: number, source: {query: cr.capital, path: stockCapital.capital}, note_ar: "شركات المساهمة"}
+    - {id: announced_capital, label_ar: "رأس المال المصرح به", prompt_ar: null, compare: number, source: {query: cr.capital, path: stockCapital.announcedCapital}}
+    - {id: paid_capital, label_ar: "رأس المال المدفوع", prompt_ar: null, compare: number, source: {query: cr.capital, path: stockCapital.paidCapital}}
+    - {id: stock_count, label_ar: "عدد الأسهم", prompt_ar: "رأس المال: عدد الأسهم", compare: number, source: {query: cr.capital, path: "stockCapital.stocks[].count"}}
+    - {id: stock_value, label_ar: "قيمة السهم", prompt_ar: "رأس المال: قيمة السهم", compare: number, source: {query: cr.capital, path: "stockCapital.stocks[].value"}}
+    - {id: stock_types, label_ar: "وصف نوع السهم", prompt_ar: null, compare: list, source: {query: cr.capital, path: "stockCapital.stocks[].typeName"}}
+    - {id: partner_names, label_ar: "اسم الشريك / المالك", prompt_ar: "الشريك: الاسم", compare: name, source: {query: cr.owners, path: "[].name"}, note_ar: "قائمة؛ يُطابق كل شريك باسمه أو هويته"}
+    - {id: partner_types, label_ar: "وصف نوع الشريك", prompt_ar: null, compare: text, source: {query: cr.owners, path: "[].typeName"}, note_ar: "فرد سعودي، شركة، مستثمر أجنبي، جمعية"}
+    - {id: partner_ids, label_ar: "رقم الإثبات (الشريك)", prompt_ar: "الشريك: رقم الهوية", compare: exact, personal: true, source: {query: cr.owners, path: "[].identity.id"}}
+    - {id: partner_id_types, label_ar: "وصف نوع الاثبات (الشريك)", prompt_ar: null, compare: text, source: {query: cr.owners, path: "[].identity.typeName"}}
+    - {id: partnership_kinds, label_ar: "وصف طبيعة الشراكة", prompt_ar: "الشريك: صفة الشراكة", compare: list, source: {query: cr.owners, path: "[].partnership[].name"}, note_ar: "شريك برأس المال، مؤسس، متضامن، موصٍ"}
+    - {id: partner_shares, label_ar: "إجمالي عدد حصص الشريك", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: cr.owners, path: "[].partnerShare.totalContributionCount"}, note_ar: "عدد حصص لا نسبة؛ النسبة = حصص الشريك ÷ إجمالي الحصص، والمبلغ = الحصص × قيمة الحصة"}
+    - {id: partner_cash_shares, label_ar: "عدد الحصص النقدية (الشريك)", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: cr.owners, path: "[].partnerShare.cashContributionCount"}}
+    - {id: partner_in_kind_shares, label_ar: "عدد الحصص العينية (الشريك)", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: cr.owners, path: "[].partnerShare.inKindContributionCount"}}
+    - {id: partner_nationalities, label_ar: "وصف الجنسية (الشريك)", prompt_ar: "الشريك: الجنسية", compare: text, source: {query: cr.owners, path: "[].nationality.name"}}
+    - {id: partner_cr_numbers, label_ar: "رقم السجل التجاري (الشريك الاعتباري)", prompt_ar: "الشريك: رقم سجله", compare: exact, source: {query: cr.owners, path: "[].crNumber"}}
+    - {id: partner_license_numbers, label_ar: "رقم الترخيص (الشريك)", prompt_ar: null, compare: exact, source: {query: cr.owners, path: "[].licenseNo"}}
+    - {id: manager_names, label_ar: "اسم المدير", prompt_ar: "المدير: الاسم", compare: name, source: {query: cr.managers, path: "[].name"}, note_ar: "المدير العام، المفوض بالتوقيع، عضو مجلس الإدارة"}
+    - {id: manager_types, label_ar: "وصف نوع المدير", prompt_ar: null, compare: text, source: {query: cr.managers, path: "[].typeName"}}
+    - {id: manager_ids, label_ar: "رقم الإثبات (المدير)", prompt_ar: "المدير: رقم الهوية", compare: exact, personal: true, source: {query: cr.managers, path: "[].identity.id"}}
+    - {id: manager_id_types, label_ar: "وصف نوع الاثبات (المدير)", prompt_ar: null, compare: text, source: {query: cr.managers, path: "[].identity.typeName"}}
+    - {id: manager_nationalities, label_ar: "وصف الجنسية (المدير)", prompt_ar: "المدير: الجنسية", compare: text, source: {query: cr.managers, path: "[].nationality.name"}}
+    - {id: manager_positions, label_ar: "وصف منصب المدير بالمجلس", prompt_ar: "المدير: المنصب", compare: list, source: {query: cr.managers, path: "[].positions[].name"}, note_ar: "مدير عام، رئيس مجلس المديرين، عضو"}
+    - {id: management_structure, label_ar: "وصف الهيكل الإداري", prompt_ar: null, compare: text, source: {query: cr.fullinfo, path: management.structureName}, note_ar: "مدير / مجلس مديرين / مجلس إدارة"}
+    - {id: license_issuer, label_ar: "وصف جهة إصدار الترخيص", prompt_ar: null, compare: text, source: {query: cr.fullinfo, path: licenseIssuerName}}
+    - {id: partners_nationality, label_ar: "وصف جنسية الشركاء", prompt_ar: "الشريك: الجنسية", compare: text, source: {query: cr.fullinfo, path: PartnersNationalityName}, note_ar: "سعودية، مختلطة، أجنبية"}
+    - {id: phone, label_ar: "رقم الهاتف", prompt_ar: "الهاتف", compare: exact, personal: true, source: {query: cr.fullinfo, path: contactInfo.phoneNo}}
+    - {id: mobile, label_ar: "رقم الجوال", prompt_ar: "الجوال", compare: exact, personal: true, source: {query: cr.fullinfo, path: contactInfo.mobileNo}}
+    - {id: email, label_ar: "البريد الالكتروني", prompt_ar: "البريد الإلكتروني", compare: exact, personal: true, source: {query: cr.fullinfo, path: contactInfo.email}}
+    - {id: website, label_ar: "الموقع الالكتروني", prompt_ar: null, compare: exact, source: {query: cr.fullinfo, path: contactInfo.websiteUrl}}
+    - {id: fiscal_year_calendar, label_ar: "وصف نوع التقويم (السنة المالية)", prompt_ar: "نهاية السنة المالية", compare: text, source: {query: cr.fullinfo, path: fiscalYear.calendarTypeName}}
+    - {id: fiscal_year_end_month, label_ar: "شهر نهاية السنة المالية", prompt_ar: "نهاية السنة المالية", compare: number, source: {query: cr.fullinfo, path: fiscalYear.endMonth}}
+    - {id: fiscal_year_end_day, label_ar: "يوم نهاية السنة المالية", prompt_ar: "نهاية السنة المالية", compare: number, source: {query: cr.fullinfo, path: fiscalYear.endDay}}
+    - {id: liquidator_names, label_ar: "اسم المصفي", prompt_ar: "المصفي: الاسم", compare: name, source: {query: cr.fullinfo, path: "liquidators[].name"}}
+    - {id: liquidator_ids, label_ar: "رقم الإثبات (المصفي)", prompt_ar: "المصفي: رقم الهوية", compare: exact, personal: true, source: {query: cr.fullinfo, path: "liquidators[].identity.id"}}
+    - {id: branch_cr_numbers, label_ar: "رقم السجل التجاري (الفرع)", prompt_ar: "الفرع: رقم السجل", compare: list, source: {query: cr.branches, path: "[].crNumber"}, note_ar: "هل سجل الفرع المذكور تابع لهذه الشركة"}
+    - {id: branch_unified_numbers, label_ar: "الرقم الموحد للسجل التجاري (الفرع)", prompt_ar: "الفرع: رقم السجل", compare: list, source: {query: cr.branches, path: "[].crNationalNumber"}}
+    - {id: branch_names, label_ar: "الاسم التجاري للمنشأة (الفرع)", prompt_ar: "الفرع: الاسم", compare: list, source: {query: cr.branches, path: "[].name"}}
+    - {id: beneficiary_names, label_ar: "اسم المستفيد", prompt_ar: "المستفيد الحقيقي: الاسم", compare: name, source: {query: cr.beneficiary, path: "beneficiaries[].name"}, note_ar: "المستفيد الحقيقي / المالك الفعلي"}
+    - {id: beneficiary_types, label_ar: "وصف نوع المستفيد", prompt_ar: null, compare: text, source: {query: cr.beneficiary, path: "beneficiaries[].type.name"}}
+    - {id: beneficiary_ids, label_ar: "رقم هوية المستفيد", prompt_ar: "المستفيد الحقيقي: رقم الهوية", compare: exact, personal: true, source: {query: cr.beneficiary, path: "beneficiaries[].identity.id"}}
+    - {id: beneficiary_id_types, label_ar: "وصف نوع هوية (المستفيد)", prompt_ar: null, compare: text, source: {query: cr.beneficiary, path: "beneficiaries[].identity.typeName"}}
+    - {id: beneficiary_nationalities, label_ar: "وصف جنسية المستفيد", prompt_ar: "المستفيد الحقيقي: الجنسية", compare: text, source: {query: cr.beneficiary, path: "beneficiaries[].nationality.name"}}
+    - {id: beneficiary_genders, label_ar: "وصف جنس المستفيد", prompt_ar: null, compare: text, source: {query: cr.beneficiary, path: "beneficiaries[].gender.name"}}
+    - {id: beneficiary_reasons, label_ar: "سبب إضافة المستفيد", prompt_ar: "المستفيد الحقيقي: سبب الإضافة", compare: list, source: {query: cr.beneficiary, path: "beneficiaries[].addingReasons[].description"}, note_ar: "ملكية ٢٥٪ فأكثر، سيطرة، تعيين المديرين"}
+    - {id: beneficiary_guardian_name, label_ar: "اسم الوصي", prompt_ar: null, compare: name, source: {query: cr.beneficiary, path: "beneficiaries[].guardian.name"}}
+    - {id: beneficiary_guardian_id, label_ar: "رقم هوية الوصي", prompt_ar: null, compare: exact, personal: true, source: {query: cr.beneficiary, path: "beneficiaries[].guardian.identity.id"}}
+    - {id: beneficiary_guardian_nationality, label_ar: "وصف جنسية الوصي", prompt_ar: null, compare: text, source: {query: cr.beneficiary, path: "beneficiaries[].guardian.nationality.name"}}
+    - {id: beneficiary_exemption_reasons, label_ar: "أسباب الإعفاء من الإفصاح عن المستفيد الحقيقي", prompt_ar: null, compare: list, source: {query: cr.beneficiary, path: "exemption.reasons[].description"}}
+    - {id: person_name, label_ar: "الاسم (صاحب الهوية)", prompt_ar: null, compare: name, source: {query: cr.related, path: name}, note_ar: "اسم الشخص كما هو مسجل مقابل هويته"}
+    - {id: person_id_type_name, label_ar: "وصف نوع الاثبات (صاحب الهوية)", prompt_ar: null, compare: text, source: {query: cr.related, path: identity.typeName}}
+    - {id: person_companies, label_ar: "الاسم التجاري للمنشأة (المرتبطة بالهوية)", prompt_ar: null, compare: list, source: {query: cr.related, path: "related[].name"}, note_ar: "لا يطبع مستند «شركات الشخص»؛ خطوة المقارنة تطابق «اسم الشركة» الوارد في المستند مع هذه القائمة"}
+    - {id: person_company_unified_numbers, label_ar: "الرقم الموحد للسجل التجاري (المرتبط بالهوية)", prompt_ar: null, compare: list, source: {query: cr.related, path: "related[].crNationalNumber"}, note_ar: "يُطابق مع «الرقم الوطني الموحد» الوارد في المستند"}
+    - {id: person_company_status, label_ar: "وصف حالة السجل التجاري (المرتبط)", prompt_ar: null, compare: status, source: {query: cr.related, path: "related[].status.name"}}
+    - {id: person_relation, label_ar: "وصف العلاقة", prompt_ar: null, compare: text, source: {query: cr.related, path: "related[].relation.name"}, note_ar: "مالك، شريك، مدير، عضو مجلس؛ يُطابق مع صفة الشخص الملتقطة تحت «الشريك» أو «المدير»"}
+    - {id: person_positions, label_ar: "وصف منصب المدير بالمجلس (صاحب الهوية)", prompt_ar: null, compare: list, source: {query: cr.related, path: "related[].positions[].name"}, note_ar: "يُطابق مع «المدير: المنصب»"}
+    - {id: person_partnership_kinds, label_ar: "وصف طبيعة الشراكة (صاحب الهوية)", prompt_ar: null, compare: list, source: {query: cr.related, path: "related[].parties[].partnership[].name"}, note_ar: "يُطابق مع «الشريك: صفة الشراكة»"}
+    - {id: person_owns_cr, label_ar: "يمتلك سجلاً تجارياً", prompt_ar: null, compare: flag, source: {query: cr.owns, path: ownsCr}, note_ar: "نعم/لا فقط: هل الشخص مالك أو شريك في أي سجل، دون تسمية الشركة"}
+  queries:
+    - id: cr.cr_national_number
+      internal: true
+      needs: [cr_number]
+      note: "conversion step: old CR -> unified number, cached; a 404 means a struck-off record, then the data query is retried once with the old number"
+      supplies: {unified_number: crNationalNumber}
+    - id: cr.info
+      needs: ["cr_number | unified_number"]
+      supplies:
+        unified_number: crNationalNumber
+        cr_number: crNumber
+        company_name: name
+        company_duration: companyDuration
+        is_main_cr: isMain
+        issue_date_gregorian: issueDateGregorian
+        issue_date_hijri: issueDateHijri
+        main_unified_number: mainCrNationalNumber
+        main_cr_number: mainCrNumber
+        in_liquidation: inLiquidationProcess
+        headquarter_city: headquarterCityName
+        entity_type: entityType.name
+        legal_form: entityType.formName
+        company_characters: "entityType.characters[].name"
+        cr_status: status.name
+        activity_codes: "activities[].id"
+        activities: "activities[].name"
+    - id: cr.status
+      needs: ["cr_number | unified_number"]
+      supplies: {cr_status: name}
+    - id: cr.status_dates
+      needs: ["cr_number | unified_number"]
+      supplies:
+        cr_status: name
+        confirmation_date_gregorian: confirmationDate.gregorian
+        confirmation_date_hijri: confirmationDate.hijri
+        suspension_date: suspensionDate.gregorian
+        reactivation_date: reactivationDate.gregorian
+        deletion_date: deletionDate.gregorian
+    - id: cr.capital
+      needs: ["cr_number | unified_number"]
+      supplies:
+        capital: capital
+        capital_currency: currencyName
+        capital_type: contributionCapital.typeName
+        cash_capital: contributionCapital.cashCapital
+        in_kind_capital: contributionCapital.inKindCapital
+        share_value: contributionCapital.contributionValue
+        total_cash_shares: contributionCapital.totalCashContribution
+        total_in_kind_shares: contributionCapital.totalInKindContribution
+        issued_capital: stockCapital.capital
+        announced_capital: stockCapital.announcedCapital
+        paid_capital: stockCapital.paidCapital
+        stock_count: "stockCapital.stocks[].count"
+        stock_value: "stockCapital.stocks[].value"
+        stock_types: "stockCapital.stocks[].typeName"
+    - id: cr.managers
+      needs: ["cr_number | unified_number"]
+      supplies:
+        manager_names: "[].name"
+        manager_types: "[].typeName"
+        manager_ids: "[].identity.id"
+        manager_id_types: "[].identity.typeName"
+        manager_nationalities: "[].nationality.name"
+        manager_positions: "[].positions[].name"
+    - id: cr.owners
+      needs: ["cr_number | unified_number"]
+      note: "not offered for joint-stock / simplified joint-stock companies (they have no partners): verdict not_in_register"
+      supplies:
+        partner_names: "[].name"
+        partner_types: "[].typeName"
+        partner_ids: "[].identity.id"
+        partner_id_types: "[].identity.typeName"
+        partnership_kinds: "[].partnership[].name"
+        partner_shares: "[].partnerShare.totalContributionCount"
+        partner_cash_shares: "[].partnerShare.cashContributionCount"
+        partner_in_kind_shares: "[].partnerShare.inKindContributionCount"
+        partner_nationalities: "[].nationality.name"
+        partner_cr_numbers: "[].crNumber"
+        partner_license_numbers: "[].licenseNo"
+    - id: cr.branches
+      needs: ["cr_number | unified_number"]
+      supplies:
+        branch_unified_numbers: "[].crNationalNumber"
+        branch_cr_numbers: "[].crNumber"
+        branch_names: "[].name"
+    - id: cr.beneficiary
+      needs: ["cr_number | unified_number"]
+      supplies:
+        beneficiary_names: "beneficiaries[].name"
+        beneficiary_types: "beneficiaries[].type.name"
+        beneficiary_ids: "beneficiaries[].identity.id"
+        beneficiary_id_types: "beneficiaries[].identity.typeName"
+        beneficiary_nationalities: "beneficiaries[].nationality.name"
+        beneficiary_genders: "beneficiaries[].gender.name"
+        beneficiary_reasons: "beneficiaries[].addingReasons[].description"
+        beneficiary_guardian_name: "beneficiaries[].guardian.name"
+        beneficiary_guardian_id: "beneficiaries[].guardian.identity.id"
+        beneficiary_guardian_nationality: "beneficiaries[].guardian.nationality.name"
+        beneficiary_exemption_reasons: "exemption.reasons[].description"
+    - id: cr.fullinfo
+      needs: ["cr_number | unified_number"]
+      note: "one call that covers info + status_dates + capital + managers + owners and adds contact, fiscal year, liquidators, licence issuer, management structure"
+      supplies:
+        unified_number: crNationalNumber
+        cr_number: crNumber
+        company_name: name
+        capital: crCapital
+        company_duration: companyDuration
+        is_main_cr: isMain
+        issue_date_gregorian: issueDateGregorian
+        issue_date_hijri: issueDateHijri
+        main_unified_number: mainCrNationalNumber
+        main_cr_number: mainCrNumber
+        in_liquidation: inLiquidationProcess
+        headquarter_city: headquarterCityName
+        license_issuer: licenseIssuerName
+        partners_nationality: PartnersNationalityName
+        entity_type: entityType.name
+        legal_form: entityType.formName
+        company_characters: "entityType.characters[].name"
+        cr_status: status.name
+        confirmation_date_gregorian: status.confirmationDate.gregorian
+        confirmation_date_hijri: status.confirmationDate.hijri
+        deletion_date: status.deletionDate.gregorian
+        phone: contactInfo.phoneNo
+        mobile: contactInfo.mobileNo
+        email: contactInfo.email
+        website: contactInfo.websiteUrl
+        capital_currency: capital.currencyName
+        capital_type: capital.contributionCapital.typeName
+        cash_capital: capital.contributionCapital.cashCapital
+        in_kind_capital: capital.contributionCapital.inKindCapital
+        share_value: capital.contributionCapital.contributionValue
+        total_cash_shares: capital.contributionCapital.totalCashContribution
+        total_in_kind_shares: capital.contributionCapital.totalInKindContribution
+        issued_capital: capital.stockCapital.capital
+        announced_capital: capital.stockCapital.announcedCapital
+        paid_capital: capital.stockCapital.paidCapital
+        stock_count: "capital.stockCapital.stocks[].count"
+        stock_value: "capital.stockCapital.stocks[].value"
+        fiscal_year_calendar: fiscalYear.calendarTypeName
+        fiscal_year_end_month: fiscalYear.endMonth
+        fiscal_year_end_day: fiscalYear.endDay
+        partner_names: "parties[].name"
+        partner_types: "parties[].typeName"
+        partner_ids: "parties[].identity.id"
+        partner_id_types: "parties[].identity.typeName"
+        partnership_kinds: "parties[].partnership[].name"
+        partner_shares: "parties[].partnerShare.totalContributionCount"
+        partner_cash_shares: "parties[].partnerShare.cashContributionCount"
+        partner_in_kind_shares: "parties[].partnerShare.inKindContributionCount"
+        partner_nationalities: "parties[].nationality.name"
+        partner_cr_numbers: "parties[].crNumber"
+        partner_license_numbers: "parties[].licenseNo"
+        management_structure: management.structureName
+        manager_names: "management.managers[].name"
+        manager_ids: "management.managers[].identity.id"
+        manager_id_types: "management.managers[].identity.typeName"
+        manager_nationalities: "management.managers[].nationality.name"
+        manager_positions: "management.managers[].positions[].name"
+        liquidator_names: "liquidators[].name"
+        liquidator_ids: "liquidators[].identity.id"
+        activity_codes: "activities[].id"
+        activities: "activities[].name"
+    - id: cr.related
+      needs: [person_id, person_id_type]
+      optional: [person_nationality]
+      required_if: {person_nationality: {person_id_type: [Passport, Foreign_CR_No]}}
+      supplies:
+        person_name: name
+        person_id_type_name: identity.typeName
+        person_company_unified_numbers: "related[].crNationalNumber"
+        person_companies: "related[].name"
+        person_company_status: "related[].status.name"
+        person_relation: "related[].relation.name"
+        person_positions: "related[].positions[].name"
+        person_partnership_kinds: "related[].parties[].partnership[].name"
+    - id: cr.owns
+      needs: [person_id, person_id_type]
+      optional: [person_nationality]
+      required_if: {person_nationality: {person_id_type: [Passport, Foreign_CR_No]}}
+      supplies: {person_owns_cr: ownsCr}
+
+# =============================================================================
+- id: contract
+  label_ar: "عقد تأسيس الشركة / النظام الأساس"
+  label_en: "Company contract (articles of association and amendments)"
+  about_ar: "نسخة عقد تأسيس الشركة أو نظامها الأساس كما هي مقيدة لدى وزارة التجارة: الشركاء وحصصهم ورأس المال والإدارة والصلاحيات والبنود."
+  document_words_ar: "عقد تأسيس، عقد الشركة، النظام الأساس، ملحق تعديل عقد التأسيس، قرار الشركاء، قرار الشريك الوحيد، محضر جمعية، خطاب تفويض مدير"
+  keys:
+    - id: cr_number
+      label_ar: "رقم السجل التجاري"
+      prompt_ar: "رقم السجل التجاري"
+      shape: "10 digits starting 1-6; converted silently to the unified number first"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين: رقم السجل التجاري أو الرقم الوطني الموحد؛ يرد في ديباجة العقد «شركة … سجل تجاري رقم …»"
+      aliases_ar: ["رقم السجل التجاري", "سجل تجاري رقم", "س.ت", "رقم السجل"]
+    - id: unified_number
+      label_ar: "الرقم الوطني الموحد للسجل التجاري"
+      prompt_ar: "الرقم الوطني الموحد"
+      shape: "10 digits starting 70"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين"
+      aliases_ar: ["الرقم الوطني الموحد", "الرقم الموحد", "الرقم الوطني الموحد للمنشأة"]
+    - id: copy_number
+      label_ar: "رقم نسخة العقد"
+      prompt_ar: "رقم نسخة العقد"
+      shape: "1-5 digits"
+      personal: false
+      required: false
+      note_ar: "اختياري؛ إن لم يذكره المستند يُترك فارغاً فيعود أحدث عقد"
+      aliases_ar: ["رقم النسخة", "نسخة العقد رقم", "النسخة المعدلة رقم", "رقم نسخة العقد"]
+    - id: manager_id
+      label_ar: "رقم هوية المدير"
+      prompt_ar: "رقم هوية المدير"
+      shape: "3-20 digits; national ID 1XXXXXXXXX, iqama 2XXXXXXXXX"
+      personal: true
+      required: false
+      note_ar: "يلزم فقط حين يذكر المستند صلاحيات مدير بعينه (توكيل، إنابة، منفرداً/مجتمعين)؛ يلزم معه نوع هويته"
+      aliases_ar: ["هوية وطنية رقم", "رقم الهوية", "سجل مدني رقم", "إقامة رقم", "جواز سفر رقم", "هوية خليجية رقم"]
+    - id: manager_id_type
+      label_ar: "نوع الهوية (المدير)"
+      prompt_ar: "نوع هوية المدير"
+      shape: "one of National_ID | Resident_ID | Passport | GCC_ID | Endowment_Deed_No | License_No | CR_National_ID | Foreign_CR_No | National_Number | Boarder_Number | CR_Number"
+      personal: false
+      required: false
+      note_ar: "يلزم مع رقم هوية المدير؛ يُستنتج من كلمة المستند أو من أول رقم (١ هوية وطنية، ٢ إقامة)"
+      aliases_ar: ["هوية وطنية", "سجل مدني", "إقامة", "جواز سفر", "هوية خليجية", "سجل تجاري"]
+  facts:
+    - {id: contract_copy_number, label_ar: "رقم نسخة العقد", prompt_ar: "رقم النسخة", compare: number, source: {query: contracts.info, path: contractCopyNumber}}
+    - {id: contract_date, label_ar: "تاريخ العقد", prompt_ar: "تاريخ العقد", compare: date, source: {query: contracts.info, path: contractDate}, note_ar: "حُرر بتاريخ / تاريخ التأسيس / تاريخ آخر تعديل؛ السجل ميلادي والمستند غالباً هجري"}
+    - {id: unified_number, label_ar: "الرقم الموحد للسجل التجاري", prompt_ar: "الرقم الوطني الموحد", compare: exact, source: {query: contracts.info, path: entity.crNationalNumber}}
+    - {id: cr_number, label_ar: "رقم السجل التجاري", prompt_ar: "رقم السجل التجاري", compare: exact, source: {query: contracts.info, path: entity.crNumber}}
+    - {id: company_name, label_ar: "الاسم التجاري كامل باللغة العربية", prompt_ar: "اسم الشركة", compare: name, source: {query: contracts.info, path: entity.name}, note_ar: "عنوان العقد «عقد تأسيس شركة …»"}
+    - {id: company_duration, label_ar: "مدة الشركة", prompt_ar: "مدة الشركة", compare: number, source: {query: contracts.info, path: entity.companyDuration}, note_ar: "بالسنوات؛ قد تُكتب بالحروف"}
+    - {id: headquarter_city, label_ar: "وصف مدينة المقر الرئيس للشركة", prompt_ar: "مدينة المقر", compare: name, source: {query: contracts.info, path: entity.headquarterCityName}}
+    - {id: is_license_based, label_ar: "هل السجل مصدر بناء على ترخيص", prompt_ar: null, compare: flag, source: {query: contracts.info, path: entity.isLicenseBased}}
+    - {id: license_issuer, label_ar: "وصف جهة إصدار الترخيص", prompt_ar: null, compare: text, source: {query: contracts.info, path: entity.licenseIssuerName}}
+    - {id: entity_type, label_ar: "وصف نوع الكيان", prompt_ar: "نوع الكيان", compare: text, source: {query: contracts.info, path: entity.entityType.name}}
+    - {id: legal_form, label_ar: "وصف شكل الشركة", prompt_ar: "الشكل القانوني", compare: text, source: {query: contracts.info, path: entity.entityType.formName}}
+    - {id: company_characters, label_ar: "وصف صفة الشركة", prompt_ar: null, compare: list, source: {query: contracts.info, path: "entity.entityType.characters[].name"}}
+    - {id: capital_currency, label_ar: "وصف عملة رأس المال", prompt_ar: null, compare: text, source: {query: contracts.info, path: entity.capital.currencyName}}
+    - {id: capital_type, label_ar: "وصف نوع رأس المال", prompt_ar: null, compare: text, source: {query: contracts.info, path: entity.capital.contributionCapital.typeName}}
+    - {id: cash_capital, label_ar: "رأس المال النقدي", prompt_ar: "رأس المال: النقدي", compare: number, source: {query: contracts.info, path: entity.capital.contributionCapital.cashCapital}, note_ar: "إجمالي رأس المال للشركة ذات الحصص = النقدي + العيني"}
+    - {id: in_kind_capital, label_ar: "رأس المال العيني", prompt_ar: "رأس المال: العيني", compare: number, source: {query: contracts.info, path: entity.capital.contributionCapital.inKindCapital}}
+    - {id: share_value, label_ar: "قيمة الحصة", prompt_ar: "رأس المال: قيمة الحصة", compare: number, source: {query: contracts.info, path: entity.capital.contributionCapital.contributionValue}}
+    - {id: total_cash_shares, label_ar: "إجمالي عدد الحصص النقدية", prompt_ar: "رأس المال: عدد الحصص", compare: number, source: {query: contracts.info, path: entity.capital.contributionCapital.totalCashContribution}}
+    - {id: total_in_kind_shares, label_ar: "إجمالي عدد الحصص العينية", prompt_ar: "رأس المال: عدد الحصص", compare: number, source: {query: contracts.info, path: entity.capital.contributionCapital.totalInKindContribution}}
+    - {id: issued_capital, label_ar: "رأس المال المصدر", prompt_ar: "رأس المال: الإجمالي", compare: number, source: {query: contracts.info, path: entity.capital.stockCapital.capital}}
+    - {id: announced_capital, label_ar: "رأس المال المصرح به", prompt_ar: null, compare: number, source: {query: contracts.info, path: entity.capital.stockCapital.announcedCapital}}
+    - {id: paid_capital, label_ar: "رأس المال المدفوع", prompt_ar: null, compare: number, source: {query: contracts.info, path: entity.capital.stockCapital.paidCapital}}
+    - {id: stock_count, label_ar: "عدد الأسهم", prompt_ar: "رأس المال: عدد الأسهم", compare: number, source: {query: contracts.info, path: "entity.capital.stockCapital.stocks[].count"}}
+    - {id: stock_value, label_ar: "قيمة السهم", prompt_ar: "رأس المال: قيمة السهم", compare: number, source: {query: contracts.info, path: "entity.capital.stockCapital.stocks[].value"}}
+    - {id: stock_types, label_ar: "وصف نوع السهم", prompt_ar: null, compare: list, source: {query: contracts.info, path: "entity.capital.stockCapital.stocks[].typeName"}}
+    - {id: fiscal_year_calendar, label_ar: "وصف نوع التقويم (السنة المالية)", prompt_ar: "نهاية السنة المالية", compare: text, source: {query: contracts.info, path: entity.fiscalYear.calendarTypeName}}
+    - {id: fiscal_year_end_day, label_ar: "يوم نهاية السنة المالية", prompt_ar: "نهاية السنة المالية", compare: number, source: {query: contracts.info, path: entity.fiscalYear.endDay}}
+    - {id: fiscal_year_end_month, label_ar: "شهر نهاية السنة المالية", prompt_ar: "نهاية السنة المالية", compare: number, source: {query: contracts.info, path: entity.fiscalYear.endMonth}}
+    - {id: fiscal_year_end_year, label_ar: "سنة نهاية السنة المالية", prompt_ar: "نهاية السنة المالية", compare: number, source: {query: contracts.info, path: entity.fiscalYear.endYear}}
+    - {id: partner_names, label_ar: "اسم الشريك / المالك", prompt_ar: "الشريك: الاسم", compare: name, source: {query: contracts.info, path: "entity.parties[].name"}, note_ar: "أطراف العقد: الطرف الأول، الطرف الثاني…"}
+    - {id: partner_types, label_ar: "وصف نوع الشريك", prompt_ar: null, compare: text, source: {query: contracts.info, path: "entity.parties[].typeName"}}
+    - {id: partner_ids, label_ar: "رقم الإثبات (الشريك)", prompt_ar: "الشريك: رقم الهوية", compare: exact, personal: true, source: {query: contracts.info, path: "entity.parties[].identity.id"}}
+    - {id: partner_id_types, label_ar: "وصف نوع الاثبات (الشريك)", prompt_ar: null, compare: text, source: {query: contracts.info, path: "entity.parties[].identity.typeName"}}
+    - {id: partnership_kinds, label_ar: "وصف طبيعة الشراكة", prompt_ar: "الشريك: صفة الشراكة", compare: list, source: {query: contracts.info, path: "entity.parties[].partnership[].name"}}
+    - {id: partner_shares, label_ar: "إجمالي عدد حصص الشريك", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: contracts.info, path: "entity.parties[].partnerShare.totalContributionCount"}, note_ar: "عدد حصص؛ إن طُبعت نسبة فقط تُحسب من إجمالي الحصص"}
+    - {id: partner_cash_shares, label_ar: "عدد الحصص النقدية (الشريك)", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: contracts.info, path: "entity.parties[].partnerShare.cashContributionCount"}}
+    - {id: partner_in_kind_shares, label_ar: "عدد الحصص العينية (الشريك)", prompt_ar: "الشريك: الحصص أو النسبة", compare: number, source: {query: contracts.info, path: "entity.parties[].partnerShare.inKindContributionCount"}}
+    - {id: partner_profit_share, label_ar: "النسبة من الأرباح", prompt_ar: "الشريك: نسبة الربح", compare: number, source: {query: contracts.info, path: "entity.parties[].partnerProfitLossDistribution.profitDistribution"}}
+    - {id: partner_loss_share, label_ar: "النسبة من الخسائر", prompt_ar: "الشريك: نسبة الخسارة", compare: number, source: {query: contracts.info, path: "entity.parties[].partnerProfitLossDistribution.lossDistribution"}}
+    - {id: partner_nationalities, label_ar: "وصف الجنسية (الشريك)", prompt_ar: "الشريك: الجنسية", compare: text, source: {query: contracts.info, path: "entity.parties[].nationality.name"}}
+    - {id: partner_cr_numbers, label_ar: "رقم السجل التجاري (الشريك الاعتباري)", prompt_ar: "الشريك: رقم سجله", compare: exact, source: {query: contracts.info, path: "entity.parties[].crNumber"}}
+    - {id: partner_license_numbers, label_ar: "رقم الترخيص (الشريك)", prompt_ar: null, compare: exact, source: {query: contracts.info, path: "entity.parties[].licenseNo"}}
+    - {id: guardian_name, label_ar: "اسم الوصي / الولي", prompt_ar: "الولي أو الوصي: الاسم", compare: name, source: {query: contracts.info, path: "entity.parties[].guardian.name"}, note_ar: "ويمثله وليه / بولاية والده"}
+    - {id: guardian_id, label_ar: "رقم الإثبات (الوصي)", prompt_ar: "الولي أو الوصي: رقم الهوية", compare: exact, personal: true, source: {query: contracts.info, path: "entity.parties[].guardian.identity.id"}}
+    - {id: guardian_nationality, label_ar: "وصف الجنسية (الوصي)", prompt_ar: null, compare: text, source: {query: contracts.info, path: "entity.parties[].guardian.nationality.name"}}
+    - {id: guardian_is_father, label_ar: "هل الوصي هو الأب", prompt_ar: null, compare: flag, source: {query: contracts.info, path: "entity.parties[].guardian.isFatherGuardian"}}
+    - {id: management_structure, label_ar: "وصف الهيكل الإداري", prompt_ar: null, compare: text, source: {query: contracts.management, path: structureName}, note_ar: "مدير / مجلس مديرين / مجلس إدارة"}
+    - {id: dismissal_method, label_ar: "طريقة العزل", prompt_ar: null, compare: text, source: {query: contracts.management, path: dismissalMethod}}
+    - {id: manager_names, label_ar: "اسم المدير", prompt_ar: "المدير: الاسم", compare: name, source: {query: contracts.management, path: "managers[].name"}}
+    - {id: manager_types, label_ar: "وصف نوع المدير", prompt_ar: null, compare: text, source: {query: contracts.management, path: "managers[].typeName"}}
+    - {id: manager_ids, label_ar: "رقم الإثبات (المدير)", prompt_ar: "المدير: رقم الهوية", compare: exact, personal: true, source: {query: contracts.management, path: "managers[].identity.id"}}
+    - {id: manager_id_types, label_ar: "وصف نوع الاثبات (المدير)", prompt_ar: null, compare: text, source: {query: contracts.management, path: "managers[].identity.typeName"}}
+    - {id: manager_nationalities, label_ar: "وصف الجنسية (المدير)", prompt_ar: "المدير: الجنسية", compare: text, source: {query: contracts.management, path: "managers[].nationality.name"}}
+    - {id: manager_positions, label_ar: "وصف منصب المدير بالمجلس", prompt_ar: "المدير: المنصب", compare: list, source: {query: contracts.management, path: "managers[].positions[].name"}}
+    - {id: board_quorum, label_ar: "وصف النصاب الصحيح للاجتماع (مجلس المديرين)", prompt_ar: "مجلس المديرين: النصاب", compare: text, source: {query: contracts.management, path: managementBoard.meetingQuorumName}}
+    - {id: board_can_delegate_attendance, label_ar: "جواز التوكيل بالحضور (مجلس المديرين)", prompt_ar: null, compare: flag, source: {query: contracts.management, path: managementBoard.canDelegateAttendance}}
+    - {id: board_term_years, label_ar: "عدد سنوات المجلس (مجلس المديرين)", prompt_ar: "مجلس المديرين: المدة", compare: number, source: {query: contracts.management, path: managementBoard.termYears}}
+    - {id: board_meeting_place, label_ar: "مكان انعقاد جلسات المجلس (مجلس المديرين)", prompt_ar: null, compare: text, source: {query: contracts.management, path: managementBoard.meetingPlace}}
+    - {id: board_positions, label_ar: "مناصب مجلس المديرين", prompt_ar: null, compare: list, source: {query: contracts.management, path: "managementBoard.positions[].name"}}
+    - {id: directors_board_member_count, label_ar: "عدد أعضاء مجلس الادارة", prompt_ar: "مجلس الإدارة: عدد الأعضاء", compare: number, source: {query: contracts.management, path: directorsBoard.memberCount}}
+    - {id: directors_board_term_years, label_ar: "عدد سنوات المجلس (مجلس الإدارة)", prompt_ar: "مجلس الإدارة: المدة", compare: number, source: {query: contracts.management, path: directorsBoard.termYears}}
+    - {id: directors_board_reward, label_ar: "قيمة منحة مجلس الإدارة", prompt_ar: null, compare: number, source: {query: contracts.management, path: directorsBoard.value}}
+    - {id: directors_board_reward_max, label_ar: "الحد الأقصى لمنحة مجلس الإدارة", prompt_ar: null, compare: number, source: {query: contracts.management, path: directorsBoard.valueMax}}
+    - {id: directors_board_quorum, label_ar: "نصاب اجتماع مجلس الإدارة", prompt_ar: null, compare: number, source: {query: contracts.management, path: directorsBoard.meetingQuorum}}
+    - {id: directors_board_can_delegate_attendance, label_ar: "جواز التوكيل بالحضور (مجلس الإدارة)", prompt_ar: null, compare: flag, source: {query: contracts.management, path: directorsBoard.canDelegateAttendance}}
+    - {id: directors_board_meeting_place, label_ar: "مكان انعقاد جلسات المجلس (مجلس الإدارة)", prompt_ar: null, compare: text, source: {query: contracts.management, path: directorsBoard.meetingPlace}}
+    - {id: directors_board_positions, label_ar: "مناصب مجلس الإدارة", prompt_ar: null, compare: list, source: {query: contracts.management, path: "directorsBoard.positions[].name"}}
+    - {id: activities, label_ar: "وصف النشاط التجاري", prompt_ar: "الأنشطة", compare: list, source: {query: contracts.info, path: "entity.activities[].name"}, note_ar: "أغراض الشركة"}
+    - {id: activity_codes, label_ar: "رمز النشاط التجاري", prompt_ar: "الأنشطة", compare: list, source: {query: contracts.info, path: "entity.activities[].id"}}
+    - {id: notification_channels, label_ar: "وصف وسيلة الابلاغ", prompt_ar: null, compare: list, source: {query: contracts.info, path: "notificationChannel[].name"}, note_ar: "رسائل نصية، بريد إلكتروني، خطاب مسجل"}
+    - {id: partner_decisions, label_ar: "وصف القرار (قرارات الشركاء)", prompt_ar: "قرارات الشركاء ونسبة اعتمادها", compare: list, source: {query: contracts.info, path: "partnerDecision[].name"}}
+    - {id: decision_approval_percentages, label_ar: "النسبة اللازمة لاعتماد القرار", prompt_ar: "قرارات الشركاء ونسبة اعتمادها", compare: number, source: {query: contracts.info, path: "partnerDecision[].approvePercentage"}, note_ar: "بإجماع الشركاء = ١٠٠، ثلاثة أرباع = ٧٥"}
+    - {id: profit_set_aside_enabled, label_ar: "هل يُجنَّب جزء من الأرباح", prompt_ar: "نسبة الأرباح المجنبة", compare: flag, source: {query: contracts.info, path: setAsideDetails.isSetAsideEnabled}}
+    - {id: profit_set_aside_percentage, label_ar: "نسبة الأرباح المجنبة", prompt_ar: "نسبة الأرباح المجنبة", compare: number, source: {query: contracts.info, path: setAsideDetails.profitAllocation.percentage}}
+    - {id: profit_set_aside_purpose, label_ar: "الغرض من تجنيب النسبة", prompt_ar: null, compare: text, source: {query: contracts.info, path: setAsideDetails.profitAllocation.purpose}}
+    - {id: article_parts, label_ar: "وصف الباب باللغة العربية", prompt_ar: null, compare: list, source: {query: contracts.info, path: "articles[].partName"}, note_ar: "عناوين أبواب العقد"}
+    - {id: article_texts, label_ar: "نص البند", prompt_ar: null, compare: text, source: {query: contracts.info, path: "articles[].text"}, note_ar: "لا يُطلب من النموذج نسخ نصوص البنود؛ يُقارن فقط البند الذي يلصقه المستخدم في شاشة المراجعة"}
+    - {id: additional_articles, label_ar: "نص البند الإضافي", prompt_ar: null, compare: text, source: {query: contracts.info, path: "additionalArticles[].text"}, note_ar: "عنوان البند في additionalArticles[].title؛ كالبند السابق: يُقارن ما يلصقه المستخدم فقط"}
+    - {id: manager_permissions, label_ar: "وصف الصلاحية", prompt_ar: "صلاحية المدير: الاسم", compare: list, source: {query: contracts.manager, path: "[].permissions[].name"}, note_ar: "قبول الرهن، فتح الحسابات، التوقيع على العقود"}
+    - {id: permission_can_issue_poa, label_ar: "جواز التوكيل", prompt_ar: "صلاحية المدير: حق التوكيل", compare: flag, source: {query: contracts.manager, path: "[].permissions[].canIssuePOA"}, note_ar: "وله حق توكيل الغير"}
+    - {id: permission_can_delegate, label_ar: "جواز الإنابة", prompt_ar: "صلاحية المدير: حق الإنابة", compare: flag, source: {query: contracts.manager, path: "[].permissions[].canDelegate"}}
+    - {id: permission_condition, label_ar: "شرط خاص بالصلاحية", prompt_ar: "صلاحية المدير: شرطها", compare: text, source: {query: contracts.manager, path: "[].permissions[].specialConditionText"}}
+    - {id: permission_exercise_method, label_ar: "وصف طريقة ممارسة الصلاحية", prompt_ar: "صلاحية المدير: منفرداً أو مجتمعين", compare: text, source: {query: contracts.manager, path: "[].permissions[].exerciseMethodDescription"}, note_ar: "منفرداً / مجتمعين"}
+  queries:
+    - id: contracts.info
+      needs: ["cr_number | unified_number"]
+      optional: [copy_number]
+      supplies:
+        contract_copy_number: contractCopyNumber
+        contract_date: contractDate
+        unified_number: entity.crNationalNumber
+        cr_number: entity.crNumber
+        company_name: entity.name
+        company_duration: entity.companyDuration
+        headquarter_city: entity.headquarterCityName
+        is_license_based: entity.isLicenseBased
+        license_issuer: entity.licenseIssuerName
+        entity_type: entity.entityType.name
+        legal_form: entity.entityType.formName
+        company_characters: "entity.entityType.characters[].name"
+        capital_currency: entity.capital.currencyName
+        capital_type: entity.capital.contributionCapital.typeName
+        cash_capital: entity.capital.contributionCapital.cashCapital
+        in_kind_capital: entity.capital.contributionCapital.inKindCapital
+        share_value: entity.capital.contributionCapital.contributionValue
+        total_cash_shares: entity.capital.contributionCapital.totalCashContribution
+        total_in_kind_shares: entity.capital.contributionCapital.totalInKindContribution
+        issued_capital: entity.capital.stockCapital.capital
+        announced_capital: entity.capital.stockCapital.announcedCapital
+        paid_capital: entity.capital.stockCapital.paidCapital
+        stock_count: "entity.capital.stockCapital.stocks[].count"
+        stock_value: "entity.capital.stockCapital.stocks[].value"
+        stock_types: "entity.capital.stockCapital.stocks[].typeName"
+        fiscal_year_calendar: entity.fiscalYear.calendarTypeName
+        fiscal_year_end_day: entity.fiscalYear.endDay
+        fiscal_year_end_month: entity.fiscalYear.endMonth
+        fiscal_year_end_year: entity.fiscalYear.endYear
+        partner_names: "entity.parties[].name"
+        partner_types: "entity.parties[].typeName"
+        partner_ids: "entity.parties[].identity.id"
+        partner_id_types: "entity.parties[].identity.typeName"
+        partnership_kinds: "entity.parties[].partnership[].name"
+        partner_shares: "entity.parties[].partnerShare.totalContributionCount"
+        partner_cash_shares: "entity.parties[].partnerShare.cashContributionCount"
+        partner_in_kind_shares: "entity.parties[].partnerShare.inKindContributionCount"
+        partner_profit_share: "entity.parties[].partnerProfitLossDistribution.profitDistribution"
+        partner_loss_share: "entity.parties[].partnerProfitLossDistribution.lossDistribution"
+        partner_nationalities: "entity.parties[].nationality.name"
+        partner_cr_numbers: "entity.parties[].crNumber"
+        partner_license_numbers: "entity.parties[].licenseNo"
+        guardian_name: "entity.parties[].guardian.name"
+        guardian_id: "entity.parties[].guardian.identity.id"
+        guardian_nationality: "entity.parties[].guardian.nationality.name"
+        guardian_is_father: "entity.parties[].guardian.isFatherGuardian"
+        management_structure: entity.management.structureName
+        dismissal_method: entity.management.dismissalMethod
+        manager_names: "entity.management.managers[].name"
+        manager_types: "entity.management.managers[].typeName"
+        manager_ids: "entity.management.managers[].identity.id"
+        manager_id_types: "entity.management.managers[].identity.typeName"
+        manager_nationalities: "entity.management.managers[].nationality.name"
+        manager_positions: "entity.management.managers[].positions[].name"
+        board_quorum: entity.management.managementBoard.meetingQuorumName
+        board_can_delegate_attendance: entity.management.managementBoard.canDelegateAttendance
+        board_term_years: entity.management.managementBoard.termYears
+        board_meeting_place: entity.management.managementBoard.meetingPlace
+        board_positions: "entity.management.managementBoard.positions[].name"
+        directors_board_member_count: entity.management.directorsBoard.memberCount
+        directors_board_term_years: entity.management.directorsBoard.termYears
+        directors_board_reward: entity.management.directorsBoard.value
+        directors_board_reward_max: entity.management.directorsBoard.valueMax
+        directors_board_quorum: entity.management.directorsBoard.meetingQuorum
+        directors_board_can_delegate_attendance: entity.management.directorsBoard.canDelegateAttendance
+        directors_board_meeting_place: entity.management.directorsBoard.meetingPlace
+        directors_board_positions: "entity.management.directorsBoard.positions[].name"
+        activities: "entity.activities[].name"
+        activity_codes: "entity.activities[].id"
+        notification_channels: "notificationChannel[].name"
+        partner_decisions: "partnerDecision[].name"
+        decision_approval_percentages: "partnerDecision[].approvePercentage"
+        profit_set_aside_enabled: setAsideDetails.isSetAsideEnabled
+        profit_set_aside_percentage: setAsideDetails.profitAllocation.percentage
+        profit_set_aside_purpose: setAsideDetails.profitAllocation.purpose
+        article_parts: "articles[].partName"
+        article_texts: "articles[].text"
+        additional_articles: "additionalArticles[].text"
+    - id: contracts.management
+      needs: ["cr_number | unified_number"]
+      note: "the same management block as contracts.info; enough when the document only mentions managers or the board"
+      supplies:
+        management_structure: structureName
+        dismissal_method: dismissalMethod
+        manager_names: "managers[].name"
+        manager_types: "managers[].typeName"
+        manager_ids: "managers[].identity.id"
+        manager_id_types: "managers[].identity.typeName"
+        manager_nationalities: "managers[].nationality.name"
+        manager_positions: "managers[].positions[].name"
+        board_quorum: managementBoard.meetingQuorumName
+        board_can_delegate_attendance: managementBoard.canDelegateAttendance
+        board_term_years: managementBoard.termYears
+        board_meeting_place: managementBoard.meetingPlace
+        board_positions: "managementBoard.positions[].name"
+        directors_board_member_count: directorsBoard.memberCount
+        directors_board_term_years: directorsBoard.termYears
+        directors_board_reward: directorsBoard.value
+        directors_board_reward_max: directorsBoard.valueMax
+        directors_board_quorum: directorsBoard.meetingQuorum
+        directors_board_can_delegate_attendance: directorsBoard.canDelegateAttendance
+        directors_board_meeting_place: directorsBoard.meetingPlace
+        directors_board_positions: "directorsBoard.positions[].name"
+    - id: contracts.manager
+      needs: ["cr_number | unified_number", manager_id, manager_id_type]
+      note: "one manager's permissions; permissionId is never sent so every permission comes back"
+      supplies:
+        manager_names: "[].name"
+        manager_types: "[].typeName"
+        manager_ids: "[].identity.id"
+        manager_id_types: "[].identity.typeName"
+        manager_nationalities: "[].nationality.name"
+        manager_positions: "[].positions[].name"
+        manager_permissions: "[].permissions[].name"
+        permission_can_issue_poa: "[].permissions[].canIssuePOA"
+        permission_can_delegate: "[].permissions[].canDelegate"
+        permission_condition: "[].permissions[].specialConditionText"
+        permission_exercise_method: "[].permissions[].exerciseMethodDescription"
+
+# =============================================================================
+- id: national_address
+  label_ar: "العنوان الوطني للمنشأة"
+  label_en: "National address of an establishment"
+  about_ar: "سجل البريد السعودي للعنوان الوطني المسجل باسم المنشأة: رقم المبنى والشارع والحي والمدينة والرمز البريدي والرقم الإضافي."
+  document_words_ar: "شهادة العنوان الوطني، ترويسة خطاب، فاتورة ضريبية، عقد، عرض سعر، شهادة الزكاة والضريبة، أي مستند يطبع عنوان المنشأة مع رقم سجلها"
+  keys:
+    - id: cr_number
+      label_ar: "رقم السجل التجاري"
+      prompt_ar: "رقم السجل التجاري"
+      shape: "10 digits starting 1-6; sent as-is (this register accepts the old number directly)"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين: رقم السجل التجاري أو الرقم الوطني الموحد"
+      aliases_ar: ["رقم السجل التجاري", "س.ت", "سجل تجاري رقم", "C.R. No."]
+    - id: unified_number
+      label_ar: "الرقم الوطني الموحد"
+      prompt_ar: "الرقم الوطني الموحد"
+      shape: "10 digits starting 70"
+      personal: false
+      required: false
+      note_ar: "يكفي أحد الرقمين"
+      aliases_ar: ["الرقم الوطني الموحد", "الرقم الموحد للمنشأة", "الرقم الموحد", "UNN"]
+  facts:
+    - {id: establishment_name, label_ar: "اسم المنشأة", prompt_ar: "اسم المنشأة", compare: name, source: {query: national_address.info, path: "[].title"}}
+    - {id: building_number, label_ar: "رقم المبنى", prompt_ar: "رقم المبنى", compare: exact, source: {query: national_address.info, path: "[].buildingNumber"}}
+    - {id: street, label_ar: "الشارع", prompt_ar: "الشارع", compare: name, source: {query: national_address.info, path: "[].street"}, note_ar: "السجل قد يعيده بالإنجليزية"}
+    - {id: district, label_ar: "الحي", prompt_ar: "الحي", compare: name, source: {query: national_address.info, path: "[].district"}}
+    - {id: city, label_ar: "المدينة", prompt_ar: "المدينة", compare: name, source: {query: national_address.info, path: "[].city"}}
+    - {id: postal_code, label_ar: "الرمز البريدي", prompt_ar: "الرمز البريدي", compare: exact, source: {query: national_address.info, path: "[].postCode"}, note_ar: "٥ أرقام؛ ليس صندوق البريد"}
+    - {id: additional_number, label_ar: "الرقم الإضافي", prompt_ar: "الرقم الإضافي", compare: exact, source: {query: national_address.info, path: "[].additionalNumber"}, note_ar: "٤ أرقام بعد الشرطة في سطر العنوان"}
+    - {id: unit_number, label_ar: "رقم الوحدة", prompt_ar: "رقم الوحدة", compare: exact, source: {query: national_address.info, path: "[].unitNumber"}}
+    - {id: region, label_ar: "المنطقة", prompt_ar: "المنطقة", compare: name, source: {query: national_address.info, path: "[].regionName"}}
+    - {id: address_line1, label_ar: "العنوان", prompt_ar: "سطر العنوان", compare: text, source: {query: national_address.info, path: "[].address"}, note_ar: "رقم المبنى، الشارع، الحي"}
+    - {id: address_line2, label_ar: "سطر العنوان الثاني (المدينة، الرمز البريدي، الرقم الإضافي)", prompt_ar: "سطر العنوان", compare: text, source: {query: national_address.info, path: "[].address2"}, note_ar: "ليس العنوان المختصر المكوّن من ٤ أحرف و٤ أرقام"}
+    - {id: address_status, label_ar: "حالة العنوان", prompt_ar: null, compare: status, source: {query: national_address.info, path: "[].status"}}
+    - {id: is_primary_address, label_ar: "العنوان الرئيسي", prompt_ar: null, compare: flag, source: {query: national_address.info, path: "[].isPrimaryAddress"}, note_ar: "يُستخدم لاختيار صف العنوان المناسب حين يعيد السجل أكثر من عنوان"}
+  queries:
+    - id: national_address.info
+      needs: ["cr_number | unified_number"]
+      note: "the answer is a list (branches may have their own address): compare against the primary address or the row whose postal code / building number matches"
+      supplies:
+        establishment_name: "[].title"
+        building_number: "[].buildingNumber"
+        street: "[].street"
+        district: "[].district"
+        city: "[].city"
+        postal_code: "[].postCode"
+        additional_number: "[].additionalNumber"
+        unit_number: "[].unitNumber"
+        region: "[].regionName"
+        address_line1: "[].address"
+        address_line2: "[].address2"
+        address_status: "[].status"
+        is_primary_address: "[].isPrimaryAddress"
+
+# =============================================================================
+- id: attorney
+  label_ar: "الوكالة الشرعية"
+  label_en: "Power of attorney"
+  about_ar: "سجل وزارة العدل (ناجز) للوكالات: أطراف الوكالة وحالتها ومدتها وبنودها ونصها."
+  document_words_ar: "وكالة، صك وكالة، وكالة إلكترونية، تم إصدار وكالة إلكترونياً رقم، الموكل، الوكيل، وقد تم الإقرار بتوكيل"
+  keys:
+    - id: attorney_number
+      label_ar: "رقم الوكالة"
+      prompt_ar: "رقم الوكالة"
+      shape: "1-10 digits"
+      personal: false
+      required: true
+      note_ar: "يظهر في ترويسة الصك وداخل نصه بعد «تم إصدار وكالة إلكترونياً رقم»"
+      aliases_ar: ["رقم الوكالة", "وكالة رقم", "وكالة إلكترونية رقم", "تم إصدار وكالة إلكترونياً رقم"]
+    - id: principal_id
+      label_ar: "رقم هوية أحد الموكلين"
+      prompt_ar: "رقم هوية الموكل"
+      shape: "exactly 10 digits"
+      personal: true
+      required: false
+      note_ar: "يكفي رقم هوية طرف واحد: موكل أو وكيل؛ يُرسل رقم الموكل أولاً ثم رقم الوكيل إن لم يكن الأول طرفاً في الوكالة"
+      aliases_ar: ["للموكل", "الموكل", "بموجب إقامة رقم", "بموجب سجل مدني رقم", "بموجب هوية وطنية رقم"]
+    - id: agent_id
+      label_ar: "رقم هوية أحد الوكلاء"
+      prompt_ar: "رقم هوية الوكيل"
+      shape: "exactly 10 digits"
+      personal: true
+      required: false
+      note_ar: "بديل عن رقم هوية الموكل؛ يكفي أحدهما"
+      aliases_ar: ["الوكيل", "وقد تم الإقرار بتوكيل", "١- … بموجب سجل مدني رقم", "بموجب إقامة رقم"]
+  facts:
+    - {id: attorney_number, label_ar: "رقم الوكالة", prompt_ar: "رقم الوكالة", compare: exact, source: {query: attorney.info, path: code}, note_ar: "قد يعود باسم attorneyNumber"}
+    - {id: attorney_status, label_ar: "حالة الوكالة", prompt_ar: "حالة الوكالة", compare: status, source: {query: attorney.info, path: status}, note_ar: "سارية / منتهية / ملغاة؛ نادراً ما تُطبع في الصك"}
+    - {id: issue_date_hijri, label_ar: "تاريخ الإصدار (هجري)", prompt_ar: "تاريخ الإصدار", compare: date, source: {query: attorney.info, path: issueHijriDate}, note_ar: "حرر بتاريخ … هـ"}
+    - {id: issue_date_gregorian, label_ar: "تاريخ الإصدار (ميلادي)", prompt_ar: "تاريخ الإصدار", compare: date, source: {query: attorney.info, path: issueGregDate}}
+    - {id: expiry_date_hijri, label_ar: "تاريخ الانتهاء (هجري)", prompt_ar: "تاريخ الانتهاء", compare: date, source: {query: attorney.info, path: expiryHijriDate}, note_ar: "سارية حتى / تنتهي بتاريخ"}
+    - {id: expiry_date_gregorian, label_ar: "تاريخ الانتهاء (ميلادي)", prompt_ar: "تاريخ الانتهاء", compare: date, source: {query: attorney.info, path: expiryGregDate}, note_ar: "قد يعود باسم expiryDate"}
+    - {id: attorney_type, label_ar: "نوع الوكالة", prompt_ar: "نوع الوكالة", compare: text, source: {query: attorney.info, path: attorneyType}, note_ar: "أصلية / فرعية"}
+    - {id: issuing_office, label_ar: "اسم جهة الإصدار", prompt_ar: "جهة الإصدار", compare: name, source: {query: attorney.info, path: location.name}, note_ar: "كتابة عدل … / خدمات الوكالات الإلكترونية"}
+    - {id: principal_names, label_ar: "اسم الموكل", prompt_ar: "الموكل: الاسم", compare: name, source: {query: attorney.info, path: "principals[].name"}}
+    - {id: principal_ids, label_ar: "رقم هوية الموكل", prompt_ar: "الموكل: رقم الهوية", compare: exact, personal: true, source: {query: attorney.info, path: "principals[].id"}}
+    - {id: principal_capacities, label_ar: "صفة الموكل", prompt_ar: "الموكل: الصفة", compare: text, source: {query: attorney.info, path: "principals[].SefaName"}, note_ar: "أصالة عن نفسه / بصفته مديراً لشركة / ولياً / وصياً"}
+    - {id: agent_names, label_ar: "اسم الوكيل", prompt_ar: "الوكيل: الاسم", compare: list, source: {query: attorney.info, path: "agents[].name"}, note_ar: "القائمة المرقمة بعد «وقد تم الإقرار بتوكيل»"}
+    - {id: agent_ids, label_ar: "رقم هوية الوكيل", prompt_ar: "الوكيل: رقم الهوية", compare: exact, personal: true, source: {query: attorney.info, path: "agents[].id"}}
+    - {id: agent_capacities, label_ar: "صفة الوكيل", prompt_ar: "الوكيل: الصفة", compare: text, source: {query: attorney.info, path: "agents[].SefaName"}}
+    - {id: agents_behavior, label_ar: "طريقة تصرف الوكلاء (عربي)", prompt_ar: "تصرف الوكلاء", compare: text, source: {query: attorney.info, path: agentsBehavior.ar}, note_ar: "مجتمعين / منفردين / مجتمعين أو منفردين"}
+    - {id: principal_id_type, label_ar: "نوع الهوية (الموكل)", prompt_ar: null, compare: text, source: {query: attorney.info, path: "AllowedToActOnBehalf[].SocialTypeName"}, note_ar: "إقامة / سجل مدني / هوية وطنية / جواز"}
+    - {id: principal_party_type, label_ar: "نوع الطرف", prompt_ar: null, compare: text, source: {query: attorney.info, path: "AllowedToActOnBehalf[].TypeName"}, note_ar: "فردي / شركة / مؤسسة"}
+    - {id: principal_cr_number, label_ar: "رقم السجل التجاري (الموكل منشأة)", prompt_ar: "الموكل منشأة: رقم السجل التجاري", compare: exact, source: {query: attorney.info, path: "AllowedToActOnBehalf[].CRNumber"}}
+    - {id: principal_national_number, label_ar: "الرقم الوطني (الموكل منشأة)", prompt_ar: "الموكل منشأة: رقم السجل التجاري", compare: exact, personal: true, source: {query: attorney.info, path: "AllowedToActOnBehalf[].NationalNumber"}}
+    - {id: company_represent_type, label_ar: "نوع تمثيل المنشأة", prompt_ar: null, compare: text, source: {query: attorney.info, path: "AllowedToActOnBehalf[].CompanyRepresentTypeName"}, note_ar: "بصفته مديراً / مالك المؤسسة / رئيس مجلس الإدارة"}
+    - {id: represent_document_type, label_ar: "نوع المستند (سند التمثيل)", prompt_ar: null, compare: text, source: {query: attorney.info, path: "AllowedToActOnBehalf[].DocumentTypeName"}, note_ar: "بموجب عقد التأسيس / قرار الشركاء / السجل التجاري"}
+    - {id: decision_number, label_ar: "رقم القرار", prompt_ar: "الموكل منشأة: رقم القرار أو الصك", compare: exact, source: {query: attorney.info, path: "AllowedToActOnBehalf[].KararNumber"}}
+    - {id: represent_deed_number, label_ar: "رقم الصك (سند التمثيل)", prompt_ar: "الموكل منشأة: رقم القرار أو الصك", compare: exact, source: {query: attorney.info, path: "AllowedToActOnBehalf[].SakkNumber"}}
+    - {id: clauses, label_ar: "نص البند", prompt_ar: null, compare: list, source: {query: attorney.info, path: "textList[].text"}, note_ar: "بنود الصلاحيات في متن الوكالة؛ لا يُطلب نسخها من النموذج، تُعرض من السجل وتُقارن بما يلصقه المستخدم"}
+    - {id: clause_categories, label_ar: "تصنيف البند", prompt_ar: "بنود الوكالة", compare: list, source: {query: attorney.info, path: "textList[].type"}, note_ar: "العناوين القصيرة بين أقواس مربعة فقط: [العقارات] [المحاكم] [طلب الخدمات]"}
+    - {id: attorney_text, label_ar: "نص الوكالة", prompt_ar: null, compare: text, source: {query: attorney.info, path: text}, note_ar: "متن الصك كاملاً؛ قد يعود باسم attorneyText؛ أرقام الهويات داخله محجوبة؛ لا يُطلب نسخه من النموذج"}
+  queries:
+    - id: attorney.info
+      needs: [attorney_number, "principal_id | agent_id"]
+      note: "if the register says the ID is not a party of this attorney, retry once with the other party's ID"
+      supplies:
+        attorney_number: code
+        attorney_status: status
+        issue_date_hijri: issueHijriDate
+        issue_date_gregorian: issueGregDate
+        expiry_date_hijri: expiryHijriDate
+        expiry_date_gregorian: expiryGregDate
+        attorney_type: attorneyType
+        issuing_office: location.name
+        principal_names: "principals[].name"
+        principal_ids: "principals[].id"
+        principal_capacities: "principals[].SefaName"
+        agent_names: "agents[].name"
+        agent_ids: "agents[].id"
+        agent_capacities: "agents[].SefaName"
+        agents_behavior: agentsBehavior.ar
+        principal_id_type: "AllowedToActOnBehalf[].SocialTypeName"
+        principal_party_type: "AllowedToActOnBehalf[].TypeName"
+        principal_cr_number: "AllowedToActOnBehalf[].CRNumber"
+        principal_national_number: "AllowedToActOnBehalf[].NationalNumber"
+        company_represent_type: "AllowedToActOnBehalf[].CompanyRepresentTypeName"
+        represent_document_type: "AllowedToActOnBehalf[].DocumentTypeName"
+        decision_number: "AllowedToActOnBehalf[].KararNumber"
+        represent_deed_number: "AllowedToActOnBehalf[].SakkNumber"
+        clauses: "textList[].text"
+        clause_categories: "textList[].type"
+        attorney_text: text
+
+# =============================================================================
+- id: deed
+  label_ar: "الصك العقاري"
+  label_en: "Real-estate deed"
+  about_ar: "سجل وزارة العدل للصكوك العقارية: رقم الصك وتاريخه وجهة إصداره وملاكه وحصصهم ومساحته وحدوده والعقارات التي يشملها."
+  document_words_ar: "صك، صك ملكية، صك عقاري، بموجب الصك رقم … وتاريخ …، إفراغ، عقد بيع عقار، عقد إيجار يذكر صكاً، خطاب بنك عقاري"
+  keys:
+    - id: deed_number
+      label_ar: "رقم الصك"
+      prompt_ar: "رقم الصك"
+      shape: "digits only, 1-20"
+      personal: false
+      required: true
+      note_ar: "لا يكفي وحده؛ يلزم معه رقم هوية أحد الملاك ونوعها"
+      aliases_ar: ["رقم الصك", "صك رقم", "الصك رقم", "بموجب الصك رقم"]
+    - id: owner_id
+      label_ar: "رقم هوية أحد الملاك"
+      prompt_ar: "رقم هوية المالك"
+      shape: "3-20 letters/digits; national ID 1XXXXXXXXX, iqama 2XXXXXXXXX, passport letters+digits, CR 10 digits"
+      personal: true
+      required: true
+      note_ar: "هوية مالك واحد تكفي لأن السجل يعيد كل الملاك؛ إن ذكر المستند الصك دون هوية مالك يُطلب الرقم في شاشة المراجعة"
+      aliases_ar: ["رقم الهوية", "هوية وطنية رقم", "سجل مدني رقم", "بموجب السجل المدني رقم", "رقم الإقامة", "إقامة رقم", "جواز سفر رقم", "رقم السجل التجاري", "س.ت", "رقم صك الوقف", "رقم الترخيص"]
+    - id: owner_id_type
+      label_ar: "نوع الهوية (المالك)"
+      prompt_ar: "نوع هوية المالك"
+      shape: "one of National_ID | Resident_ID | Passport | CR_NO | Endowment_Deed_No | license_No | Foreign_CR_No | Gov_National_ID (case-sensitive)"
+      personal: false
+      required: true
+      note_ar: "يُستنتج من كلمة الهوية: هوية وطنية / سجل مدني ← National_ID، إقامة ← Resident_ID، جواز ← Passport، سجل تجاري ← CR_NO، صك وقف ← Endowment_Deed_No، ترخيص ← license_No، جهة حكومية ← Gov_National_ID؛ أو من أول رقم (١ وطنية، ٢ إقامة)"
+      aliases_ar: ["هوية وطنية", "سجل مدني", "إقامة", "هوية مقيم", "جواز سفر", "سجل تجاري", "صك وقف", "ترخيص", "جهة حكومية"]
+  facts:
+    - {id: deed_number, label_ar: "رقم الصك", prompt_ar: "رقم الصك", compare: exact, source: {query: real_estate.deed, path: deedDetails.deedNumber}}
+    - {id: deed_serial, label_ar: "الرقم التسلسلي للصك", prompt_ar: "الرقم التسلسلي", compare: exact, source: {query: real_estate.deed, path: deedDetails.deedSerial}, note_ar: "يُطبع على الصك إلى جانب رقمه؛ ليس مفتاحاً ولا بديلاً عن رقم الصك"}
+    - {id: deed_date_hijri, label_ar: "تاريخ الصك (هجري)", prompt_ar: "تاريخ الصك", compare: date, source: {query: real_estate.deed, path: deedDetails.deedDate}, note_ar: "السجل هجري فقط؛ تُوحَّد الفواصل والأصفار"}
+    - {id: deed_source, label_ar: "مصدر الصك (كتابة العدل / المحكمة)", prompt_ar: "مصدر الصك", compare: text, source: {query: real_estate.deed, path: courtDetails.deedSource}}
+    - {id: deed_city, label_ar: "مدينة إصدار الصك", prompt_ar: "مدينة الإصدار", compare: name, source: {query: real_estate.deed, path: courtDetails.deedCity}}
+    - {id: deed_status, label_ar: "حالة الصك", prompt_ar: "حالة الصك", compare: status, source: {query: real_estate.deed, path: deedStatus}, note_ar: "القيمة في السجل بالإنجليزية (active)"}
+    - {id: deed_area, label_ar: "مساحة الصك (م²)", prompt_ar: "مساحة الصك", compare: number, source: {query: real_estate.deed, path: deedInfo.deedArea}}
+    - {id: deed_area_text, label_ar: "مساحة الصك (نصاً)", prompt_ar: "مساحة الصك", compare: text, source: {query: real_estate.deed, path: deedInfo.deedAreaText}}
+    - {id: is_mortgaged, label_ar: "هل العقار مرهون", prompt_ar: "مرهون", compare: flag, source: {query: real_estate.deed, path: deedInfo.isRealEstateMortgaged}, note_ar: "مرهون لصالح … / خالٍ من الرهن"}
+    - {id: is_halted, label_ar: "هل العقار موقوف عن التصرف", prompt_ar: "موقوف عن التصرف", compare: flag, source: {query: real_estate.deed, path: deedInfo.isRealEstateHalted}}
+    - {id: owner_names, label_ar: "اسم المالك", prompt_ar: "المالك: الاسم", compare: name, source: {query: real_estate.deed, path: "ownerDetails[].ownerName"}, note_ar: "يُطابق كل مالك برقم هويته ثم يُقارن اسمه"}
+    - {id: owner_ids, label_ar: "رقم هوية المالك", prompt_ar: "المالك: رقم الهوية", compare: exact, personal: true, source: {query: real_estate.deed, path: "ownerDetails[].idNumber"}}
+    - {id: owner_id_types, label_ar: "نوع الهوية (المالك)", prompt_ar: null, compare: text, source: {query: real_estate.deed, path: "ownerDetails[].idTypeText"}}
+    - {id: owner_birth_dates, label_ar: "تاريخ الميلاد (هجري)", prompt_ar: null, compare: date, personal: true, source: {query: real_estate.deed, path: "ownerDetails[].birthDate"}, note_ar: "يرد في الصكوك القديمة"}
+    - {id: owner_nationalities, label_ar: "الجنسية (المالك)", prompt_ar: "المالك: الجنسية", compare: text, source: {query: real_estate.deed, path: "ownerDetails[].nationality"}}
+    - {id: owner_shares, label_ar: "حصة الملكية", prompt_ar: "المالك: حصة الملكية", compare: number, source: {query: real_estate.deed, path: "ownerDetails[].owningAmount"}, note_ar: "نسبة مئوية؛ الربع = ٢٥، كامل العقار = ١٠٠"}
+    - {id: owner_areas, label_ar: "المساحة المملوكة (م²)", prompt_ar: "المالك: المساحة المملوكة", compare: number, source: {query: real_estate.deed, path: "ownerDetails[].owningArea"}}
+    - {id: north_limit, label_ar: "الحد الشمالي", prompt_ar: "حدود الصك: شمالاً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.northLimitName}, note_ar: "قطعة / شارع / ممر؛ قيمة البند = الوصف والطول معاً كما طُبعا"}
+    - {id: north_limit_description, label_ar: "وصف الحد الشمالي", prompt_ar: "حدود الصك: شمالاً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.northLimitDescription}}
+    - {id: north_limit_length, label_ar: "طول الحد الشمالي (م)", prompt_ar: "حدود الصك: شمالاً", compare: number, source: {query: real_estate.deed, path: deedLimitsDetails.northLimitLength}}
+    - {id: south_limit, label_ar: "الحد الجنوبي", prompt_ar: "حدود الصك: جنوباً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.southLimitName}}
+    - {id: south_limit_description, label_ar: "وصف الحد الجنوبي", prompt_ar: "حدود الصك: جنوباً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.southLimitDescription}}
+    - {id: south_limit_length, label_ar: "طول الحد الجنوبي (م)", prompt_ar: "حدود الصك: جنوباً", compare: number, source: {query: real_estate.deed, path: deedLimitsDetails.southLimitLength}}
+    - {id: east_limit, label_ar: "الحد الشرقي", prompt_ar: "حدود الصك: شرقاً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.eastLimitName}}
+    - {id: east_limit_description, label_ar: "وصف الحد الشرقي", prompt_ar: "حدود الصك: شرقاً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.eastLimitDescription}}
+    - {id: east_limit_length, label_ar: "طول الحد الشرقي (م)", prompt_ar: "حدود الصك: شرقاً", compare: number, source: {query: real_estate.deed, path: deedLimitsDetails.eastLimitLength}}
+    - {id: west_limit, label_ar: "الحد الغربي", prompt_ar: "حدود الصك: غرباً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.westLimitName}}
+    - {id: west_limit_description, label_ar: "وصف الحد الغربي", prompt_ar: "حدود الصك: غرباً", compare: text, source: {query: real_estate.deed, path: deedLimitsDetails.westLimitDescription}}
+    - {id: west_limit_length, label_ar: "طول الحد الغربي (م)", prompt_ar: "حدود الصك: غرباً", compare: number, source: {query: real_estate.deed, path: deedLimitsDetails.westLimitLength}}
+    - {id: region, label_ar: "المنطقة", prompt_ar: "العقار: المنطقة", compare: name, source: {query: real_estate.deed, path: "realEstateDetails[].regionName"}}
+    - {id: city, label_ar: "المدينة", prompt_ar: "العقار: المدينة", compare: name, source: {query: real_estate.deed, path: "realEstateDetails[].cityName"}}
+    - {id: district, label_ar: "الحي", prompt_ar: "العقار: الحي", compare: name, source: {query: real_estate.deed, path: "realEstateDetails[].districtName"}}
+    - {id: property_type, label_ar: "نوع العقار", prompt_ar: null, compare: text, source: {query: real_estate.deed, path: "realEstateDetails[].realEstateTypeName"}, note_ar: "أرض / شقة / فيلا / عمارة؛ قد يكون فارغاً في السجل"}
+    - {id: land_number, label_ar: "رقم القطعة", prompt_ar: "العقار: رقم القطعة", compare: exact, source: {query: real_estate.deed, path: "realEstateDetails[].landNumber"}}
+    - {id: plan_number, label_ar: "رقم المخطط", prompt_ar: "العقار: رقم المخطط", compare: exact, source: {query: real_estate.deed, path: "realEstateDetails[].planNumber"}, note_ar: "قد يحوي شرطات مائلة وحروفاً؛ تُقارن بعد حذف المسافات"}
+    - {id: property_area, label_ar: "المساحة (م²)", prompt_ar: "العقار: المساحة", compare: number, source: {query: real_estate.deed, path: "realEstateDetails[].area"}}
+    - {id: property_area_text, label_ar: "المساحة (نصاً)", prompt_ar: "العقار: المساحة", compare: text, source: {query: real_estate.deed, path: "realEstateDetails[].areaText"}}
+    - {id: location_description, label_ar: "وصف الموقع", prompt_ar: null, compare: text, source: {query: real_estate.deed, path: "realEstateDetails[].locationDescription"}}
+  queries:
+    - id: real_estate.deed
+      needs: [deed_number, owner_id, owner_id_type]
+      note: "one call per (deed, owner) pair; a not-found answer means the deed and owner together have no match, never which one is wrong"
+      supplies:
+        deed_number: deedDetails.deedNumber
+        deed_serial: deedDetails.deedSerial
+        deed_date_hijri: deedDetails.deedDate
+        deed_source: courtDetails.deedSource
+        deed_city: courtDetails.deedCity
+        deed_status: deedStatus
+        deed_area: deedInfo.deedArea
+        deed_area_text: deedInfo.deedAreaText
+        is_mortgaged: deedInfo.isRealEstateMortgaged
+        is_halted: deedInfo.isRealEstateHalted
+        owner_names: "ownerDetails[].ownerName"
+        owner_ids: "ownerDetails[].idNumber"
+        owner_id_types: "ownerDetails[].idTypeText"
+        owner_birth_dates: "ownerDetails[].birthDate"
+        owner_nationalities: "ownerDetails[].nationality"
+        owner_shares: "ownerDetails[].owningAmount"
+        owner_areas: "ownerDetails[].owningArea"
+        north_limit: deedLimitsDetails.northLimitName
+        north_limit_description: deedLimitsDetails.northLimitDescription
+        north_limit_length: deedLimitsDetails.northLimitLength
+        south_limit: deedLimitsDetails.southLimitName
+        south_limit_description: deedLimitsDetails.southLimitDescription
+        south_limit_length: deedLimitsDetails.southLimitLength
+        east_limit: deedLimitsDetails.eastLimitName
+        east_limit_description: deedLimitsDetails.eastLimitDescription
+        east_limit_length: deedLimitsDetails.eastLimitLength
+        west_limit: deedLimitsDetails.westLimitName
+        west_limit_description: deedLimitsDetails.westLimitDescription
+        west_limit_length: deedLimitsDetails.westLimitLength
+        region: "realEstateDetails[].regionName"
+        city: "realEstateDetails[].cityName"
+        district: "realEstateDetails[].districtName"
+        property_type: "realEstateDetails[].realEstateTypeName"
+        land_number: "realEstateDetails[].landNumber"
+        plan_number: "realEstateDetails[].planNumber"
+        property_area: "realEstateDetails[].area"
+        property_area_text: "realEstateDetails[].areaText"
+        location_description: "realEstateDetails[].locationDescription"
+
+# =============================================================================
+- id: employee
+  label_ar: "الموظف (المشترك في التأمينات الاجتماعية)"
+  label_en: "Employee (GOSI contributor, private sector)"
+  about_ar: "سجل التأمينات الاجتماعية للمشترك في القطاع الخاص: اسمه وجنسيته ومدة اشتراكه ومنشآته وحالته فيها وأجره المسجل."
+  document_words_ar: "عقد عمل، شهادة تعريف بالراتب، كشف راتب، مشهد مدد الاشتراك من التأمينات، خطاب تعريف، بطاقة هوية، إقامة"
+  keys:
+    - id: person_id
+      label_ar: "رقم الهوية أو رقم الإقامة"
+      prompt_ar: "رقم هوية الموظف"
+      shape: "exactly 10 digits starting 1 (national ID) or 2 (iqama); passports and GCC IDs are not accepted"
+      personal: true
+      required: true
+      note_ar: "السجل لا يعيد رقم الهوية؛ تتأكد الهوية من الاسم فقط؛ القطاع الخاص وحده"
+      aliases_ar: ["رقم الهوية الوطنية", "رقم الهوية", "رقم السجل المدني", "رقم بطاقة الأحوال", "رقم الإقامة", "هوية مقيم", "ID No.", "Iqama No."]
+      note_exclude_ar: "«رقم المشترك» في التأمينات ليس رقم الهوية ولا يُرسل"
+  facts:
+    - {id: employee_name, label_ar: "اسم المشترك الكامل", prompt_ar: "اسم الموظف", compare: name, source: {query: employee.info, path: name}, note_ar: "اسم الموظف / العامل / الطرف الثاني في عقد العمل"}
+    - {id: nationality, label_ar: "الجنسية", prompt_ar: "الجنسية", compare: text, source: {query: employee.info, path: nationality}, note_ar: "سعودي = السعودية"}
+    - {id: working_months, label_ar: "إجمالي أشهر الاشتراك في التأمينات الاجتماعية", prompt_ar: "أشهر الاشتراك", compare: number, source: {query: employee.info, path: workingMonths}, note_ar: "تراكمي عبر كل المنشآت ويزداد شهرياً؛ السنوات تُحوَّل إلى أشهر"}
+    - {id: employer_names, label_ar: "اسم المنشأة", prompt_ar: "اسم المنشأة", compare: name, source: {query: employee.info, path: "employmentInfo[].employer"}, note_ar: "جهة العمل / صاحب العمل / الكفيل / الطرف الأول؛ قائمة بالمنشآت الحالية والسابقة"}
+    - {id: employment_status, label_ar: "حالة المشترك في المنشأة", prompt_ar: "حالة الاشتراك", compare: status, source: {query: employee.info, path: "employmentInfo[].status"}, note_ar: "القيم بالإنجليزية: Active (على رأس العمل)، Inactive (منتهي)، Public pension، Private pension (متقاعد)"}
+    - {id: basic_wage, label_ar: "الأجر الأساسي الشهري", prompt_ar: "الراتب الأساسي", compare: number, source: {query: employee.info, path: "employmentInfo[].wageDetails.basicWage"}}
+    - {id: housing_allowance, label_ar: "بدل السكن الشهري", prompt_ar: "بدل السكن", compare: number, source: {query: employee.info, path: "employmentInfo[].wageDetails.housingAllowance"}, note_ar: "البدل السنوي أو النسبة تُحوَّل إلى قيمة شهرية"}
+    - {id: other_allowance, label_ar: "البدلات الأخرى الشهرية", prompt_ar: "البدلات الأخرى", compare: number, source: {query: employee.info, path: "employmentInfo[].wageDetails.otherAllowance"}, note_ar: "مجموع البدلات عدا السكن"}
+    - {id: full_wage, label_ar: "إجمالي الأجر", prompt_ar: "إجمالي الراتب", compare: number, source: {query: employee.info, path: "employmentInfo[].wageDetails.fullWage"}, note_ar: "الأجر الخاضع للاشتراك؛ قد يختلف عن إجمالي المستند إن ضم بدلات غير خاضعة"}
+  queries:
+    - id: employee.info
+      needs: [person_id]
+      note: "the register never returns date of birth, profession, joining/leaving dates or the establishment's number"
+      supplies:
+        employee_name: name
+        nationality: nationality
+        working_months: workingMonths
+        employer_names: "employmentInfo[].employer"
+        employment_status: "employmentInfo[].status"
+        basic_wage: "employmentInfo[].wageDetails.basicWage"
+        housing_allowance: "employmentInfo[].wageDetails.housingAllowance"
+        other_allowance: "employmentInfo[].wageDetails.otherAllowance"
+        full_wage: "employmentInfo[].wageDetails.fullWage"
+
+# =============================================================================
+- id: investor
+  label_ar: "المستثمر الأجنبي (وزارة الاستثمار)"
+  label_en: "Foreign investor (MISA-registered entity)"
+  about_ar: "سجل وزارة الاستثمار للكيان الأجنبي المستثمر: بياناته ودولة منشئه وحالة تسجيله وشركاؤه ونسبهم ومفوَّضه."
+  document_words_ar: "رخصة استثمار أجنبي، ترخيص استثماري، وزارة الاستثمار، الهيئة العامة للاستثمار، مستثمر أجنبي، فرع شركة أجنبية، شريك أجنبي ونسبة ملكيته"
+  keys:
+    - id: unified_number
+      label_ar: "الرقم الموحد الصادر من سدايا (700)"
+      prompt_ar: "الرقم الوطني الموحد"
+      shape: "10-12 digits starting 70"
+      personal: false
+      required: true
+      note_ar: "رقم الترخيص الاستثماري ليس مفتاحاً لهذا السجل؛ رقم السجل التجاري القديم (١–٦…) يُحوَّل عبر السجل التجاري أولاً"
+      aliases_ar: ["الرقم الوطني الموحد", "الرقم الموحد للمنشأة", "الرقم الموحد", "الرقم الموحد الصادر من سدايا", "رقم المنشأة الموحد"]
+  facts:
+    - {id: unified_number, label_ar: "الرقم الموحد الصادر من سدايا", prompt_ar: "الرقم الوطني الموحد", compare: exact, source: {query: investor.fullinfo, path: entityInfo.crNationalNumber}}
+    - {id: entity_name, label_ar: "أسم المنشأة", prompt_ar: "اسم المنشأة", compare: name, source: {query: investor.fullinfo, path: entityInfo.name}}
+    - {id: registration_type, label_ar: "نوع التسجيل", prompt_ar: null, compare: text, source: {query: investor.fullinfo, path: entityInfo.regestrationType}, note_ar: "قد يعود بالإنجليزية"}
+    - {id: origin_country, label_ar: "دولة منشأ المنشأة", prompt_ar: "دولة المنشأ", compare: name, source: {query: investor.fullinfo, path: entityInfo.country}, note_ar: "السجل يعيد رمز الدولة (AU) والمستند الاسم (أستراليا)"}
+    - {id: origin_cr_number, label_ar: "رقم السجل التجاري في دولة المنشأ", prompt_ar: "رقم السجل في دولة المنشأ", compare: exact, source: {query: investor.fullinfo, path: entityInfo.originCr}}
+    - {id: registration_status, label_ar: "وصف حالة التسجيل", prompt_ar: "حالة التسجيل", compare: status, source: {query: investor.fullinfo, path: entityInfo.status.name}, note_ar: "نشط، منتهي، ملغى"}
+    - {id: annual_update_date, label_ar: "تاريخ التحديث السنوي القادم", prompt_ar: null, compare: date, source: {query: investor.fullinfo, path: entityInfo.annualUpdateDate}, note_ar: "لا يُساوى بتاريخ انتهاء الرخصة إلا إذا نص المستند"}
+    - {id: phone, label_ar: "رقم هاتف المنشأة", prompt_ar: "هاتف المنشأة", compare: exact, source: {query: investor.fullinfo, path: entityInfo.phone}, note_ar: "دون رمز الدولة والصفر البادئ"}
+    - {id: email, label_ar: "البريد الإلكتروني الرسمي للمنشأة", prompt_ar: "بريد المنشأة", compare: exact, source: {query: investor.fullinfo, path: entityInfo.email}}
+    - {id: partner_names, label_ar: "الاسم الكامل للشريك", prompt_ar: "الشريك: الاسم", compare: list, source: {query: investor.fullinfo, path: "partners[].name"}, note_ar: "قد يعود باسم parties[]"}
+    - {id: partner_types, label_ar: "وصف نوع الشريك", prompt_ar: "الشريك: النوع", compare: text, source: {query: investor.fullinfo, path: "partners[].partnersType.name"}, note_ar: "فرد / منظمة"}
+    - {id: partner_nationalities, label_ar: "جنسية الشريك", prompt_ar: "الشريك: الجنسية", compare: name, source: {query: investor.fullinfo, path: "partners[].nationality"}, note_ar: "رمز دولة في السجل"}
+    - {id: partner_shares, label_ar: "نسبة ملكية الشريك", prompt_ar: "الشريك: نسبة الملكية", compare: number, source: {query: investor.fullinfo, path: "partners[].partnerShare"}, note_ar: "نسبة مئوية (50.000000)؛ إن طُبع عدد الحصص لا النسبة فلا يُقارن"}
+    - {id: delegate_name, label_ar: "الاسم الكامل للمفوَّض", prompt_ar: "المفوض: الاسم", compare: name, source: {query: investor.fullinfo, path: delegate.name}, note_ar: "المفوض / الممثل النظامي / المدير العام / مقدم الطلب"}
+    - {id: delegate_id_type, label_ar: "وصف نوع هوية المفوَّض", prompt_ar: null, compare: text, source: {query: investor.fullinfo, path: delegate.delegateType.typeName}}
+    - {id: delegate_id, label_ar: "رقم هوية المفوض", prompt_ar: "المفوض: رقم الهوية", compare: exact, personal: true, source: {query: investor.fullinfo, path: delegate.delegateType.id}, note_ar: "قد يعود باسم delegate.identity.id"}
+    - {id: delegate_nationality, label_ar: "جنسية المفوَّض", prompt_ar: "المفوض: الجنسية", compare: name, source: {query: investor.fullinfo, path: delegate.nationality}, note_ar: "قد يكون فارغاً في السجل"}
+    - {id: delegation_start_date, label_ar: "تاريخ بداية التفويض", prompt_ar: "المفوض: بداية التفويض", compare: date, source: {query: investor.fullinfo, path: delegate.delegStartDate}}
+    - {id: delegation_end_date, label_ar: "تاريخ انتهاء التفويض", prompt_ar: "المفوض: نهاية التفويض", compare: date, source: {query: investor.fullinfo, path: delegate.delegExpDate}}
+  queries:
+    - id: investor.fullinfo
+      needs: [unified_number]
+      note: "the live answer may spell partners as parties, delegateType as identity and delegStartDate/delegExpDate as delegationStartDate/delegationExpDate: read through an alias map"
+      supplies:
+        unified_number: entityInfo.crNationalNumber
+        entity_name: entityInfo.name
+        registration_type: entityInfo.regestrationType
+        origin_country: entityInfo.country
+        origin_cr_number: entityInfo.originCr
+        registration_status: entityInfo.status.name
+        annual_update_date: entityInfo.annualUpdateDate
+        phone: entityInfo.phone
+        email: entityInfo.email
+        partner_names: "partners[].name"
+        partner_types: "partners[].partnersType.name"
+        partner_nationalities: "partners[].nationality"
+        partner_shares: "partners[].partnerShare"
+        delegate_name: delegate.name
+        delegate_id_type: delegate.delegateType.typeName
+        delegate_id: delegate.delegateType.id
+        delegate_nationality: delegate.nationality
+        delegation_start_date: delegate.delegStartDate
+        delegation_end_date: delegate.delegExpDate
+
+# =============================================================================
+- id: drug
+  label_ar: "الدواء المسجل لدى هيئة الغذاء والدواء"
+  label_en: "Registered drug (SFDA)"
+  about_ar: "سجل هيئة الغذاء والدواء للمستحضر الصيدلاني: اسمه التجاري وحالة تسجيله وسعره المعتمد وشهاداته وشروط صرفه."
+  document_words_ar: "علبة دواء، نشرة داخلية، شهادة تسجيل مستحضر، قائمة أسعار، فاتورة صيدلية، وصفة طبية، ملاحظة استبدال دواء"
+  keys:
+    - id: registration_number
+      label_ar: "رقم تسجيل المستحضر"
+      prompt_ar: "رقم تسجيل المستحضر"
+      shape: "digits only, 1-20"
+      personal: false
+      required: true
+      note_ar: "لا بيانات شخصية في هذا السجل"
+      aliases_ar: ["رقم التسجيل", "رقم تسجيل المستحضر", "رقم تسجيل الدواء", "رقم التسجيل لدى هيئة الغذاء والدواء", "Registration No.", "SFDA Reg. No."]
+  facts:
+    - {id: registration_number, label_ar: "رقم تسجيل المستحضر", prompt_ar: "رقم تسجيل المستحضر", compare: exact, source: {query: drug.price, path: registrationNumber}, note_ar: "صدى للمفتاح: يؤكد أن السجل فُتح بالرقم نفسه"}
+    - {id: trade_name, label_ar: "الاسم التجاري للمستحضر", prompt_ar: "الاسم التجاري", compare: name, source: {query: drug.status, path: tradeName}, note_ar: "اسم الدواء على العلبة؛ تسامح مع لاحقة التركيز والشكل الصيدلاني"}
+    - {id: certificate_status, label_ar: "حالة الشهادة", prompt_ar: "حالة التسجيل", compare: status, source: {query: drug.status, path: certificateStatus}, note_ar: "القيم بالإنجليزية (Registered، Invalid) والمستند بالعربية (مسجل، ملغى)"}
+    - {id: certificate_number, label_ar: "رقم الشهادة", prompt_ar: "رقم الشهادة", compare: exact, source: {query: drug.price, path: "certificates[].certificateNumber"}, note_ar: "الأصفار البادئة في السجل"}
+    - {id: certificate_start_date, label_ar: "تاريخ بداية الشهادة", prompt_ar: "تاريخ الشهادة", compare: date, source: {query: drug.price, path: "certificates[].startDate"}, note_ar: "الجزء التاريخي فقط"}
+    - {id: price, label_ar: "سعر المستحضر", prompt_ar: "السعر", compare: number, source: {query: drug.price, path: "certificates[].price"}, note_ar: "سعر الجمهور / السعر المعتمد؛ يُقارن بأحدث شهادة، ومطابقة شهادة أقدم = مطابقة جزئية"}
+    - {id: dispensing_classification, label_ar: "تصنيف الصرف المقترح", prompt_ar: "تصنيف الصرف", compare: text, source: {query: drug.dispensing, path: "certificates[].dispensingClassification"}, note_ar: "يُصرف بوصفة طبية / بدون وصفة (OTC)"}
+    - {id: behind_the_counter, label_ar: "صرف خلف المنضدة", prompt_ar: "الصرف خلف المنضدة", compare: text, source: {query: drug.dispensing, path: "certificates[].behindTheCounter"}, note_ar: "يُصرف بواسطة الصيدلي (BTC)"}
+    - {id: prescription_type, label_ar: "نوع الوصفة الطبية", prompt_ar: "نوع الوصفة", compare: text, source: {query: drug.dispensing, path: "certificates[].medicalPrescriptionType"}, note_ar: "مخدرة / مراقبة / عادية؛ غالباً فارغ في السجل"}
+    - {id: alternative_trade_names, label_ar: "الاسم التجاري للمستحضر البديل", prompt_ar: "اسم البديل", compare: list, source: {query: drug.alternatives, path: "alternatives[].tradeName"}, note_ar: "فقط حين يذكر المستند بديلاً"}
+  queries:
+    - id: drug.status
+      needs: [registration_number]
+      supplies: {trade_name: tradeName, certificate_status: certificateStatus}
+    - id: drug.price
+      needs: [registration_number]
+      note: "certificates are a history list: compare with the certificate having the latest start date"
+      supplies:
+        registration_number: registrationNumber
+        certificate_number: "certificates[].certificateNumber"
+        price: "certificates[].price"
+        certificate_start_date: "certificates[].startDate"
+    - id: drug.dispensing
+      needs: [registration_number]
+      supplies:
+        registration_number: registrationNumber
+        certificate_status: certificateStatus
+        certificate_number: "certificates[].certificateNumber"
+        certificate_start_date: "certificates[].startDate"
+        dispensing_classification: "certificates[].dispensingClassification"
+        behind_the_counter: "certificates[].behindTheCounter"
+        prescription_type: "certificates[].medicalPrescriptionType"
+    - id: drug.alternatives
+      needs: [registration_number]
+      note: "only when the document names a substitute product"
+      supplies:
+        registration_number: registrationNumber
+        certificate_number: certificateNumber
+        certificate_status: certificateStatus
+        price: price
+        alternative_trade_names: "alternatives[].tradeName"

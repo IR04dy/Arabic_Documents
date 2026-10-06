@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wathq-mock",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["C:/Users/User/AppData/Local/Temp/claude/D--Yousef-Arabic-Text-Extraction/b0b58ca6-ea63-4fd8-827e-330923f102e1/scratchpad/wathq_mock_all.py", "8323"],
+      "port": 8323
+    }
+  ]
+}

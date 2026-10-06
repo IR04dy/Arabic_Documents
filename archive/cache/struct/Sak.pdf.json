@@ -1,0 +1,1301 @@
+{
+ "document_type": "صك حصر ورثة",
+ "truncated": false,
+ "output_capped": false,
+ "sections": [
+  {
+   "title": "بيانات الصك",
+   "fields": [
+    {
+     "label": "رقم الصك",
+     "value": "٤٣١٥٣٧٢٣٤",
+     "key": "deed_number",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 3,
+      "start": 58,
+      "end": 67,
+      "quote": "رقم الوثيقة : ٤٣١٥٣٧٢٣٤"
+     }
+    },
+    {
+     "label": "تاريخ الصك",
+     "value": "١٤٤٣/٠٤/١٩ هـ",
+     "key": "deed_date_hijri",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 4,
+      "start": 78,
+      "end": 91,
+      "quote": "تاريخها : ١٤٤٣/٠٤/١٩ هـ"
+     }
+    },
+    {
+     "label": "الجهة المصدرة",
+     "value": "النظام الإلكتروني لخدمات التوثيق",
+     "key": "issuing_authority",
+     "required": true,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 26,
+      "start": 1195,
+      "end": 1227,
+      "quote": "صدرت هذه الوثيقة من النظام الإلكتروني لخدمات التوثيق، ويمكن التحقق من صحة الوثيقة عبر الخدمات الإلكترونية لوزارة العدل"
+     }
+    },
+    {
+     "label": "التاريخ الميلادي",
+     "value": "٢٠٢١/١١/٢٤",
+     "key": "deed_date_gregorian",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 5,
+      "start": 102,
+      "end": 112,
+      "quote": "الموافق : ٢٠٢١/١١/٢٤ م"
+     }
+    },
+    {
+     "label": "رقم المعاملة",
+     "value": "٤٣١٥٣٧٢٣٤",
+     "key": "case_number",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 3,
+      "start": 58,
+      "end": 67,
+      "quote": "رقم الوثيقة : ٤٣١٥٣٧٢٣٤"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات المتوفى",
+   "fields": [
+    {
+     "label": "اسم المتوفى",
+     "value": "نافع سبيل عوده الحربي",
+     "key": "deceased_name",
+     "required": true,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 7,
+      "start": 143,
+      "end": 164,
+      "quote": "اسم المتوفى | نافع سبيل عوده الحربي"
+     }
+    },
+    {
+     "label": "رقم هوية المتوفى",
+     "value": "١٠٠١١٦٧٦٤٠",
+     "key": "deceased_id_number",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 220,
+      "end": 230,
+      "quote": "رقم الهوية | ١٠٠١١٦٧٦٤٠"
+     }
+    },
+    {
+     "label": "نوع هوية المتوفى",
+     "value": "هوية وطنية",
+     "key": "deceased_id_type",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 9,
+      "start": 196,
+      "end": 206,
+      "quote": "نوع الهوية | هوية وطنية"
+     }
+    },
+    {
+     "label": "جنسية المتوفى",
+     "value": "السعودية",
+     "key": "deceased_nationality",
+     "required": false,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 15,
+      "start": 418,
+      "end": 426,
+      "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+     }
+    },
+    {
+     "label": "الرقم الموحد للمتوفى",
+     "value": "١٠٠١١٦٧٦٤٠",
+     "key": "deceased_unified_number_700",
+     "required": false,
+     "status": "mismatch",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 10,
+      "start": 220,
+      "end": 230,
+      "quote": "رقم الهوية | ١٠٠١١٦٧٦٤٠"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات الوفاة",
+   "fields": [
+    {
+     "label": "تاريخ الوفاة",
+     "value": "١٤٤٣/٠٤/٠٩ هـ",
+     "key": "death_date_hijri",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 11,
+      "start": 246,
+      "end": 259,
+      "quote": "تاريخ الوفاة | ١٤٤٣/٠٤/٠٩ هـ"
+     }
+    },
+    {
+     "label": "رقم شهادة الوفاة",
+     "value": "١٨٦٥-٠٠٠٠٢١٣٤",
+     "key": "death_certificate_number",
+     "required": false,
+     "status": "ok",
+     "origin": "aligned",
+     "source": {
+      "page": 1,
+      "line": 12,
+      "start": 279,
+      "end": 292,
+      "quote": "رقم شهادة الوفاة | ١٨٦٥-٠٠٠٠٢١٣٤"
+     }
+    }
+   ]
+  },
+  {
+   "title": "بيانات الورثة",
+   "fields": [],
+   "record_label": "الوارث",
+   "records": [
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "ناصر نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 394,
+       "end": 415,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 386,
+       "end": 391,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٠٢٩٥٢٨٥٩",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 429,
+       "end": 439,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 418,
+       "end": 426,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠٥/٠٣/٢٥ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 442,
+       "end": 455,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 15,
+       "start": 458,
+       "end": 462,
+       "quote": "الابن | ناصر نافع سبيل الحربي | السعودية | ١٠٠٢٩٥٢٨٥٩ | ١٤٠٥/٠٣/٢٥ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "بدريه علي سليم الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 472,
+       "end": 493,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الزوجة",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 463,
+       "end": 469,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٠١١٦٧٦٥٧",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 507,
+       "end": 517,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 496,
+       "end": 504,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٣٨٤/٠٧/٠١ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 520,
+       "end": 533,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 16,
+       "start": 536,
+       "end": 540,
+       "quote": "الزوجة | بدريه علي سليم الحربي | السعودية | ١٠٠١١٦٧٦٥٧ | ١٣٨٤/٠٧/٠١ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "عميشاء تريحيب ساجر الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 550,
+       "end": 575,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الزوجة",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 541,
+       "end": 547,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠١١٣٨٧٢٦١",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 589,
+       "end": 599,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 578,
+       "end": 586,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٣٨٧/٠٧/٠١ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 602,
+       "end": 615,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 17,
+       "start": 618,
+       "end": 622,
+       "quote": "الزوجة | عميشاء تريحيب ساجر الحربي | السعودية | ١٠١١٣٨٧٢٦١ | ١٣٨٧/٠٧/٠١ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "شيخه نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 632,
+       "end": 653,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابنة",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 623,
+       "end": 629,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٠١١٦٧٦٦٥",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 667,
+       "end": 677,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 656,
+       "end": 664,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٣٩٧/٠٧/٠١ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 680,
+       "end": 693,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 18,
+       "start": 696,
+       "end": 700,
+       "quote": "الابنة | شيخه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٦٥ | ١٣٩٧/٠٧/٠١ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "بدر نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 709,
+       "end": 729,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 701,
+       "end": 706,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٠١١٦٧٦٨١",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 743,
+       "end": 753,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 732,
+       "end": 740,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠٣/٠٤/٠٢ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 756,
+       "end": 769,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 19,
+       "start": 772,
+       "end": 776,
+       "quote": "الابن | بدر نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٨١ | ١٤٠٣/٠٤/٠٢ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "منصور نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 785,
+       "end": 807,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 777,
+       "end": 782,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٥٠٢٠٤٣٩٣",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 821,
+       "end": 831,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 810,
+       "end": 818,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠٦/١١/٢٠ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 834,
+       "end": 847,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 20,
+       "start": 850,
+       "end": 854,
+       "quote": "الابن | منصور نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٣٩٣ | ١٤٠٦/١١/٢٠ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "مزنه نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 864,
+       "end": 885,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابنة",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 855,
+       "end": 861,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٠١١٦٧٦٧٣",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 899,
+       "end": 909,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 888,
+       "end": 896,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠١/١٢/٢٥ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 912,
+       "end": 925,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 21,
+       "start": 928,
+       "end": 932,
+       "quote": "الابنة | مزنه نافع سبيل الحربي | السعودية | ١٠٠١١٦٧٦٧٣ | ١٤٠١/١٢/٢٥ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "عبدالمحسن نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 941,
+       "end": 967,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 933,
+       "end": 938,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٥٠٢٠٤٤٠١",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 981,
+       "end": 991,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 970,
+       "end": 978,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠٧/٠٥/١٨ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 994,
+       "end": 1007,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 22,
+       "start": 1010,
+       "end": 1014,
+       "quote": "الابن | عبدالمحسن نافع سبيل الحربي | السعودية | ١٠٥٠٢٠٤٤٠١ | ١٤٠٧/٠٥/١٨ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "فهد نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1023,
+       "end": 1043,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1015,
+       "end": 1020,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٩٨٠٧٩٧١٦",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1057,
+       "end": 1067,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1046,
+       "end": 1054,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤١٨/٠٨/٠٦ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1070,
+       "end": 1083,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 23,
+       "start": 1086,
+       "end": 1090,
+       "quote": "الابن | فهد نافع سبيل الحربي | السعودية | ١٠٩٨٠٧٩٧١٦ | ١٤١٨/٠٨/٠٦ هـ | راشد"
+      }
+     }
+    ],
+    [
+     {
+      "label": "اسم الوارث",
+      "value": "فايز نافع سبيل الحربي",
+      "key": "heir_name",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1099,
+       "end": 1120,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "صلة القرابة",
+      "value": "الابن",
+      "key": "heir_relation",
+      "required": true,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1091,
+       "end": 1096,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "رقم هوية الوارث",
+      "value": "١٠٦٠٩٧٣٤٥٨",
+      "key": "heir_id_number",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1134,
+       "end": 1144,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "جنسية الوارث",
+      "value": "السعودية",
+      "key": "heir_nationality",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1123,
+       "end": 1131,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "تاريخ ميلاد الوارث",
+      "value": "١٤٠٨/١٢/١٢ هـ",
+      "key": "heir_birth_date_hijri",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1147,
+       "end": 1160,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     },
+     {
+      "label": "حالة الوارث",
+      "value": "راشد",
+      "key": "heir_status",
+      "required": false,
+      "status": "ok",
+      "origin": "aligned",
+      "source": {
+       "page": 1,
+       "line": 24,
+       "start": 1163,
+       "end": 1167,
+       "quote": "الابن | فايز نافع سبيل الحربي | السعودية | ١٠٦٠٩٧٣٤٥٨ | ١٤٠٨/١٢/١٢ هـ | راشد"
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "title": "منطوق الصك",
+   "fields": [
+    {
+     "label": "منطوق الصك",
+     "value": "تم توثيق ورثة",
+     "key": "confinement_statement",
+     "required": true,
+     "status": "ok",
+     "origin": "model",
+     "source": {
+      "page": 1,
+      "line": 6,
+      "start": 115,
+      "end": 128,
+      "quote": "تم توثيق ورثة"
+     }
+    }
+   ]
+  },
+  {
+   "title": "التوقيع والختم",
+   "fields": [
+    {
+     "label": "كاتب العدل",
+     "value": "",
+     "key": "attesting_officer_name",
+     "required": true,
+     "status": "empty",
+     "origin": "model"
+    }
+   ]
+  },
+  {
+   "title": "معلومات أخرى في المستند",
+   "fields": [
+    {
+     "label": "جنس المتوفى",
+     "value": "ذكر",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 8,
+      "start": 179,
+      "end": 182,
+      "quote": "جنس المتوفى | ذكر"
+     }
+    },
+    {
+     "label": "الموافق الميلادي",
+     "value": "٢٠٢١/١١/٢٤ م",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 5,
+      "start": 102,
+      "end": 114,
+      "quote": "الموافق : ٢٠٢١/١١/٢٤ م"
+     }
+    },
+    {
+     "label": "ملاحظة",
+     "value": "صدرت هذه الوثيقة من النظام الإلكتروني لخدمات التوثيق، ويمكن التحقق من صحة الوثيقة عبر الخدمات الإلكترونية لوزارة العدل",
+     "origin": "document",
+     "source": {
+      "page": 1,
+      "line": 26,
+      "start": 1175,
+      "end": 1293,
+      "quote": "صدرت هذه الوثيقة من النظام الإلكتروني لخدمات التوثيق، ويمكن التحقق من صحة الوثيقة عبر الخدمات الإلكترونية لوزارة العدل"
+     }
+    }
+   ]
+  }
+ ],
+ "template_id": "sakk_hasr_warathah",
+ "template_name_ar": "صك حصر ورثة",
+ "missing_required": [
+  {
+   "key": "attesting_officer_name",
+   "label_ar": "كاتب العدل",
+   "label_en": "Attesting notary or judge"
+  }
+ ],
+ "extras": 3,
+ "passes": 3,
+ "expiry": {
+  "status": "unknown",
+  "status_ar": "غير محدّد — تحتاج مراجعة",
+  "date_text": "",
+  "date_normalized": "",
+  "calendar": "",
+  "date_gregorian": "",
+  "days_remaining": null,
+  "basis": "",
+  "confidence": "low",
+  "verified": false,
+  "derived": false,
+  "label": "",
+  "source": null,
+  "converter": "",
+  "state_override": "",
+  "state_override_ar": "",
+  "note": "لم يُعثر على تاريخ انتهاء في المستند",
+  "assessed_on": "2026-10-05",
+  "assessed_on_hijri": "1448-04-24"
+ },
+ "_classify": {
+  "template_id": "sakk_hasr_warathah",
+  "name_ar": "صك حصر ورثة",
+  "name_en": "Inheritance / heirs inventory deed",
+  "family": "estate",
+  "confidence": 1.0,
+  "source": "llm+rules",
+  "generic": false,
+  "needs_review": false,
+  "rules_score": 0.9,
+  "corroborated": true,
+  "evidence": [
+   "وثيقة ورثة متوفى",
+   "وانحصر ورثته في",
+   "تم توثيق ورثة",
+   "حالة الوارث",
+   "صلة القرابة"
+  ],
+  "rules": [
+   {
+    "template_id": "sakk_hasr_warathah",
+    "name_ar": "صك حصر ورثة",
+    "score": 0.9,
+    "raw": 9,
+    "max_raw": 10,
+    "hits": [
+     "وثيقة ورثة متوفى",
+     "تم توثيق ورثة",
+     "وانحصر ورثته في",
+     "حالة الوارث",
+     "صلة القرابة"
+    ],
+    "negatives": []
+   },
+   {
+    "template_id": "sakk_milkiyyah_aqar",
+    "name_ar": "صك ملكية عقار",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   },
+   {
+    "template_id": "wakalah_shariyyah",
+    "name_ar": "وكالة شرعية",
+    "score": 0.0,
+    "raw": 0,
+    "max_raw": 8,
+    "hits": [],
+    "negatives": []
+   }
+  ],
+  "llm": {
+   "family": "estate",
+   "family_confidence": 0.99,
+   "template_id": "sakk_hasr_warathah",
+   "confidence": 1.0,
+   "evidence": [
+    "وثيقة ورثة متوفى",
+    "وانحصر ورثته في"
+   ]
+  },
+  "error": null,
+  "ms": 1377
+ }
+}
