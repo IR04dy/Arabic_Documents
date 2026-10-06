@@ -5,32 +5,36 @@
   const MAX_CHARS = 40000;
   const docs = {a: null, b: null};
   let report = null, generation = 0, controller = null, busy = false;
-  // Every workspace tab (analysis, comparison, complaints…) shares this controller;
-  // a workspace learns it became visible from the 'workspace:change' event.
-  const tabs = [...document.querySelectorAll('.workspace-tabs [role="tab"]')];
-  function selectTab(tab) {
-    tabs.forEach(item => {
-      const active = item === tab;
-      item.setAttribute('aria-selected', String(active));
-      item.tabIndex = active ? 0 : -1;
-      const panel = $(item.getAttribute('aria-controls'));
-      if (panel) panel.hidden = !active;
-    });
-    window.dispatchEvent(new CustomEvent('workspace:change', {detail: {panel: tab.getAttribute('aria-controls')}}));
+  // The sidebar (.workspace-tabs) switches workspaces for the whole page; a
+  // workspace learns it became visible from the 'workspace:change' event.
+  // Several items may open one workspace: the complaint pages share
+  // #complaints-workspace and pick its sub-view (data-view) through the
+  // workspace's own view tabs.
+  const tabs = [...document.querySelectorAll('.workspace-tabs [data-panel]')];
+  const panels = [...new Set(tabs.map(tab => tab.dataset.panel))];
+  function mark(tab) {
+    tabs.forEach(item => { if (item === tab) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current'); });
+    const title = $('topbar-title'), sub = $('topbar-sub');
+    if (title) title.textContent = tab.dataset.title || tab.textContent.trim();
+    if (sub) sub.textContent = tab.dataset.sub || '';
   }
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => selectTab(tab));
-    tab.addEventListener('keydown', event => {
-      // In a right-to-left tablist the next tab sits to the LEFT.
-      const rtl = getComputedStyle(tab.parentElement).direction === 'rtl';
-      const step = {ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1}[event.key];
-      let next;
-      if (step) next = tabs[(index + step + tabs.length) % tabs.length];
-      if (event.key === 'Home') next = tabs[0];
-      if (event.key === 'End') next = tabs[tabs.length - 1];
-      if (next) { event.preventDefault(); selectTab(next); next.focus(); }
-    });
-  });
+  function selectTab(tab) {
+    mark(tab);
+    panels.forEach(id => { const panel = $(id); if (panel) panel.hidden = id !== tab.dataset.panel; });
+    if (tab.dataset.view) $('cms-tab-' + tab.dataset.view)?.click();
+    window.dispatchEvent(new CustomEvent('workspace:change', {detail: {panel: tab.dataset.panel}}));
+  }
+  tabs.forEach(tab => tab.addEventListener('click', () => selectTab(tab)));
+  // A complaint page may switch its own view (e.g. «فتح» in the intake list opens
+  // the register): keep the sidebar on the page actually shown.
+  const cmsViews = document.querySelector('#complaints-workspace .cms-views');
+  if (cmsViews) new MutationObserver(() => {
+    if ($('complaints-workspace').hidden) return;
+    const on = cmsViews.querySelector('[aria-selected="true"]');
+    const view = on && on.getAttribute('aria-controls').slice(4);
+    const item = tabs.find(tab => tab.dataset.panel === 'complaints-workspace' && tab.dataset.view === view);
+    if (item && item.getAttribute('aria-current') !== 'page') mark(item);
+  }).observe(cmsViews, {subtree: true, attributes: true, attributeFilter: ['aria-selected']});
   function el(tag, cls, text) {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -184,7 +188,12 @@
       (report.complete ? 'نتائج مقارنة النصوص' : 'نتائج جزئية — توجد فجوات في المراجعة');
     const stats = $('cmp-stats');
     stats.replaceChildren();
-    for (const [key, count] of Object.entries(report.counts)) stats.append(el('span', 'cmp-stat', `${report.statuses[key]}: ${count}`));
+    for (const [key, count] of Object.entries(report.counts)) {
+      const stat = el('div', 'cmp-stat');
+      stat.dataset.status = key;
+      stat.append(el('b', '', String(count)), el('span', '', report.statuses[key]));
+      stats.append(stat);
+    }
     $('cmp-coverage').textContent = ['a', 'b'].map(key => {
       const c = report.coverage[key];
       return `${key === 'a' ? 'الأول' : 'الثاني'}: ${c.reviewed_chunks} / ${c.chunks} مقاطع تمت مراجعتها`;

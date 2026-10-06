@@ -98,6 +98,11 @@ async def _security_headers(request, call_next):
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Content-Security-Policy"] = CSP
     resp.headers["X-Frame-Options"] = "SAMEORIGIN"     # frame-ancestors for older browsers
+    # The page's scripts and stylesheets carry a Last-Modified but no caching rule,
+    # so a browser may keep using an old copy after an update (the page itself is
+    # always fresh): a new ui.html then runs against stale module code. Revalidate.
+    if request.url.path.endswith(("/ui.js", "/ui.css", "/flow.js")):
+        resp.headers["Cache-Control"] = "no-cache"
     return resp
 
 

@@ -151,6 +151,8 @@
     productsBar.replaceChildren();
     catalog.products.forEach((p, i) => {
       const b = node('button', 'vf-product', p.label);
+      const n = p.endpoints.length;
+      b.append(node('small', 'vf-product-n', n === 1 ? 'استعلام واحد' : n === 2 ? 'استعلامان' : n <= 10 ? ar(n) + ' استعلامات' : ar(n) + ' استعلامًا'));
       b.type = 'button';
       b.id = 'vf-tab-' + p.id;
       b.setAttribute('role', 'tab');
@@ -160,7 +162,7 @@
       b.tabIndex = i === 0 ? 0 : -1;
       b.addEventListener('click', () => selectProduct(p));
       b.addEventListener('keydown', ev => {
-        const step = {ArrowLeft: 1, ArrowRight: -1}[ev.key];          // RTL: next is to the left
+        const step = {ArrowDown: 1, ArrowUp: -1, ArrowLeft: 1, ArrowRight: -1}[ev.key];   // a vertical list; RTL: next is to the left
         const list = catalog.products;
         let next;
         if (step) next = list[(list.indexOf(p) + step + list.length) % list.length];

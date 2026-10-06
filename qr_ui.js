@@ -2,7 +2,7 @@
 (() => {
   const box = document.createElement("details");
   box.id = "qr-results";
-  box.style.cssText = "flex:none;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:6px;max-height:38vh;overflow:auto";
+  box.className = "qr-box";
   const summary = document.createElement("summary");
   summary.textContent = "رموز QR والصفحات المرتبطة";
   summary.style.cursor = "pointer";
@@ -14,12 +14,10 @@
   const state = document.createElement("p"); state.setAttribute("role", "status");
   const results = document.createElement("div");
   box.append(summary, hint, start, state, results);
-  document.querySelector("#status").after(box);
-  document.querySelector("#p1 .pbody").style.overflowY = "auto";
-  document.querySelector("#p1 .viewer").style.minHeight = "260px";
+  document.querySelector("#qr-slot").append(box);           // the analysis rail, under the fields
   const captures = document.createElement("details");
   captures.id = "qr-captures"; captures.hidden = true;
-  captures.style.cssText = "flex:none;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:6px;max-height:42vh;overflow:auto";
+  captures.className = "qr-box";
   const captureTitle = document.createElement("summary");
   captureTitle.textContent = "لقطات الصفحات المرتبطة";
   const captureHint = document.createElement("p");
@@ -103,7 +101,7 @@
         if (applied) {
           restore.hidden = false;
           feedback.textContent = "أصبحت اللقطة المستند النشط؛ تستمر خطوات التدقيق والحقول والمحادثة المعتادة.";
-          document.querySelector("#p1 .viewer").scrollIntoView({block:"nearest"});
+          document.querySelector("#viewerbody").scrollIntoView({block:"nearest"});
         }
       } catch (error) { if (gen === generation) feedback.textContent = error.message; }
       finally { if (gen === generation) use.disabled = false; }

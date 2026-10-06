@@ -10,22 +10,22 @@
    badge, tag and SLA text use a darker ink (every pair ≥ 4.5:1; dark mode
    already passes and keeps the tones). test_complaints_ui checks the ratios. */
 #complaints-workspace{
-  --serious:#C2561B; --serious-soft:#FCEFE6;
-  --cms-bar:#3C72C9; --cms-grid:#E3E7EE; --cms-hl:#FFE9A8;
-  --warn-ink:#7A5A00; --ok-ink:#176B43; --crit-ink:#B03232; --serious-ink:#A3440F; --accent-text:#1A5DC8;
-  --cms-elev:0 10px 28px rgba(15,20,27,.13),0 1px 3px rgba(15,20,27,.08);
-  flex:1;min-height:0;overflow:auto;padding:22px 24px 40px;
+  --serious:#B5663C; --serious-soft:#F7E9DF;
+  --cms-bar:#0E5E5E; --cms-grid:#E5DFD2; --cms-hl:#F6E4B0;
+  --warn-ink:#876019; --ok-ink:#235D3D; --crit-ink:#7E2A25; --serious-ink:#8A4520; --accent-text:#094242;
+  --cms-elev:0 16px 48px rgba(21,32,29,.16),0 4px 12px rgba(21,32,29,.06);
+  flex:1;min-height:0;overflow:auto;padding:24px 28px 32px;
   position:relative   /* contains the visually hidden tables, or they stretch the page and scrollIntoView scrolls the whole app */
 }
 @media (prefers-color-scheme:dark){#complaints-workspace{
   --serious:#F0925A; --serious-soft:#3B2618;
-  --cms-bar:#6C9EEA; --cms-grid:#2A3340; --cms-hl:#5A4712;
+  --cms-bar:#5FA5A5; --cms-grid:#24403F; --cms-hl:#5A4712;
   --warn-ink:var(--warn); --ok-ink:var(--ok); --crit-ink:var(--crit); --serious-ink:var(--serious); --accent-text:var(--accent);
   --cms-elev:0 12px 32px rgba(0,0,0,.5),0 1px 3px rgba(0,0,0,.4);
 }}
 #complaints-workspace[hidden]{display:none!important}
 #complaints-workspace [hidden]{display:none!important}
-#complaints-workspace .cms-content{max-width:1400px;margin:0 auto}
+#complaints-workspace .cms-content{max-width:1400px}
 #complaints-workspace .cms-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
 #complaints-workspace .cms-muted{color:var(--ink-2);font-size:12px}
 #complaints-workspace .cms-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:22px}
@@ -33,10 +33,10 @@
 #complaints-workspace bdo{unicode-bidi:isolate-override}
 
 /* ---- header strip ---- */
-#complaints-workspace .cms-heading{display:flex;justify-content:space-between;gap:16px 24px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-#complaints-workspace .cms-heading h2{font-size:21px;margin:0}
+#complaints-workspace .cms-heading{display:flex;justify-content:space-between;gap:16px 24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
+#complaints-workspace .cms-heading h2{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0}
 #complaints-workspace .cms-title-row{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:4px}
-#complaints-workspace .cms-heading p{color:var(--ink-2);margin:0;max-width:780px}
+#complaints-workspace .cms-heading p{color:var(--ink-2);margin:6px 0 0;max-width:680px;font-size:13px;line-height:1.7}
 /* The receiving entity: the desk every complaint is addressed to (taxonomy receiving_entity). */
 #complaints-workspace .cms-entity{display:inline-flex;align-items:baseline;gap:5px;max-width:100%;padding:3px 11px;border:1px solid var(--accent-line);border-radius:var(--pill);background:var(--accent-soft);color:var(--ink-2);font-size:12px;line-height:1.6}
 #complaints-workspace .cms-entity strong{color:var(--accent);font-size:13px;overflow-wrap:anywhere}
@@ -46,7 +46,7 @@
 #complaints-workspace .cms-provider{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);min-width:0;max-width:100%}
 #complaints-workspace .cms-provider select{min-width:0;flex:1 1 auto;max-width:300px}
 #complaints-workspace select,#complaints-workspace input[type="text"],#complaints-workspace input[type="search"],#complaints-workspace textarea{
-  font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 9px;max-width:100%}
+  font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 9px;max-width:100%}
 #complaints-workspace select:disabled{opacity:.6}
 #complaints-workspace textarea{width:100%;resize:vertical;line-height:1.8}
 #complaints-workspace .cms-dot{width:8px;height:8px;border-radius:50%;background:var(--muted-2);flex:none;display:inline-block}
@@ -57,40 +57,40 @@
 @keyframes cms-pulse{50%{opacity:.35}}
 
 /* ---- buttons, alerts, empty states (the comparison tab's language) ---- */
-#complaints-workspace .cms-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;line-height:1.4}
+#complaints-workspace .cms-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 13px;border:1px solid var(--line-3);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;line-height:1.4}
 #complaints-workspace .cms-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 #complaints-workspace .cms-btn:disabled{opacity:.5;cursor:default}
 #complaints-workspace .cms-btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-#complaints-workspace .cms-btn-primary:hover:not(:disabled){color:var(--accent-ink);filter:brightness(1.07)}
+#complaints-workspace .cms-btn-primary:hover:not(:disabled){color:var(--accent-ink);background:var(--accent-hover);border-color:var(--accent-hover)}
 #complaints-workspace .cms-btn-ghost{border-color:transparent;background:transparent;color:var(--accent)}
 #complaints-workspace .cms-btn-danger{color:var(--crit-ink)}
 #complaints-workspace .cms-btn-danger:hover:not(:disabled){border-color:var(--crit);color:var(--crit-ink)}
 #complaints-workspace .cms-btn-sm{padding:3px 10px;font-size:12px}
 #complaints-workspace .cms-link{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
-#complaints-workspace .cms-error{background:var(--crit-soft);color:var(--crit-ink);padding:10px 12px;border:1px solid var(--crit);border-radius:var(--r);margin:10px 0;overflow-wrap:anywhere;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-#complaints-workspace .cms-empty{border:1px dashed var(--line-3);border-radius:10px;text-align:center;padding:28px 22px;color:var(--ink-2);margin-top:10px}
+#complaints-workspace .cms-error{background:var(--crit-soft);color:var(--crit-ink);padding:10px 12px;border:1px solid var(--crit);border-radius:var(--r-sm);margin:10px 0;overflow-wrap:anywhere;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#complaints-workspace .cms-empty{border:1.5px dashed var(--line-3);background:var(--card-2);border-radius:var(--r);text-align:center;padding:28px 22px;color:var(--ink-2);margin-top:10px}
 #complaints-workspace .cms-empty strong{display:block;color:var(--ink);margin-bottom:6px;font-size:14px}
 #complaints-workspace .cms-spinner{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;display:inline-block;vertical-align:-2px;animation:cms-spin .7s linear infinite;flex:none}
 @keyframes cms-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#complaints-workspace .cms-spinner,#complaints-workspace .cms-dot,#complaints-workspace .cms-step.is-active::before{animation:none!important}}
 #complaints-workspace .cms-section-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px}
-#complaints-workspace .cms-section-head h3{font-size:15px;margin:0}
+#complaints-workspace .cms-section-head h3{font-size:15px;font-weight:700;margin:0}
 #complaints-workspace .cms-section-head .cms-btn:last-child{margin-inline-start:auto}
 
 /* ---- segmented control between the three sub-views ---- */
-#complaints-workspace .cms-views{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--bar);margin:2px 0 14px;max-width:100%}
+#complaints-workspace .cms-views{display:none;gap:2px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--bar);margin:2px 0 14px;max-width:100%}
 #complaints-workspace .cms-views button{border:0;background:transparent;color:var(--ink-2);padding:7px 18px;border-radius:6px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
 #complaints-workspace .cms-views button:hover{color:var(--ink)}
 #complaints-workspace .cms-views button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow),0 0 0 1px var(--line)}
 
 /* ---- intake ---- */
 #complaints-workspace .cms-intake-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
-#complaints-workspace .cms-drop{border:1.5px dashed var(--muted-2);border-radius:10px;background:var(--surface);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;color:var(--ink-2);cursor:pointer;transition:border-color .15s,background .15s}
+#complaints-workspace .cms-drop{border:1.5px dashed var(--line-3);border-radius:var(--r);background:var(--card-2);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;color:var(--ink-2);cursor:pointer;transition:border-color .15s,background .15s}
 #complaints-workspace .cms-drop strong{color:var(--ink);font-size:14px}
 #complaints-workspace .cms-drop .cms-btn{margin-top:6px}
 #complaints-workspace .cms-drop:hover,#complaints-workspace .cms-drop.is-over{border-color:var(--accent);background:var(--accent-soft)}
 #complaints-workspace .cms-drop.is-busy{opacity:.7;cursor:progress}
-#complaints-workspace .cms-paste{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+#complaints-workspace .cms-paste{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
 #complaints-workspace .cms-paste summary{cursor:pointer;font-weight:700;padding:2px 0}
 #complaints-workspace .cms-paste[open] summary{margin-bottom:10px}
 #complaints-workspace .cms-paste label{display:block;font-size:12px;color:var(--ink-2);margin:8px 0 4px}
@@ -99,7 +99,7 @@
 #complaints-workspace .cms-count-over{color:var(--crit-ink);font-weight:700}
 #complaints-workspace #cms-upload-progress{width:100%;height:5px;accent-color:var(--accent);margin:4px 0 8px}
 #complaints-workspace .cms-intake-list{list-style:none;margin:0;padding:0}
-#complaints-workspace .cms-job{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) auto;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-bottom:8px}
+#complaints-workspace .cms-job{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) auto;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px 14px;margin-bottom:8px}
 #complaints-workspace .cms-job[data-stage="error"]{border-color:var(--crit)}
 #complaints-workspace .cms-job-name{font-weight:700;overflow-wrap:anywhere}
 #complaints-workspace .cms-job-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:12px;color:var(--ink-2);margin-top:2px}
@@ -143,7 +143,7 @@
 #complaints-workspace .cms-sla.is-over{color:var(--crit-ink);font-weight:700}
 
 /* ---- register ---- */
-#complaints-workspace .cms-filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+#complaints-workspace .cms-filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
 #complaints-workspace .cms-field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink-2);min-width:0}
 #complaints-workspace .cms-filters .cms-field select{max-width:200px}
 #complaints-workspace .cms-field-q{flex:1 1 220px}
@@ -154,7 +154,7 @@
 /* The wrap is the query container of the detail panel: 100cqi is its visible
    width. It never scrolls vertically (its height is the table's): a vertical
    scrollbar would narrow the visible width under a panel sized in cqi. */
-#complaints-workspace .cms-table-wrap{overflow-x:auto;overflow-y:hidden;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:opacity .15s;container:cms-register/inline-size}
+#complaints-workspace .cms-table-wrap{overflow-x:auto;overflow-y:hidden;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:opacity .15s;container:cms-register/inline-size}
 #complaints-workspace .is-loading{opacity:.6}
 #complaints-workspace .cms-table-wrap.is-loading{opacity:1}            /* a reload dims the rows, never the open panel */
 #complaints-workspace .cms-table-wrap.is-loading .cms-rrow{opacity:.6}
@@ -189,19 +189,19 @@
 
 /* ---- analytics: KPI tiles ---- */
 #complaints-workspace .cms-kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-bottom:14px}   /* 7 tiles: 7 / 4+3 / 2 per row with the last one spanning */
-#complaints-workspace .cms-kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 16px;min-width:0}
+#complaints-workspace .cms-kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 16px;min-width:0;box-shadow:var(--shadow)}
 #complaints-workspace .cms-kpi[data-flag="crit"]{border-inline-start:4px solid var(--crit)}
 #complaints-workspace .cms-kpi[data-flag="warn"]{border-inline-start:4px solid var(--warn)}
-#complaints-workspace .cms-kpi-label{font-size:12px;color:var(--ink-2)}
-#complaints-workspace .cms-kpi-value{font-size:28px;font-weight:700;line-height:1.35;color:var(--ink)}
+#complaints-workspace .cms-kpi-label{font-size:12px;font-weight:600;color:var(--ink-2)}
+#complaints-workspace .cms-kpi-value{font-size:28px;font-weight:800;line-height:1.35;letter-spacing:-.02em;color:var(--ink)}
 #complaints-workspace .cms-kpi-sub{font-size:11.5px;color:var(--ink-2);overflow-wrap:anywhere}
 
 /* ---- analytics: chart cards ---- */
 #complaints-workspace .cms-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;transition:opacity .15s}
-#complaints-workspace .cms-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;min-width:0;margin:0}
+#complaints-workspace .cms-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;min-width:0;margin:0;box-shadow:var(--shadow)}
 #complaints-workspace .cms-chart.is-wide{grid-column:1/-1}
 #complaints-workspace .cms-chart-head{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
-#complaints-workspace .cms-chart-head h3,#complaints-workspace .cms-chart h4{font-size:14px;margin:0}
+#complaints-workspace .cms-chart-head h3,#complaints-workspace .cms-chart h4{font-size:13.5px;font-weight:700;margin:0}
 #complaints-workspace .cms-chart h4{font-size:13px;margin-top:14px}
 #complaints-workspace .cms-chart-sub{font-size:11.5px;color:var(--ink-2)}
 #complaints-workspace .cms-chart-empty{color:var(--ink-2);font-size:12px;padding:18px 0 6px}
@@ -270,7 +270,7 @@
    position:relative (here and on the details column): the container query
    makes the wrap the containing block of absolutely placed descendants, and
    the visually hidden spans of a scrolled column must not stick out of it. */
-#complaints-workspace .cms-panel{position:relative;display:flex;flex-direction:column;height:var(--cms-panel-h,min(85vh,960px));min-height:320px;border:1px solid var(--accent-line);border-radius:10px;background:var(--ground);color:var(--ink);font-size:13px;overflow:hidden;box-shadow:var(--cms-elev);cursor:auto}
+#complaints-workspace .cms-panel{position:relative;display:flex;flex-direction:column;height:var(--cms-panel-h,min(85vh,960px));min-height:320px;border:1px solid var(--accent-line);border-radius:var(--r);background:var(--ground);color:var(--ink);font-size:13px;overflow:hidden;box-shadow:var(--cms-elev);cursor:auto}
 @supports (height:1dvh){#complaints-workspace .cms-panel{height:var(--cms-panel-h,min(85dvh,960px))}}   /* --cms-panel-h: fitHeight() in complaints_ui.js */
 #complaints-workspace .cms-d-head{position:sticky;top:0;z-index:1;display:flex;gap:10px 18px;align-items:flex-start;justify-content:space-between;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;flex-shrink:0}
 #complaints-workspace .cms-d-headline{min-width:0;flex:1 1 380px}
@@ -308,7 +308,7 @@
 #complaints-workspace .cms-line mark{background:var(--cms-hl);color:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--warn)}
 #complaints-workspace .cms-pagemark{margin:12px 14px 6px;padding:1px 10px;font-size:11px;color:var(--ink-2);background:var(--bar);border:1px solid var(--line-2);border-radius:var(--pill);width:max-content}
 #complaints-workspace .cms-pagemark:first-child{margin-top:4px}
-#complaints-workspace .cms-block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:12px;min-width:0}
+#complaints-workspace .cms-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;margin-bottom:12px;min-width:0}
 #complaints-workspace .cms-block > h4{font-size:13.5px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #complaints-workspace .cms-block.is-warn{border-color:var(--warn);background:var(--warn-soft)}
 #complaints-workspace .cms-block.is-crit{border-color:var(--crit)}
@@ -317,7 +317,7 @@
 #complaints-workspace .cms-facts li{overflow-wrap:anywhere}
 #complaints-workspace .cms-warnings{margin:10px 0 0;padding-inline-start:20px;color:var(--warn-ink);font-size:12px}
 #complaints-workspace .cms-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-#complaints-workspace .cms-fcard{border:1px solid var(--line-2);border-radius:var(--r);background:var(--card);padding:7px 10px;min-width:0}
+#complaints-workspace .cms-fcard{border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--card);padding:7px 10px;min-width:0}
 #complaints-workspace .cms-fcard.is-wide{grid-column:1/-1}
 #complaints-workspace .cms-flabel{font-size:11.5px;color:var(--ink-2)}
 #complaints-workspace .cms-fvalue{font-size:13px;overflow-wrap:anywhere;min-height:20px;color:var(--ink)}
@@ -329,7 +329,7 @@
 #complaints-workspace .cms-block.cms-pending.is-settled{border-color:var(--ok)}
 #complaints-workspace .cms-pending > p.cms-muted{margin:0 0 8px;line-height:1.7}
 #complaints-workspace .cms-pending-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-#complaints-workspace .cms-prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;border:1px solid var(--line-2);border-radius:var(--r);background:var(--card);padding:7px 10px}
+#complaints-workspace .cms-prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--card);padding:7px 10px}
 #complaints-workspace .cms-prow.is-editing{border-color:var(--accent-line)}
 #complaints-workspace .cms-prow .cms-field input{width:100%;max-width:none}
 #complaints-workspace .cms-prow-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -351,7 +351,7 @@
 #complaints-workspace .cms-form .cms-wide{grid-column:1/-1}
 #complaints-workspace .cms-form-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
 #complaints-workspace .cms-hint{font-size:11px;color:var(--ink-2);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-#complaints-workspace .cms-ack{white-space:pre-wrap;line-height:1.95;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r);padding:12px 14px;font-size:13px;overflow-wrap:anywhere;margin:0 0 8px}
+#complaints-workspace .cms-ack{white-space:pre-wrap;line-height:1.95;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:12px 14px;font-size:13px;overflow-wrap:anywhere;margin:0 0 8px}
 #complaints-workspace .cms-timeline{list-style:none;margin:0;padding:0 0 0 0;border-inline-start:2px solid var(--line-2);margin-inline-start:5px}
 #complaints-workspace .cms-timeline li{position:relative;padding:0 16px 12px;font-size:12.5px;overflow-wrap:anywhere}
 #complaints-workspace .cms-timeline li::before{content:"";position:absolute;inset-inline-start:-7px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:2px solid var(--line-3)}

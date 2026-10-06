@@ -52,7 +52,7 @@
           const box=node('div',null,'reg-match');
           box.append(node('p',match.text));
           const show=node('button',match.page?`إظهار النص · صفحة ${digits(match.page)}`:'إظهار النص في المستند','btn-out');
-          show.type='button';show.onclick=()=>{dialog.close();const p=document.getElementById('p1');if(p.classList.contains('collapsed'))p.querySelector('.collapse').click();showSource(match.start_utf16,match.end_utf16);};
+          show.type='button';show.onclick=()=>{dialog.close();showSource(match.start_utf16,match.end_utf16);};
           box.append(show);matches.append(box);
         }
         if(item.matched_passage_count>item.matches.length)matches.append(node('p','تُعرض أقوى ثلاثة مقاطع مرتبطة بهذه المادة.','reg-meta'));

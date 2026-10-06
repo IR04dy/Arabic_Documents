@@ -4,8 +4,25 @@
     {
       "name": "wathq-mock",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["C:/Users/User/AppData/Local/Temp/claude/D--Yousef-Arabic-Text-Extraction/b0b58ca6-ea63-4fd8-827e-330923f102e1/scratchpad/wathq_mock_all.py", "8323"],
+      "runtimeArgs": [
+        "C:/Users/User/AppData/Local/Temp/claude/D--Yousef-Arabic-Text-Extraction/b0b58ca6-ea63-4fd8-827e-330923f102e1/scratchpad/wathq_mock_all.py",
+        "8323"
+      ],
       "port": 8323
+    },
+    {
+      "name": "app",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8100"
+      ],
+      "port": 8100
     }
   ]
 }
